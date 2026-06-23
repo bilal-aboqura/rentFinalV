@@ -46,7 +46,7 @@ export default function BookingWizard() {
       setLoadingPrice(false);
 
       if (res.success) {
-        setPrice(res.price);
+        setPrice(res.price ?? null);
       } else {
         setPrice(null);
         setErrorMessage('Error calculating price. Please contact support.');

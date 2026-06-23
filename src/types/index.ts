@@ -7,7 +7,7 @@ export interface Location {
   name: string;
   type: LocationType;
   isActive: boolean;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface CreateLocationInput {
@@ -51,5 +51,26 @@ export interface ServerActionResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
-  validationErrors?: { [key in keyof T]?: string[] };
+  validationErrors?: { [key in keyof T]?: string[] } | { [key: string]: string[] };
+}
+
+export interface Driver {
+  id: string;
+  name: string;
+  phone: string;
+  availability_status: 'Available' | 'Busy' | 'Inactive';
+  created_at: string;
+}
+
+export interface CreateDriverInput {
+  name: string;
+  phone: string;
+  availability_status?: 'Available' | 'Busy' | 'Inactive';
+}
+
+export interface UpdateDriverInput {
+  id: string;
+  name?: string;
+  phone?: string;
+  availability_status?: 'Available' | 'Busy' | 'Inactive';
 }

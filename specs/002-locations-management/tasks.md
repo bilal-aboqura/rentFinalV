@@ -58,14 +58,14 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T011 [P] [US1] Write unit/integration tests using Vitest for fetching and searching locations in tests/unit/fetchLocations.test.ts
+- [x] T011 [P] [US1] Write unit/integration tests using Vitest for fetching and searching locations in tests/unit/fetchLocations.test.ts
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Implement server-side fetching function with search and pagination filters in src/app/admin/locations/data.ts
-- [ ] T013 [P] [US1] Create Table and Pagination UI elements using Tailwind CSS in src/components/ui/table.tsx
-- [ ] T014 [US1] Build Admin Locations Page component using RSC to render list view in src/app/admin/locations/page.tsx
-- [ ] T015 [US1] Verify T011 tests pass and manually check locations table rendering in the browser
+- [x] T012 [US1] Implement server-side fetching function with search and pagination filters in src/app/admin/locations/data.ts
+- [x] T013 [P] [US1] Create Table and Pagination UI elements using Tailwind CSS in src/components/ui/table.tsx
+- [x] T014 [US1] Build Admin Locations Page component using RSC to render list view in src/app/admin/locations/page.tsx
+- [x] T015 [US1] Verify T011 tests pass and manually check locations table rendering in the browser
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
 
