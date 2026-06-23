@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Feature 001 is a separate decoupled stack (Express + Vite/React) with its own linting.
+    "backend/**",
+    "frontend/**",
   ]),
 ]);
 

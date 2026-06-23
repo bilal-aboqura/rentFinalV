@@ -76,13 +76,17 @@ if ($null -eq $Options) {
     # ConvertFrom-Yaml unavailable or failed; fall back to Python+PyYAML.
     $pythonCmd = $null
     foreach ($candidate in @('python3', 'python')) {
-        if (Get-Command $candidate -ErrorAction SilentlyContinue) {
-            # Verify it is Python 3
-            $verOut = & $candidate --version 2>&1
-            if ($verOut -match 'Python 3') {
-                $pythonCmd = $candidate
-                break
+        try {
+            if (Get-Command $candidate -ErrorAction SilentlyContinue) {
+                # Verify it is Python 3
+                $verOut = & $candidate --version 2>&1
+                if ($verOut -match 'Python 3') {
+                    $pythonCmd = $candidate
+                    break
+                }
             }
+        } catch {
+            # Ignore and check next candidate
         }
     }
 
@@ -120,6 +124,37 @@ print(json.dumps(data))
             }
         } catch {
             $Options = $null
+        }
+    }
+
+    if (-not $Options) {
+        try {
+            $rawYaml = Get-Content -LiteralPath $ExtConfig -ErrorAction SilentlyContinue
+            if ($rawYaml) {
+                $contextFileVal = $null
+                $startMarkerVal = $null
+                $endMarkerVal = $null
+                foreach ($line in $rawYaml) {
+                    if ($line -match '^\s*context_file:\s*(.+)$') {
+                        $contextFileVal = $Matches[1].Trim().Trim('"').Trim("'")
+                    } elseif ($line -match '^\s*start:\s*(.+)$') {
+                        $startMarkerVal = $Matches[1].Trim().Trim('"').Trim("'")
+                    } elseif ($line -match '^\s*end:\s*(.+)$') {
+                        $endMarkerVal = $Matches[1].Trim().Trim('"').Trim("'")
+                    }
+                }
+                if ($contextFileVal) {
+                    $Options = [PSCustomObject]@{
+                        context_file = $contextFileVal
+                        context_markers = [PSCustomObject]@{
+                            start = $startMarkerVal
+                            end = $endMarkerVal
+                        }
+                    }
+                }
+            }
+        } catch {
+            # Fall through
         }
     }
 
