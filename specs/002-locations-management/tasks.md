@@ -24,10 +24,10 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize Next.js App Router project with TypeScript and Tailwind CSS in the repository root
-- [ ] T003 [P] Configure ESLint and formatting tools in the project root
-- [ ] T004 [P] Configure Vitest and setup testing environment in package.json and vite.config.ts
+- [x] T001 Create project structure per implementation plan
+- [x] T002 Initialize Next.js App Router project with TypeScript and Tailwind CSS in the repository root
+- [x] T003 [P] Configure ESLint and formatting tools in the project root
+- [x] T004 [P] Configure Vitest and setup testing environment in package.json and vite.config.ts
 
 ---
 
@@ -37,12 +37,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Setup Supabase database schema by running migrations/SQL scripts to create `locations` table in Supabase SQL editor
-- [ ] T006 [P] Configure Row Level Security (RLS) policies for the `locations` table in Supabase SQL editor
-- [ ] T007 [P] Create Supabase server client and client-side setup in src/lib/supabase/server.ts and src/lib/supabase/client.ts
-- [ ] T008 [P] Create Zod schemas and validation utilities for Locations in src/lib/validation/location.ts
-- [ ] T009 Write Vitest unit tests for validation utilities in tests/unit/validation.test.ts
-- [ ] T010 Verify foundational validation tests pass by running npm run test
+- [x] T005 Setup Supabase database schema by running migrations/SQL scripts to create `locations` table in Supabase SQL editor
+- [x] T006 [P] Configure Row Level Security (RLS) policies for the `locations` table in Supabase SQL editor
+- [x] T007 [P] Create Supabase server client and client-side setup in src/lib/supabase/server.ts and src/lib/supabase/client.ts
+- [x] T008 [P] Create Zod schemas and validation utilities for Locations in src/lib/validation/location.ts
+- [x] T009 Write Vitest unit tests for validation utilities in tests/unit/validation.test.ts
+- [x] T010 Verify foundational validation tests pass by running npm run test
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
