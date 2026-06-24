@@ -79,14 +79,14 @@
 
 ### Tests for User Story 5 (MANDATORY) ⚠️
 
-- [ ] T016 [P] [US5] Write Vitest tests for active locations grouping and filtering utilities in tests/unit/groupLocations.test.ts
+- [x] T016 [P] [US5] Write Vitest tests for active locations grouping and filtering utilities in tests/unit/groupLocations.test.ts
 
 ### Implementation for User Story 5
 
-- [ ] T017 [US5] Create utility function to group active locations by type and sort alphabetically in src/lib/utils/groupLocations.ts
-- [ ] T018 [US5] Implement customer locations fetch function in src/lib/api/customerLocations.ts
-- [ ] T019 [US5] Create customer-facing Booking Wizard view with grouped active location dropdowns in src/components/booking-wizard.tsx
-- [ ] T020 [US5] Verify T016 tests pass and manually validate dropdown grouping in the browser
+- [x] T017 [US5] Create utility function to group active locations by type and sort alphabetically in src/lib/utils/groupLocations.ts
+- [x] T018 [US5] Implement customer locations fetch function in src/lib/api/customerLocations.ts
+- [x] T019 [US5] Create customer-facing Booking Wizard view with grouped active location dropdowns in src/components/booking-wizard.tsx
+- [x] T020 [US5] Verify T016 tests pass and manually validate dropdown grouping in the browser
 
 **Checkpoint**: Customer locations are retrieved and properly displayed in dropdowns.
 
@@ -100,14 +100,14 @@
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
 
-- [ ] T021 [P] [US2] Write Vitest integration tests for Create Location action in tests/integration/createLocation.test.ts
+- [x] T021 [P] [US2] Write Vitest integration tests for Create Location action in tests/integration/createLocation.test.ts
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Implement createLocationAction Server Action with Zod validation in src/app/admin/locations/actions.ts
-- [ ] T023 [P] [US2] Create Add Location form modal using Tailwind CSS in src/components/location-form.tsx
-- [ ] T024 [US2] Integrate Location Form modal with createLocationAction in src/app/admin/locations/page.tsx
-- [ ] T025 [US2] Verify T021 tests pass and manually test location creation
+- [x] T022 [US2] Implement createLocationAction Server Action with Zod validation in src/app/admin/locations/actions.ts
+- [x] T023 [P] [US2] Create Add Location form modal using Tailwind CSS in src/components/location-form.tsx
+- [x] T024 [US2] Integrate Location Form modal with createLocationAction in src/app/admin/locations/page.tsx
+- [x] T025 [US2] Verify T021 tests pass and manually test location creation
 
 **Checkpoint**: Admin can successfully add new locations with validations.
 

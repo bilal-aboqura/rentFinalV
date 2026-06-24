@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Location } from '@/types';
-import { getRoutePriceAction, getActiveLocationsAction } from '@/app/admin/pricing/actions';
+import { getRoutePriceAction } from '@/app/admin/pricing/actions';
+import { fetchActiveLocationsAction } from '@/lib/api/customerLocations';
+import { groupLocationsByType, LOCATION_GROUP_ORDER } from '@/lib/utils/groupLocations';
 import { MapPin, Navigation, DollarSign, Calculator, PhoneCall } from 'lucide-react';
 
 export default function BookingWizard() {
@@ -17,7 +19,7 @@ export default function BookingWizard() {
   // Load active locations on mount
   useEffect(() => {
     async function loadLocations() {
-      const res = await getActiveLocationsAction();
+      const res = await fetchActiveLocationsAction();
       if (res.success && res.data) {
         setLocations(res.data);
       } else {
@@ -28,21 +30,29 @@ export default function BookingWizard() {
     loadLocations();
   }, []);
 
-  // Fetch price quote when both locations are selected
+  // Fetch price quote when a valid, distinct location pair is selected.
+  const routeKey =
+    pickupId && destinationId && pickupId !== destinationId
+      ? `${pickupId}:${destinationId}`
+      : '';
+  const [lastRouteKey, setLastRouteKey] = useState(routeKey);
+
+  // Reset the displayed price whenever the selected route changes
+  // (including becoming empty or identical). Render-phase adjustment
+  // avoids cascading renders from setState-in-effect.
+  if (routeKey !== lastRouteKey) {
+    setLastRouteKey(routeKey);
+    setPrice(null);
+  }
+
   useEffect(() => {
-    if (!pickupId || !destinationId) {
-      setPrice(null);
-      return;
-    }
+    if (!routeKey) return;
 
-    if (pickupId === destinationId) {
-      setPrice(null);
-      return;
-    }
-
+    let cancelled = false;
     async function getQuote() {
       setLoadingPrice(true);
       const res = await getRoutePriceAction(pickupId, destinationId);
+      if (cancelled) return;
       setLoadingPrice(false);
 
       if (res.success) {
@@ -54,18 +64,14 @@ export default function BookingWizard() {
     }
 
     getQuote();
-  }, [pickupId, destinationId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [routeKey, pickupId, destinationId]);
 
-  // Group locations by type (City, Airport, Pickup Point)
-  const groupedLocations = locations.reduce(
-    (acc, loc) => {
-      const group = loc.type === 'City' ? 'Cities' : loc.type === 'Airport' ? 'Airports' : 'Pickup Points';
-      if (!acc[group]) acc[group] = [];
-      acc[group].push(loc);
-      return acc;
-    },
-    { Cities: [], Airports: [], 'Pickup Points': [] } as Record<string, Location[]>
-  );
+  // Group active locations by type (Cities, Airports, Pickup Points)
+  // using the shared utility, preserving stable optgroup order.
+  const groupedLocations = groupLocationsByType(locations);
 
   return (
     <div className="w-full max-w-xl mx-auto bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
@@ -102,7 +108,8 @@ export default function BookingWizard() {
               className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-colors"
             >
               <option value="">Choose origin...</option>
-              {Object.entries(groupedLocations).map(([groupName, groupItems]) => {
+              {LOCATION_GROUP_ORDER.map(groupName => {
+                const groupItems = groupedLocations[groupName] || [];
                 if (groupItems.length === 0) return null;
                 return (
                   <optgroup key={groupName} label={groupName} className="bg-slate-950 text-slate-300">
@@ -133,7 +140,8 @@ export default function BookingWizard() {
               className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-colors"
             >
               <option value="">Choose destination...</option>
-              {Object.entries(groupedLocations).map(([groupName, groupItems]) => {
+              {LOCATION_GROUP_ORDER.map(groupName => {
+                const groupItems = groupedLocations[groupName] || [];
                 if (groupItems.length === 0) return null;
                 return (
                   <optgroup key={groupName} label={groupName} className="bg-slate-950 text-slate-300">

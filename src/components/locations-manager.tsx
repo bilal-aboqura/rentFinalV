@@ -13,7 +13,9 @@ import {
   EmptyRow,
   Pagination,
 } from '@/components/ui/table';
-import { AlertCircle, Search } from 'lucide-react';
+import LocationForm from '@/components/location-form';
+import { createLocationAction } from '@/app/admin/locations/actions';
+import { AlertCircle, Search, Plus, CheckCircle2 } from 'lucide-react';
 
 interface LocationsManagerProps {
   initialLocations: Location[];
@@ -39,6 +41,9 @@ export default function LocationsManager({
   const [searchInput, setSearchInput] = useState(currentQuery);
   const [lastUrlQuery, setLastUrlQuery] = useState(currentQuery);
   const [errorMessage, setErrorMessage] = useState(fetchError || '');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
 
   // Adjust local input when the URL `query` changes externally (e.g. browser nav).
   // Using the render-phase prop-change pattern instead of setState-in-effect.
@@ -48,6 +53,31 @@ export default function LocationsManager({
   }
 
   const totalPages = Math.ceil(totalCount / limit) || 1;
+
+  const handleOpenAdd = () => {
+    setEditingLocation(null);
+    setErrorMessage('');
+    setIsFormOpen(true);
+  };
+
+  const handleFormSubmit = async (formData: unknown) => {
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    const res = await createLocationAction(formData);
+
+    if (res.success) {
+      setSuccessMessage('Location created successfully.');
+      router.refresh();
+      return { success: true };
+    }
+
+    return {
+      success: false,
+      error: res.error,
+      validationErrors: res.validationErrors as Record<string, string[]> | undefined,
+    };
+  };
 
   // Debounced search -> update URL ?query= (resets to page 1, triggers RSC refetch).
   useEffect(() => {
@@ -80,11 +110,17 @@ export default function LocationsManager({
 
   return (
     <div className="space-y-6">
-      {/* Alert Banner */}
+      {/* Alert Banners */}
       {errorMessage && (
         <div className="p-4 bg-red-950/50 border border-red-900 text-red-200 rounded-xl text-sm flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
           <span>{errorMessage}</span>
+        </div>
+      )}
+      {successMessage && (
+        <div className="p-4 bg-emerald-950/50 border border-emerald-900 text-emerald-200 rounded-xl text-sm flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{successMessage}</span>
         </div>
       )}
 
@@ -116,6 +152,13 @@ export default function LocationsManager({
               </button>
             )}
           </div>
+          <button
+            onClick={handleOpenAdd}
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-950/30 active:scale-95 cursor-pointer whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Location</span>
+          </button>
         </div>
       </div>
 
@@ -174,6 +217,16 @@ export default function LocationsManager({
           itemName="locations"
         />
       </div>
+
+      {/* Add/Edit Location Modal (mounted only when open for a clean reset) */}
+      {isFormOpen && (
+        <LocationForm
+          isOpen={true}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={handleFormSubmit}
+          initialData={editingLocation}
+        />
+      )}
     </div>
   );
 }
