@@ -1,44 +1,32 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Driver } from '@/types';
+import React, { useState } from 'react';
+import { CreateDriverInput, Driver, UpdateDriverInput } from '@/types';
 import { CreateDriverSchema, UpdateDriverSchema } from '@/lib/validation/driver';
 
+type DriverStatus = Driver['availability_status'];
+
 interface DriverFormProps {
-  isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => Promise<{ success: boolean; error?: string; validationErrors?: any }>;
+  onSubmit: (
+    data: CreateDriverInput | UpdateDriverInput
+  ) => Promise<{ success: boolean; error?: string; validationErrors?: Record<string, string[]> }>;
   initialData?: Driver | null;
 }
 
 export default function DriverForm({
-  isOpen,
   onClose,
   onSubmit,
   initialData,
 }: DriverFormProps) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [availabilityStatus, setAvailabilityStatus] = useState<'Available' | 'Busy' | 'Inactive'>('Available');
+  const [name, setName] = useState(initialData?.name ?? '');
+  const [phone, setPhone] = useState(initialData?.phone ?? '');
+  const [availabilityStatus, setAvailabilityStatus] = useState<DriverStatus>(
+    initialData?.availability_status ?? 'Available'
+  );
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (initialData) {
-      setName(initialData.name);
-      setPhone(initialData.phone);
-      setAvailabilityStatus(initialData.availability_status);
-    } else {
-      setName('');
-      setPhone('');
-      setAvailabilityStatus('Available');
-    }
-    setErrors({});
-    setSubmitError('');
-  }, [initialData, isOpen]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +66,7 @@ export default function DriverForm({
       if (result.validationErrors) {
         const actionErrors: { [key: string]: string } = {};
         Object.keys(result.validationErrors).forEach(key => {
-          actionErrors[key] = (result.validationErrors as any)[key][0];
+          actionErrors[key] = result.validationErrors?.[key]?.[0] ?? 'Invalid value.';
         });
         setErrors(actionErrors);
       } else if (result.error) {
@@ -152,7 +140,7 @@ export default function DriverForm({
             </label>
             <select
               value={availabilityStatus}
-              onChange={e => setAvailabilityStatus(e.target.value as any)}
+              onChange={e => setAvailabilityStatus(e.target.value as DriverStatus)}
               className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               <option value="Available">Available</option>

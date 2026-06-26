@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { RoutePrice, Location } from '@/types';
+import { CreateRoutePriceInput, RoutePrice, Location, UpdateRoutePriceInput } from '@/types';
 import PricingForm from './pricing-form';
 import { deleteRoutePriceAction, createRoutePriceAction, updateRoutePriceAction } from '@/app/admin/pricing/actions';
 import { Trash2, Edit, Plus, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -65,15 +65,15 @@ export default function PricingManager({
     }
   };
 
-  const handleFormSubmit = async (formData: any) => {
+  const handleFormSubmit = async (formData: CreateRoutePriceInput | UpdateRoutePriceInput) => {
     setErrorMessage('');
     setSuccessMessage('');
 
     let res;
     if (editingRule) {
-      res = await updateRoutePriceAction({ id: editingRule.id, ...formData });
+      res = await updateRoutePriceAction({ id: editingRule.id, ...formData } as UpdateRoutePriceInput);
     } else {
-      res = await createRoutePriceAction(formData);
+      res = await createRoutePriceAction(formData as CreateRoutePriceInput);
     }
 
     if (res.success) {
@@ -149,7 +149,7 @@ export default function PricingManager({
               {initialRoutePrices.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-12 text-slate-500 font-medium">
-                    No route prices configured yet. Click "Add Route Price" to get started.
+                    No route prices configured yet. Click &quot;Add Route Price&quot; to get started.
                   </td>
                 </tr>
               ) : (
@@ -247,13 +247,15 @@ export default function PricingManager({
       </div>
 
       {/* Add/Edit Modal */}
-      <PricingForm
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleFormSubmit}
-        initialData={editingRule}
-        activeLocations={activeLocations}
-      />
+      {isFormOpen && (
+        <PricingForm
+          key={editingRule?.id ?? 'new-route-price'}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={handleFormSubmit}
+          initialData={editingRule}
+          activeLocations={activeLocations}
+        />
+      )}
     </div>
   );
 }

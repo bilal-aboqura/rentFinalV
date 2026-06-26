@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Driver } from '@/types';
+import { CreateDriverInput, Driver, UpdateDriverInput } from '@/types';
 import DriverForm from './driver-form';
 import { deleteDriverAction, createDriverAction, updateDriverAction } from '@/app/admin/drivers/actions';
 import { Trash2, Edit, Plus, AlertCircle, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
@@ -31,10 +31,6 @@ export default function DriversManager({
   const [searchVal, setSearchVal] = useState(initialSearch);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-
-  useEffect(() => {
-    setSearchVal(initialSearch);
-  }, [initialSearch]);
 
   const totalPages = Math.ceil(totalCount / limit) || 1;
 
@@ -90,15 +86,15 @@ export default function DriversManager({
     }
   };
 
-  const handleFormSubmit = async (formData: any) => {
+  const handleFormSubmit = async (formData: CreateDriverInput | UpdateDriverInput) => {
     setErrorMessage('');
     setSuccessMessage('');
 
     let res;
     if (editingDriver) {
-      res = await updateDriverAction({ id: editingDriver.id, ...formData });
+      res = await updateDriverAction({ id: editingDriver.id, ...formData } as UpdateDriverInput);
     } else {
-      res = await createDriverAction(formData);
+      res = await createDriverAction(formData as CreateDriverInput);
     }
 
     if (res.success) {
@@ -196,7 +192,7 @@ export default function DriversManager({
               {initialDrivers.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-12 text-slate-500 font-medium">
-                    No drivers found. Click "Add New Driver" or clear filters to start.
+                    No drivers found. Click &quot;Add New Driver&quot; or clear filters to start.
                   </td>
                 </tr>
               ) : (
@@ -265,12 +261,14 @@ export default function DriversManager({
       </div>
 
       {/* Add/Edit Modal */}
-      <DriverForm
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSubmit={handleFormSubmit}
-        initialData={editingDriver}
-      />
+      {isFormOpen && (
+        <DriverForm
+          key={editingDriver?.id ?? 'new-driver'}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={handleFormSubmit}
+          initialData={editingDriver}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Location } from '@/types';
 import { getRoutePriceAction } from '@/app/admin/pricing/actions';
 import { validateBookingScheduleAction } from '@/app/actions/booking';
@@ -42,8 +43,11 @@ export default function BookingWizardStep1({
   const [validatingSchedule, setValidatingSchedule] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState('');
-  const [routeError, setRouteError] = useState('');
   const [scheduleError, setScheduleError] = useState('');
+  const routeError =
+    pickupId && destinationId && pickupId === destinationId
+      ? 'Pickup and destination locations must be different.'
+      : '';
 
   // Get current date string for client-side date picker minimum attribute (YYYY-MM-DD)
   const getTodayString = () => {
@@ -53,16 +57,6 @@ export default function BookingWizardStep1({
     const dd = String(today.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
   };
-
-  // Run validation on location inputs
-  useEffect(() => {
-    if (pickupId && destinationId && pickupId === destinationId) {
-      setRouteError('Pickup and destination locations must be different.');
-      setPrice(null);
-    } else {
-      setRouteError('');
-    }
-  }, [pickupId, destinationId]);
 
   // Reset price and errors on route change
   useEffect(() => {
@@ -81,7 +75,7 @@ export default function BookingWizardStep1({
             setPrice(null);
             setErrorMessage(res.error || 'Failed to fetch route price.');
           }
-        } catch (err: any) {
+        } catch {
           if (cancelled) return;
           setPrice(null);
           setErrorMessage('An error occurred while fetching route price.');
@@ -94,15 +88,30 @@ export default function BookingWizardStep1({
       return () => {
         cancelled = true;
       };
-    } else {
-      setPrice(null);
     }
   }, [pickupId, destinationId]);
 
-  // Validate buffer when date and time change
-  useEffect(() => {
+  const handlePickupChange = (value: string) => {
+    setPickupId(value);
+    setPrice(null);
+    setErrorMessage('');
+  };
+
+  const handleDestinationChange = (value: string) => {
+    setDestinationId(value);
+    setPrice(null);
+    setErrorMessage('');
+  };
+
+  const handleDateChange = (value: string) => {
+    setDate(value);
     setScheduleError('');
-  }, [date, time]);
+  };
+
+  const handleTimeChange = (value: string) => {
+    setTime(value);
+    setScheduleError('');
+  };
 
   // Handle Form Submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,7 +125,6 @@ export default function BookingWizardStep1({
     }
 
     if (pickupId === destinationId) {
-      setRouteError('Pickup and destination locations must be different.');
       return;
     }
 
@@ -145,7 +153,7 @@ export default function BookingWizardStep1({
         time,
         price,
       });
-    } catch (err: any) {
+    } catch {
       setErrorMessage('Failed to validate booking schedule. Please try again.');
     } finally {
       setValidatingSchedule(false);
@@ -176,7 +184,7 @@ export default function BookingWizardStep1({
           ) : (
             <select
               value={pickupId}
-              onChange={(e) => setPickupId(e.target.value)}
+              onChange={(e) => handlePickupChange(e.target.value)}
               className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm cursor-pointer shadow-inner"
             >
               <option value="">Choose origin...</option>
@@ -208,7 +216,7 @@ export default function BookingWizardStep1({
           ) : (
             <select
               value={destinationId}
-              onChange={(e) => setDestinationId(e.target.value)}
+              onChange={(e) => handleDestinationChange(e.target.value)}
               className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all text-sm cursor-pointer shadow-inner"
             >
               <option value="">Choose destination...</option>
@@ -248,7 +256,7 @@ export default function BookingWizardStep1({
             type="date"
             value={date}
             min={getTodayString()}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => handleDateChange(e.target.value)}
             className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all text-sm cursor-pointer shadow-inner scheme-dark"
           />
         </div>
@@ -262,7 +270,7 @@ export default function BookingWizardStep1({
           <input
             type="time"
             value={time}
-            onChange={(e) => setTime(e.target.value)}
+            onChange={(e) => handleTimeChange(e.target.value)}
             className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-amber-600 transition-all text-sm cursor-pointer shadow-inner scheme-dark"
           />
         </div>
@@ -289,13 +297,13 @@ export default function BookingWizardStep1({
             <p className="text-slate-400 text-sm">
               Online pricing is unavailable for this specific route.
             </p>
-            <a
+            <Link
               href="/contact"
               className="inline-flex items-center gap-2 text-xs font-bold bg-slate-800 hover:bg-slate-750 hover:text-white text-slate-200 px-5 py-2.5 rounded-xl transition-all cursor-pointer border border-slate-700 shadow-md shadow-slate-950/40"
             >
               <span>Go to Contact Form</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </a>
+            </Link>
           </div>
         )}
 

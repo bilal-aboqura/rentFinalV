@@ -1,13 +1,69 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { RoutePrice, ServerActionResponse } from '@/types';
+import {
+  CreateRoutePriceInput,
+  Location,
+  RoutePrice,
+  ServerActionResponse,
+  UpdateRoutePriceInput,
+} from '@/types';
 import { CreateRoutePriceSchema, UpdateRoutePriceSchema } from '@/lib/validation/pricing';
 
 interface FetchRoutePricesInput {
   page: number;
   limit: number;
 }
+
+interface RoutePriceRow {
+  id: string;
+  pickup_location_id: string;
+  destination_location_id: string;
+  price: number | string;
+  created_at: string;
+}
+
+interface RoutePriceWithLocationsRow extends RoutePriceRow {
+  pickup: { name: string } | { name: string }[] | null;
+  destination: { name: string } | { name: string }[] | null;
+}
+
+interface LocationRow {
+  id: string;
+  name: string;
+  type: Location['type'];
+  is_active: boolean;
+}
+
+interface RoutePriceLookupRow {
+  price: number | string;
+}
+
+type RoutePriceUpdateRow = Partial<{
+  pickup_location_id: string;
+  destination_location_id: string;
+  price: number;
+}>;
+
+const getErrorMessage = (err: unknown) =>
+  err instanceof Error ? err.message : 'An unexpected error occurred';
+
+const firstJoinedName = (value: RoutePriceWithLocationsRow['pickup']) => {
+  if (Array.isArray(value)) {
+    return value[0]?.name;
+  }
+  return value?.name;
+};
+
+const validationErrorsFromIssues = (issues: { path: PropertyKey[]; message: string }[]) => {
+  const validationErrors: Record<string, string[]> = {};
+  issues.forEach(issue => {
+    const path = String(issue.path[0] ?? 'form');
+    validationErrors[path] ??= [];
+    validationErrors[path].push(issue.message);
+  });
+  return validationErrors;
+};
 
 export async function fetchRoutePricesAction(input: FetchRoutePricesInput) {
   const { page, limit } = input;
@@ -26,14 +82,15 @@ export async function fetchRoutePricesAction(input: FetchRoutePricesInput) {
       return { success: false, error: `Failed to fetch route prices: ${error.message}` };
     }
 
-    const formattedData: RoutePrice[] = (data || []).map((row: any) => ({
+    const rows = (data || []) as RoutePriceWithLocationsRow[];
+    const formattedData: RoutePrice[] = rows.map(row => ({
       id: row.id,
       pickupLocationId: row.pickup_location_id,
       destinationLocationId: row.destination_location_id,
       price: Number(row.price),
       createdAt: row.created_at,
-      pickupLocationName: row.pickup?.name || 'Unknown Location',
-      destinationLocationName: row.destination?.name || 'Unknown Location',
+      pickupLocationName: firstJoinedName(row.pickup) || 'Unknown Location',
+      destinationLocationName: firstJoinedName(row.destination) || 'Unknown Location',
     }));
 
     return {
@@ -41,25 +98,17 @@ export async function fetchRoutePricesAction(input: FetchRoutePricesInput) {
       data: formattedData,
       totalCount: count || 0,
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 
 export async function createRoutePriceAction(
-  input: any
+  input: CreateRoutePriceInput
 ): Promise<ServerActionResponse<RoutePrice>> {
   const validation = CreateRoutePriceSchema.safeParse(input);
   if (!validation.success) {
-    const validationErrors: { [key in keyof any]?: string[] } = {};
-    validation.error.issues.forEach(issue => {
-      const path = issue.path[0] as string;
-      if (!validationErrors[path]) {
-        validationErrors[path] = [];
-      }
-      validationErrors[path]!.push(issue.message);
-    });
-    return { success: false, validationErrors };
+    return { success: false, validationErrors: validationErrorsFromIssues(validation.error.issues) };
   }
 
   const { pickupLocationId, destinationLocationId, price } = validation.data;
@@ -93,32 +142,24 @@ export async function createRoutePriceAction(
         createdAt: data.created_at,
       },
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 
 export async function updateRoutePriceAction(
-  input: any
+  input: UpdateRoutePriceInput
 ): Promise<ServerActionResponse<RoutePrice>> {
   const validation = UpdateRoutePriceSchema.safeParse(input);
   if (!validation.success) {
-    const validationErrors: { [key in keyof any]?: string[] } = {};
-    validation.error.issues.forEach(issue => {
-      const path = issue.path[0] as string;
-      if (!validationErrors[path]) {
-        validationErrors[path] = [];
-      }
-      validationErrors[path]!.push(issue.message);
-    });
-    return { success: false, validationErrors };
+    return { success: false, validationErrors: validationErrorsFromIssues(validation.error.issues) };
   }
 
   const { id, pickupLocationId, destinationLocationId, price } = validation.data;
 
   try {
     const supabase = await createClient();
-    const updateData: any = {};
+    const updateData: RoutePriceUpdateRow = {};
     if (pickupLocationId !== undefined) updateData.pickup_location_id = pickupLocationId;
     if (destinationLocationId !== undefined) updateData.destination_location_id = destinationLocationId;
     if (price !== undefined) updateData.price = price;
@@ -151,8 +192,8 @@ export async function updateRoutePriceAction(
         createdAt: data.created_at,
       },
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 
@@ -174,8 +215,8 @@ export async function deleteRoutePriceAction(
       success: true,
       data: { id },
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 
@@ -194,15 +235,15 @@ export async function getActiveLocationsAction() {
 
     return {
       success: true,
-      data: (data || []).map((row: any) => ({
+      data: ((data || []) as LocationRow[]).map(row => ({
         id: row.id,
         name: row.name,
         type: row.type,
         isActive: row.is_active,
       })),
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 
@@ -220,12 +261,14 @@ export async function getRoutePriceAction(pickupId: string, destinationId: strin
       return { success: false, error: error.message };
     }
 
-    if (!data) {
+    const row = data as RoutePriceLookupRow | null;
+
+    if (!row) {
       return { success: true, price: null };
     }
 
-    return { success: true, price: Number(data.price) };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+    return { success: true, price: Number(row.price) };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }

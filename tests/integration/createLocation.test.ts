@@ -105,7 +105,7 @@ describe('createLocationAction', () => {
   it('should return validation errors for an invalid location type', async () => {
     const response = await createLocationAction({
       name: 'Valid Name',
-      type: 'State' as any,
+      type: 'State' as never,
     });
 
     expect(response.success).toBe(false);

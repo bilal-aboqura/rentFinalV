@@ -1,7 +1,12 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { Driver, ServerActionResponse } from '@/types';
+import {
+  CreateDriverInput,
+  Driver,
+  ServerActionResponse,
+  UpdateDriverInput,
+} from '@/types';
 import { CreateDriverSchema, UpdateDriverSchema } from '@/lib/validation/driver';
 
 interface FetchDriversInput {
@@ -9,6 +14,35 @@ interface FetchDriversInput {
   limit: number;
   search?: string;
 }
+
+type DriverStatus = Driver['availability_status'];
+
+interface DriverRow {
+  id: string;
+  name: string;
+  phone: string;
+  availability_status: DriverStatus;
+  created_at: string;
+}
+
+type DriverUpdateRow = Partial<{
+  name: string;
+  phone: string;
+  availability_status: DriverStatus;
+}>;
+
+const getErrorMessage = (err: unknown) =>
+  err instanceof Error ? err.message : 'An unexpected error occurred';
+
+const validationErrorsFromIssues = (issues: { path: PropertyKey[]; message: string }[]) => {
+  const validationErrors: Record<string, string[]> = {};
+  issues.forEach(issue => {
+    const path = String(issue.path[0] ?? 'form');
+    validationErrors[path] ??= [];
+    validationErrors[path].push(issue.message);
+  });
+  return validationErrors;
+};
 
 export async function fetchDriversAction(input: FetchDriversInput) {
   const { page, limit, search } = input;
@@ -34,7 +68,7 @@ export async function fetchDriversAction(input: FetchDriversInput) {
       return { success: false, error: `Failed to fetch drivers: ${error.message}` };
     }
 
-    const formattedData: Driver[] = (data || []).map((row: any) => ({
+    const formattedData: Driver[] = ((data || []) as DriverRow[]).map(row => ({
       id: row.id,
       name: row.name,
       phone: row.phone,
@@ -47,25 +81,17 @@ export async function fetchDriversAction(input: FetchDriversInput) {
       data: formattedData,
       totalCount: count || 0,
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 
 export async function createDriverAction(
-  input: any
+  input: CreateDriverInput
 ): Promise<ServerActionResponse<Driver>> {
   const validation = CreateDriverSchema.safeParse(input);
   if (!validation.success) {
-    const validationErrors: { [key: string]: string[] } = {};
-    validation.error.issues.forEach(issue => {
-      const path = issue.path[0] as string;
-      if (!validationErrors[path]) {
-        validationErrors[path] = [];
-      }
-      validationErrors[path].push(issue.message);
-    });
-    return { success: false, validationErrors };
+    return { success: false, validationErrors: validationErrorsFromIssues(validation.error.issues) };
   }
 
   const { name, phone, availability_status } = validation.data;
@@ -99,32 +125,24 @@ export async function createDriverAction(
         created_at: data.created_at,
       },
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 
 export async function updateDriverAction(
-  input: any
+  input: UpdateDriverInput
 ): Promise<ServerActionResponse<Driver>> {
   const validation = UpdateDriverSchema.safeParse(input);
   if (!validation.success) {
-    const validationErrors: { [key: string]: string[] } = {};
-    validation.error.issues.forEach(issue => {
-      const path = issue.path[0] as string;
-      if (!validationErrors[path]) {
-        validationErrors[path] = [];
-      }
-      validationErrors[path].push(issue.message);
-    });
-    return { success: false, validationErrors };
+    return { success: false, validationErrors: validationErrorsFromIssues(validation.error.issues) };
   }
 
   const { id, name, phone, availability_status } = validation.data;
 
   try {
     const supabase = await createClient();
-    const updateData: any = {};
+    const updateData: DriverUpdateRow = {};
     if (name !== undefined) updateData.name = name;
     if (phone !== undefined) updateData.phone = phone;
     if (availability_status !== undefined) updateData.availability_status = availability_status;
@@ -157,8 +175,8 @@ export async function updateDriverAction(
         created_at: data.created_at,
       },
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 
@@ -180,7 +198,7 @@ export async function deleteDriverAction(
       success: true,
       data: { id },
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'An unexpected error occurred' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }

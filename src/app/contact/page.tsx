@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { submitContactForm } from '@/app/actions/contact';
 import { Mail, User, BookOpen, MessageSquare, CheckCircle2, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 
@@ -60,20 +61,20 @@ export default function ContactPage() {
       <header className="border-b border-slate-900 bg-slate-950/60 sticky top-0 backdrop-blur-md z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-3 group">
+            <Link href="/" className="flex items-center gap-3 group">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-sm text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform duration-200">
                 RF
               </div>
               <span className="font-bold text-white tracking-wide group-hover:text-blue-400 transition-colors">RentFinal</span>
-            </a>
+            </Link>
           </div>
           <nav className="flex items-center gap-6 text-sm font-medium">
-            <a href="/" className="text-slate-400 hover:text-white transition-colors">
+            <Link href="/" className="text-slate-400 hover:text-white transition-colors">
               Home
-            </a>
-            <a href="/admin/bookings" className="text-slate-400 hover:text-white transition-colors">
+            </Link>
+            <Link href="/admin/bookings" className="text-slate-400 hover:text-white transition-colors">
               Admin Dashboard
-            </a>
+            </Link>
           </nav>
         </div>
       </header>
@@ -84,10 +85,10 @@ export default function ContactPage() {
           
           {/* Header Link Back */}
           <div className="mb-6">
-            <a href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors duration-200 group">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors duration-200 group">
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               Back to Home
-            </a>
+            </Link>
           </div>
 
           {/* Form Card */}

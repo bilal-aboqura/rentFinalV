@@ -41,6 +41,11 @@ interface BookingDetails {
   destination?: { name: string } | null;
 }
 
+interface BookingDetailsRow extends Omit<BookingDetails, 'pickup' | 'destination'> {
+  pickup?: { name: string } | { name: string }[] | null;
+  destination?: { name: string } | { name: string }[] | null;
+}
+
 export default function BookingWizardStep2({
   pickupLocationName,
   destinationLocationName,
@@ -74,13 +79,14 @@ export default function BookingWizardStep2({
   // Fetch booking details on success to verify RLS and show verified DB state
   useEffect(() => {
     if (bookingReference) {
+      const currentBookingReference = bookingReference;
       async function fetchBooking() {
         setLoadingDetails(true);
         try {
           const supabase = createClient({
             global: {
               headers: {
-                'x-booking-reference': bookingReference
+                'x-booking-reference': currentBookingReference
               }
             }
           });
@@ -101,13 +107,13 @@ export default function BookingWizardStep2({
               pickup:locations!pickup_location_id(name),
               destination:locations!destination_location_id(name)
             `)
-            .eq('booking_reference', bookingReference)
+            .eq('booking_reference', currentBookingReference)
             .single();
 
           if (error) {
             setFetchError(error.message);
           } else {
-            const rawData = data as any;
+            const rawData = data as BookingDetailsRow;
             const mappedData: BookingDetails = {
               id: rawData.id,
               booking_reference: rawData.booking_reference,

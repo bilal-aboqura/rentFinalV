@@ -1,7 +1,11 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { fetchDriversAction } from '@/app/admin/drivers/actions';
 
-const mockQueryBuilder: any = {
+const mockQueryBuilder: {
+  or: ReturnType<typeof vi.fn>;
+  order: ReturnType<typeof vi.fn>;
+  range: ReturnType<typeof vi.fn>;
+} = {
   or: vi.fn(),
   order: vi.fn(),
   range: vi.fn(),

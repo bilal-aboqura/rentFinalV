@@ -61,7 +61,7 @@ vi.mock('next/headers', () => ({
 
 const mockRevalidateTag = vi.fn();
 vi.mock('next/cache', () => ({
-  revalidateTag: (tag: string) => mockRevalidateTag(tag),
+  revalidateTag: (tag: string, profile: string) => mockRevalidateTag(tag, profile),
 }));
 
 describe('CMS Server Actions', () => {
@@ -157,7 +157,7 @@ describe('CMS Server Actions', () => {
 
       const res = await updateSiteSettings(validPayload);
       expect(res.success).toBe(true);
-      expect(mockRevalidateTag).toHaveBeenCalledWith('cms-settings');
+      expect(mockRevalidateTag).toHaveBeenCalledWith('cms-settings', 'max');
     });
 
     it('should return error if database update fails', async () => {
@@ -212,7 +212,7 @@ describe('CMS Server Actions', () => {
       const res = await uploadSiteAsset(formData);
       expect(res.success).toBe(true);
       expect(res.url).toBe('http://supabase.com/logo.png');
-      expect(mockRevalidateTag).toHaveBeenCalledWith('cms-settings');
+      expect(mockRevalidateTag).toHaveBeenCalledWith('cms-settings', 'max');
     });
   });
 });

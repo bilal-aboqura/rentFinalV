@@ -5,7 +5,7 @@ import { revalidateTag } from 'next/cache';
 import { SiteSettings, UpdateSiteSettingsInput } from '@/types';
 
 // Default configurations
-export const DEFAULT_SETTINGS: Omit<SiteSettings, 'id' | 'updated_at'> = {
+const DEFAULT_SETTINGS: Omit<SiteSettings, 'id' | 'updated_at'> = {
   hero_title: 'Premium Car Rentals & Airport Transfers',
   about_text: 'We provide premier transport services with professional drivers.',
   contact_phone: '+1 (555) 019-9000',
@@ -15,6 +15,9 @@ export const DEFAULT_SETTINGS: Omit<SiteSettings, 'id' | 'updated_at'> = {
   hero_image_url: null,
   site_logo_url: null,
 };
+
+const getErrorMessage = (err: unknown, fallback = 'An unexpected error occurred.') =>
+  err instanceof Error ? err.message : fallback;
 
 export async function getSiteSettings(): Promise<SiteSettings> {
   try {
@@ -113,11 +116,11 @@ export async function updateSiteSettings(
       return { success: false, error: updateError.message };
     }
 
-    revalidateTag('cms-settings');
+    revalidateTag('cms-settings', 'max');
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Exception updating site settings:', err);
-    return { success: false, error: err.message || 'An unexpected error occurred.' };
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 
@@ -204,10 +207,10 @@ export async function uploadSiteAsset(
       return { success: false, error: updateError.message };
     }
 
-    revalidateTag('cms-settings');
+    revalidateTag('cms-settings', 'max');
     return { success: true, url: publicUrl };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Exception uploading site asset:', err);
-    return { success: false, error: err.message || 'An unexpected error occurred.' };
+    return { success: false, error: getErrorMessage(err) };
   }
 }

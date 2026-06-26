@@ -1,46 +1,37 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { RoutePrice, Location } from '@/types';
+import React, { useState } from 'react';
+import {
+  CreateRoutePriceInput,
+  Location,
+  RoutePrice,
+  UpdateRoutePriceInput,
+} from '@/types';
 import { CreateRoutePriceSchema, UpdateRoutePriceSchema } from '@/lib/validation/pricing';
 
 interface PricingFormProps {
-  isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => Promise<{ success: boolean; error?: string; validationErrors?: any }>;
+  onSubmit: (
+    data: CreateRoutePriceInput | UpdateRoutePriceInput
+  ) => Promise<{ success: boolean; error?: string; validationErrors?: Record<string, string[]> }>;
   initialData?: RoutePrice | null;
   activeLocations: Location[];
 }
 
 export default function PricingForm({
-  isOpen,
   onClose,
   onSubmit,
   initialData,
   activeLocations,
 }: PricingFormProps) {
-  const [pickupLocationId, setPickupLocationId] = useState('');
-  const [destinationLocationId, setDestinationLocationId] = useState('');
-  const [price, setPrice] = useState('');
+  const [pickupLocationId, setPickupLocationId] = useState(initialData?.pickupLocationId ?? '');
+  const [destinationLocationId, setDestinationLocationId] = useState(
+    initialData?.destinationLocationId ?? ''
+  );
+  const [price, setPrice] = useState(initialData?.price.toString() ?? '');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (initialData) {
-      setPickupLocationId(initialData.pickupLocationId);
-      setDestinationLocationId(initialData.destinationLocationId);
-      setPrice(initialData.price.toString());
-    } else {
-      setPickupLocationId('');
-      setDestinationLocationId('');
-      setPrice('');
-    }
-    setErrors({});
-    setSubmitError('');
-  }, [initialData, isOpen]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +72,7 @@ export default function PricingForm({
       if (result.validationErrors) {
         const actionErrors: { [key: string]: string } = {};
         Object.keys(result.validationErrors).forEach(key => {
-          actionErrors[key] = result.validationErrors[key][0];
+          actionErrors[key] = result.validationErrors?.[key]?.[0] ?? 'Invalid value.';
         });
         setErrors(actionErrors);
       } else if (result.error) {

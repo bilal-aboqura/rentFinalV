@@ -14,6 +14,16 @@ export interface ContactInquiry {
   created_at: string;
 }
 
+interface ContactInquiryRow {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: ContactInquiry['status'];
+  created_at: string;
+}
+
 /**
  * Verifies admin authentication session.
  */
@@ -57,7 +67,7 @@ export async function fetchInquiriesAction(input: {
       return { success: false, error: error.message };
     }
 
-    const inquiries: ContactInquiry[] = ((data as any[]) || []).map((row) => ({
+    const inquiries: ContactInquiry[] = ((data as ContactInquiryRow[] | null) || []).map((row) => ({
       id: String(row.id),
       name: String(row.name),
       email: String(row.email),
