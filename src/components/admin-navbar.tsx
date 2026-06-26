@@ -3,7 +3,7 @@ import { getPendingBookingsCount } from '@/app/admin/bookings/actions';
 import { getUnreadInquiriesCount } from '@/app/admin/inquiries/actions';
 
 interface AdminNavbarProps {
-  activeTab: 'locations' | 'pricing' | 'drivers' | 'bookings' | 'inquiries';
+  activeTab: 'locations' | 'pricing' | 'drivers' | 'bookings' | 'inquiries' | 'content';
 }
 
 export default async function AdminNavbar({ activeTab }: AdminNavbarProps) {
@@ -57,6 +57,9 @@ export default async function AdminNavbar({ activeTab }: AdminNavbarProps) {
                 {unreadInquiriesCount}
               </span>
             )}
+          </a>
+          <a href="/admin/content" className={getLinkClass('content')}>
+            Content Management
           </a>
         </nav>
       </div>
