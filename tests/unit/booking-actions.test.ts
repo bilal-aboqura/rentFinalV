@@ -1,9 +1,11 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { submitBookingAction } from '@/app/actions/booking';
+import { getPendingBookingsCount } from '@/app/admin/bookings/actions';
 
 // Mock mocks
 const mockSingle = vi.fn();
 const mockInsertSelectSingle = vi.fn();
+const mockCountSelectEq = vi.fn();
 
 const mockSupabase = {
   from: vi.fn().mockImplementation((table: string) => {
@@ -24,6 +26,9 @@ const mockSupabase = {
           select: vi.fn().mockReturnValue({
             single: mockInsertSelectSingle
           })
+        }),
+        select: vi.fn().mockReturnValue({
+          eq: mockCountSelectEq
         })
       };
     }
@@ -44,11 +49,13 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@/lib/mail/smtp', () => ({
   sendBookingConfirmationEmail: vi.fn().mockResolvedValue(true),
+  sendAdminNotificationEmail: vi.fn().mockResolvedValue(true),
 }));
 
 describe('submitBookingAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.ADMIN_EMAIL = 'admin@example.com';
   });
 
   const validUuid1 = '550e8400-e29b-41d4-a716-446655440000';
@@ -113,7 +120,11 @@ describe('submitBookingAction', () => {
 
     // Mock insert query
     mockInsertSelectSingle.mockResolvedValue({
-      data: { booking_reference: mockBookingReference },
+      data: {
+        booking_reference: mockBookingReference,
+        pickup: { name: 'Location A' },
+        destination: { name: 'Location B' }
+      },
       error: null
     });
 
@@ -122,6 +133,18 @@ describe('submitBookingAction', () => {
     if (res.success && res.data) {
       expect(res.data.bookingReference).toBe(mockBookingReference);
     }
+
+    const { sendBookingConfirmationEmail, sendAdminNotificationEmail } = await import('@/lib/mail/smtp');
+    expect(sendBookingConfirmationEmail).toHaveBeenCalled();
+    expect(sendAdminNotificationEmail).toHaveBeenCalledWith({
+      reference: mockBookingReference,
+      pickupName: 'Location A',
+      destinationName: 'Location B',
+      date: '2026-06-27',
+      time: '15:30',
+      customerName: 'Alice Smith',
+      adminEmail: 'admin@example.com'
+    });
   });
 
   it('should return error if database insert fails', async () => {
@@ -138,5 +161,35 @@ describe('submitBookingAction', () => {
     const res = await submitBookingAction(validPayload);
     expect(res.success).toBe(false);
     expect(res.error).toBe('Database insert failed');
+  });
+});
+
+describe('getPendingBookingsCount', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return the correct count of pending bookings on success', async () => {
+    mockCountSelectEq.mockResolvedValue({
+      count: 4,
+      error: null
+    });
+
+    const res = await getPendingBookingsCount();
+    expect(res.success).toBe(true);
+    if (res.success && res.data) {
+      expect(res.data.count).toBe(4);
+    }
+  });
+
+  it('should return failure if the database query fails', async () => {
+    mockCountSelectEq.mockResolvedValue({
+      count: null,
+      error: { message: 'Database failure' }
+    });
+
+    const res = await getPendingBookingsCount();
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('Database failure');
   });
 });

@@ -102,3 +102,87 @@ Airport Transfer Team`;
     return null;
   }
 }
+
+export async function sendAdminNotificationEmail(params: {
+  reference: string;
+  pickupName: string;
+  destinationName: string;
+  date: string;
+  time: string;
+  customerName: string;
+  adminEmail: string;
+}) {
+  const { reference, pickupName, destinationName, date, time, customerName, adminEmail } = params;
+  
+  const subject = `New Booking Request - Ref: ${reference}`;
+  
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const dashboardLink = `${appUrl}/admin/bookings?ref=${reference}`;
+
+  const text = `A new booking request has been submitted by ${customerName}.
+
+Booking Details:
+- Reference: ${reference}
+- Customer Name: ${customerName}
+- Pickup: ${pickupName}
+- Destination: ${destinationName}
+- Date: ${date}
+- Time: ${time}
+
+You can view and manage this booking directly in the admin dashboard:
+${dashboardLink}
+
+Best regards,
+System Automations`;
+
+  const html = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+    <h2 style="color: #b91c1c; margin-top: 0;">New Booking Request</h2>
+    <p>A new booking request has been submitted by <strong>${customerName}</strong>.</p>
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+    <h3 style="color: #1e3a8a;">Booking Details</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568; width: 120px;"><strong>Reference:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${reference}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Customer:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${customerName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Pickup:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${pickupName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Destination:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${destinationName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Date:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${date}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Time:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${time}</td>
+      </tr>
+    </table>
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+    <p style="margin-top: 20px;">
+      <a href="${dashboardLink}" style="display: inline-block; background-color: #1e3a8a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+        View Booking in Dashboard
+      </a>
+    </p>
+    <p style="color: #718096; font-size: 0.85em; margin-top: 30px; border-top: 1px solid #edf2f7; padding-top: 10px;">
+      This is an automated system notification.
+    </p>
+  </div>`;
+
+  try {
+    return await sendMail({ to: adminEmail, subject, text, html });
+  } catch (error) {
+    console.error('Failed to send SMTP admin booking notification email:', error);
+    // Graceful degradation: log the error but don't crash the main flow
+    return null;
+  }
+}
+

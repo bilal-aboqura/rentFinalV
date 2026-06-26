@@ -67,32 +67,32 @@ describe('Booking Wizard Step 1 Validations', () => {
     // 2026-06-26T12:00:00 is our mock server reference time
     const referenceDate = new Date('2026-06-26T12:00:00');
 
-    it('should fail for bookings in the past', () => {
-      const result = validateBookingSchedule('2026-06-26', '10:00', referenceDate);
+    it('should fail for bookings in the past', async () => {
+      const result = await validateBookingSchedule('2026-06-26', '10:00', referenceDate);
       expect(result.success).toBe(false);
       expect(result.error).toContain('cannot be in the past');
     });
 
-    it('should fail for bookings within the 2-hour buffer (e.g., 1.5 hours in future)', () => {
-      const result = validateBookingSchedule('2026-06-26', '13:30', referenceDate);
+    it('should fail for bookings within the 2-hour buffer (e.g., 1.5 hours in future)', async () => {
+      const result = await validateBookingSchedule('2026-06-26', '13:30', referenceDate);
       expect(result.success).toBe(false);
       expect(result.error).toContain('at least 2 hours in advance');
     });
 
-    it('should pass for bookings exactly 2 hours in the future', () => {
-      const result = validateBookingSchedule('2026-06-26', '14:00', referenceDate);
+    it('should pass for bookings exactly 2 hours in the future', async () => {
+      const result = await validateBookingSchedule('2026-06-26', '14:00', referenceDate);
       expect(result.success).toBe(true);
     });
 
-    it('should pass for bookings well in the future (e.g., next day)', () => {
-      const result = validateBookingSchedule('2026-06-27', '09:00', referenceDate);
+    it('should pass for bookings well in the future (e.g., next day)', async () => {
+      const result = await validateBookingSchedule('2026-06-27', '09:00', referenceDate);
       expect(result.success).toBe(true);
     });
 
-    it('should fail for invalid input formats', () => {
-      const result1 = validateBookingSchedule('invalid-date', '12:00', referenceDate);
+    it('should fail for invalid input formats', async () => {
+      const result1 = await validateBookingSchedule('invalid-date', '12:00', referenceDate);
       expect(result1.success).toBe(false);
-      const result2 = validateBookingSchedule('2026-06-26', 'invalid-time', referenceDate);
+      const result2 = await validateBookingSchedule('2026-06-26', 'invalid-time', referenceDate);
       expect(result2.success).toBe(false);
     });
   });

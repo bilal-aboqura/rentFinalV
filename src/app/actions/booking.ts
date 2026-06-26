@@ -6,11 +6,11 @@ import { ServerActionResponse } from '@/types';
  * Validates the selected booking date and time against the server's operational clock
  * to enforce a 2-hour minimum lead-time buffer.
  */
-export function validateBookingSchedule(
+export async function validateBookingSchedule(
   dateStr: string,
   timeStr: string,
   referenceDate: Date = new Date()
-): { success: boolean; error?: string } {
+): Promise<{ success: boolean; error?: string }> {
   // Validate format of dateStr (YYYY-MM-DD) and timeStr (HH:mm)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     return { success: false, error: 'Invalid date format. Expected YYYY-MM-DD.' };
@@ -47,7 +47,7 @@ export async function validateBookingScheduleAction(
   time: string
 ): Promise<ServerActionResponse<{ isValid: boolean }>> {
   try {
-    const result = validateBookingSchedule(date, time);
+    const result = await validateBookingSchedule(date, time);
     if (!result.success) {
       return {
         success: false,
@@ -65,7 +65,7 @@ export async function validateBookingScheduleAction(
 
 import { createClient } from '@/lib/supabase/server';
 import { SubmitBookingSchema } from '@/lib/validation/booking';
-import { sendBookingConfirmationEmail } from '@/lib/mail/smtp';
+import { sendBookingConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail/smtp';
 
 export interface SubmitBookingPayload {
   pickupLocationId: string;
@@ -100,7 +100,7 @@ export async function submitBookingAction(
     }
 
     // 2. Server-side Lead-time validation
-    const scheduleResult = validateBookingSchedule(payload.date, payload.time);
+    const scheduleResult = await validateBookingSchedule(payload.date, payload.time);
     if (!scheduleResult.success) {
       return {
         success: false,
@@ -189,6 +189,22 @@ export async function submitBookingAction(
     ).catch(err => {
       console.error('Asynchronous email trigger failure:', err);
     });
+
+    // Trigger SMTP Admin Notification Email in background (non-blocking)
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (adminEmail) {
+      sendAdminNotificationEmail({
+        reference: ref,
+        pickupName,
+        destinationName,
+        date: payload.date,
+        time: payload.time,
+        customerName: payload.customerName,
+        adminEmail,
+      }).catch(err => {
+        console.error('Asynchronous admin email trigger failure:', err);
+      });
+    }
 
     return {
       success: true,

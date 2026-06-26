@@ -79,7 +79,7 @@ export const SubmitBookingSchema = z.object({
 export const UpdateBookingStatusSchema = z.object({
   bookingId: z.string().uuid({ message: 'Invalid booking ID.' }),
   status: z.enum(['Pending', 'Confirmed', 'Completed', 'Cancelled'], {
-    errorMap: () => ({ message: 'Invalid booking status selection.' }),
+    message: 'Invalid booking status selection.',
   }),
 });
 

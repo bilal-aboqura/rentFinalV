@@ -273,3 +273,26 @@ export async function fetchActiveDriversAction(): Promise<ServerActionResponse<{
     return { success: false, error: errorMsg };
   }
 }
+
+export async function getPendingBookingsCount(): Promise<ServerActionResponse<{ count: number }>> {
+  try {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'Pending');
+
+    if (error) {
+      return { success: false, error: `Failed to retrieve pending booking count: ${error.message}` };
+    }
+
+    return {
+      success: true,
+      data: { count: count || 0 },
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred.';
+    return { success: false, error: errorMsg };
+  }
+}
+

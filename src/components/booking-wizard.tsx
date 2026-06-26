@@ -82,8 +82,8 @@ export default function BookingWizard() {
       customerName: step2Data.customerName,
       customerEmail: step2Data.customerEmail,
       customerPhone: step2Data.customerPhone,
-      flightNumber: step2Data.flightNumber || null,
-      notes: step2Data.notes || null,
+      flightNumber: step2Data.flightNumber || undefined,
+      notes: step2Data.notes || undefined,
     };
 
     try {

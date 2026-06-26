@@ -77,7 +77,13 @@ export default function BookingWizardStep2({
       async function fetchBooking() {
         setLoadingDetails(true);
         try {
-          const supabase = createClient();
+          const supabase = createClient({
+            global: {
+              headers: {
+                'x-booking-reference': bookingReference
+              }
+            }
+          });
           const { data, error } = await supabase
             .from('bookings')
             .select(`
@@ -96,15 +102,32 @@ export default function BookingWizardStep2({
               destination:locations!destination_location_id(name)
             `)
             .eq('booking_reference', bookingReference)
-            .headers({
-              'x-booking-reference': bookingReference
-            })
             .single();
 
           if (error) {
             setFetchError(error.message);
           } else {
-            setBookingDetails(data);
+            const rawData = data as any;
+            const mappedData: BookingDetails = {
+              id: rawData.id,
+              booking_reference: rawData.booking_reference,
+              booking_date: rawData.booking_date,
+              booking_time: rawData.booking_time,
+              price: Number(rawData.price),
+              customer_name: rawData.customer_name,
+              customer_email: rawData.customer_email,
+              customer_phone: rawData.customer_phone,
+              flight_number: rawData.flight_number,
+              notes: rawData.notes,
+              status: rawData.status,
+              pickup: Array.isArray(rawData.pickup)
+                ? (rawData.pickup[0] as { name: string })
+                : rawData.pickup,
+              destination: Array.isArray(rawData.destination)
+                ? (rawData.destination[0] as { name: string })
+                : rawData.destination,
+            };
+            setBookingDetails(mappedData);
           }
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : 'Failed to retrieve booking confirmation.';
