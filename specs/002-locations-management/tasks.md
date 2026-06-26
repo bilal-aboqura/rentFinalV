@@ -121,13 +121,13 @@
 
 ### Tests for User Story 3 (MANDATORY) ⚠️
 
-- [ ] T026 [P] [US3] Write Vitest integration tests for Update Location action in tests/integration/updateLocation.test.ts
+- [x] T026 [P] [US3] Write Vitest integration tests for Update Location action in tests/integration/updateLocation.test.ts
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Implement updateLocationAction Server Action in src/app/admin/locations/actions.ts
-- [ ] T028 [US3] Connect Edit modal form with updateLocationAction in src/app/admin/locations/page.tsx
-- [ ] T029 [US3] Verify T026 tests pass and manually test location updates
+- [x] T027 [US3] Implement updateLocationAction Server Action in src/app/admin/locations/actions.ts
+- [x] T028 [US3] Connect Edit modal form with updateLocationAction in src/app/admin/locations/page.tsx
+- [x] T029 [US3] Verify T026 tests pass and manually test location updates
 
 **Checkpoint**: Admin can successfully edit existing locations.
 
@@ -141,13 +141,13 @@
 
 ### Tests for User Story 4 (MANDATORY) ⚠️
 
-- [ ] T030 [P] [US4] Write Vitest integration tests for Delete Location action (handling blocks for referenced bookings) in tests/integration/deleteLocation.test.ts
+- [x] T030 [P] [US4] Write Vitest integration tests for Delete Location action (handling blocks for referenced bookings) in tests/integration/deleteLocation.test.ts
 
 ### Implementation for User Story 4
 
-- [ ] T031 [US4] Implement deleteLocationAction Server Action checking for booking references in src/app/admin/locations/actions.ts
-- [ ] T032 [US4] Add Delete button and confirmation modal to Admin table in src/app/admin/locations/page.tsx
-- [ ] T033 [US4] Verify T030 tests pass and manually test location deletion
+- [x] T031 [US4] Implement deleteLocationAction Server Action checking for booking references in src/app/admin/locations/actions.ts
+- [x] T032 [US4] Add Delete button and confirmation modal to Admin table in src/app/admin/locations/page.tsx
+- [x] T033 [US4] Verify T030 tests pass and manually test location deletion
 
 **Checkpoint**: Admin can delete locations safely with referential integrity blocks.
 
@@ -157,9 +157,9 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T034 [P] Document features and APIs in README.md
-- [ ] T035 Perform final code cleanup and CSS layout refinement using Tailwind
-- [ ] T036 Run quickstart.md validation scenario tests and log results in specs/002-locations-management/walkthrough.md
+- [x] T034 [P] Document features and APIs in README.md
+- [x] T035 Perform final code cleanup and CSS layout refinement using Tailwind
+- [x] T036 Run quickstart.md validation scenario tests and log results in specs/002-locations-management/walkthrough.md
 
 ---
 

@@ -21,3 +21,5 @@ export const UpdateLocationSchema = z.object({
   type: LocationTypeSchema.optional(),
   isActive: z.boolean().optional(),
 });
+
+export const LocationIdSchema = z.string().uuid({ message: 'Invalid ID format' });

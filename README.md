@@ -16,7 +16,34 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Cities & Airports Management
+
+Administrators can manage the operating locations used by the transfer service at
+`/admin/locations`.
+
+Supported location operations:
+
+- List locations with URL-driven search and pagination.
+- Create locations with validated name, type, and active status fields.
+- Edit an existing location's name, type, or active status.
+- Delete unused locations.
+- Block deletion when a location is referenced by bookings or route pricing rules, with guidance to deactivate the location instead.
+
+Customer-facing booking dropdowns use the active locations API so inactive locations are excluded and active entries are grouped by type.
+
+### Location Server Actions
+
+The admin UI calls the Server Actions in `src/app/admin/locations/actions.ts`:
+
+- `createLocationAction(input)` creates a new location.
+- `updateLocationAction(input)` updates a location by UUID.
+- `deleteLocationAction(id)` deletes an unused location after checking booking and route pricing references.
+
+Run the location tests with:
+
+```bash
+npx vitest run tests/integration/createLocation.test.ts tests/integration/updateLocation.test.ts tests/integration/deleteLocation.test.ts
+```
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
