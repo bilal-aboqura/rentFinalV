@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { BookingWithDetails, ServerActionResponse } from '@/types';
 import { UpdateBookingStatusSchema, AssignDriverSchema } from '@/lib/validation/booking';
+import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from '@/lib/mail/smtp';
 
 interface BookingRow {
   id: string;
@@ -22,7 +23,7 @@ interface BookingRow {
   created_at: string;
   pickup: { name: string } | null;
   destination: { name: string } | null;
-  driver: { name: string } | null;
+  driver: { name: string; phone: string } | null;
 }
 
 export async function fetchBookingsAction(input: {
@@ -129,7 +130,7 @@ export async function updateBookingStatusAction(
       .from('bookings')
       .update({ status })
       .eq('id', bookingId)
-      .select('*, pickup:locations!pickup_location_id(name), destination:locations!destination_location_id(name), driver:drivers(name)')
+      .select('*, pickup:locations!pickup_location_id(name), destination:locations!destination_location_id(name), driver:drivers(name, phone)')
       .single();
 
     if (error) {
@@ -137,6 +138,31 @@ export async function updateBookingStatusAction(
     }
 
     const row = data as unknown as BookingRow;
+
+    // Send emails asynchronously (non-blocking)
+    if (status === 'Confirmed') {
+      sendBookingConfirmedEmail({
+        email: row.customer_email,
+        customerName: row.customer_name,
+        reference: row.booking_reference,
+        pickupName: row.pickup?.name || 'Unknown',
+        destinationName: row.destination?.name || 'Unknown',
+        date: row.booking_date,
+        time: row.booking_time,
+        driverName: row.driver?.name,
+        driverPhone: row.driver?.phone,
+      }).catch(err => {
+        console.error('Asynchronous confirmation email trigger failure:', err);
+      });
+    } else if (status === 'Cancelled') {
+      sendBookingCancelledEmail({
+        email: row.customer_email,
+        customerName: row.customer_name,
+        reference: row.booking_reference,
+      }).catch(err => {
+        console.error('Asynchronous cancellation email trigger failure:', err);
+      });
+    }
 
     return {
       success: true,
@@ -158,7 +184,7 @@ export async function updateBookingStatusAction(
         created_at: row.created_at,
         pickup: row.pickup ? { name: row.pickup.name } : { name: 'Unknown' },
         destination: row.destination ? { name: row.destination.name } : { name: 'Unknown' },
-        driver: row.driver ? { name: row.driver.name } : null,
+        driver: row.driver ? { name: row.driver.name, phone: row.driver.phone } : null,
       },
     };
   } catch (err: unknown) {
@@ -210,7 +236,7 @@ export async function assignDriverAction(
       .from('bookings')
       .update({ driver_id: driverId })
       .eq('id', bookingId)
-      .select('*, pickup:locations!pickup_location_id(name), destination:locations!destination_location_id(name), driver:drivers(name)')
+      .select('*, pickup:locations!pickup_location_id(name), destination:locations!destination_location_id(name), driver:drivers(name, phone)')
       .single();
 
     if (error) {
@@ -218,6 +244,22 @@ export async function assignDriverAction(
     }
 
     const row = data as unknown as BookingRow;
+
+    if (currentBooking.status === 'Confirmed') {
+      sendBookingConfirmedEmail({
+        email: row.customer_email,
+        customerName: row.customer_name,
+        reference: row.booking_reference,
+        pickupName: row.pickup?.name || 'Unknown',
+        destinationName: row.destination?.name || 'Unknown',
+        date: row.booking_date,
+        time: row.booking_time,
+        driverName: row.driver?.name,
+        driverPhone: row.driver?.phone,
+      }).catch(err => {
+        console.error('Asynchronous driver assignment confirmation email trigger failure:', err);
+      });
+    }
 
     return {
       success: true,
@@ -239,7 +281,7 @@ export async function assignDriverAction(
         created_at: row.created_at,
         pickup: row.pickup ? { name: row.pickup.name } : { name: 'Unknown' },
         destination: row.destination ? { name: row.destination.name } : { name: 'Unknown' },
-        driver: row.driver ? { name: row.driver.name } : null,
+        driver: row.driver ? { name: row.driver.name, phone: row.driver.phone } : null,
       },
     };
   } catch (err: unknown) {

@@ -1,6 +1,6 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/008-new-request-alert/plan.md
+at specs/009-status-change-alert/plan.md
 <!-- SPECKIT END -->
 

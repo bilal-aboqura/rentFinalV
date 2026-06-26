@@ -186,3 +186,129 @@ System Automations`;
   }
 }
 
+export async function sendBookingConfirmedEmail(params: {
+  email: string;
+  customerName: string;
+  reference: string;
+  pickupName: string;
+  destinationName: string;
+  date: string;
+  time: string;
+  driverName?: string;
+  driverPhone?: string;
+}) {
+  const { email, customerName, reference, pickupName, destinationName, date, time, driverName, driverPhone } = params;
+  
+  const subject = `Booking Confirmed - Ref: ${reference}`;
+  
+  const driverDetailsText = driverName && driverPhone
+    ? `- Driver Name: ${driverName}\n- Driver Phone: ${driverPhone}`
+    : `Driver Details: A driver will be assigned shortly. We will update you with their details.`;
+
+  const text = `Dear ${customerName},
+
+Great news! Your booking has been Confirmed by an administrator.
+
+Booking Details:
+- Reference: ${reference}
+- Pickup: ${pickupName}
+- Destination: ${destinationName}
+- Date: ${date}
+- Time: ${time?.slice(0, 5) || ''}
+
+${driverDetailsText}
+
+Thank you for choosing us!
+
+Best regards,
+Airport Transfer Team`;
+
+  const driverDetailsHtml = driverName && driverPhone
+    ? `<tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Driver:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${driverName} (${driverPhone})</td>
+      </tr>`
+    : `<tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Driver:</strong></td>
+        <td style="padding: 8px 0; color: #4a5568; font-style: italic;">A driver will be assigned shortly.</td>
+      </tr>`;
+
+  const html = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+    <h2 style="color: #1e3a8a; margin-top: 0;">Booking Confirmed!</h2>
+    <p>Dear <strong>${customerName}</strong>,</p>
+    <p>Great news! Your booking has been Confirmed by an administrator.</p>
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+    <h3 style="color: #1e3a8a;">Booking & Trip Details</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568; width: 120px;"><strong>Reference:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${reference}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Pickup:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${pickupName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Destination:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${destinationName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Date:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${date}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; color: #4a5568;"><strong>Time:</strong></td>
+        <td style="padding: 8px 0; color: #1a202c;">${time?.slice(0, 5) || ''}</td>
+      </tr>
+      ${driverDetailsHtml}
+    </table>
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+    <p style="color: #4a5568;">Thank you for choosing us!</p>
+    <p style="color: #4a5568; margin-top: 20px; border-top: 1px solid #edf2f7; padding-top: 10px;">Best regards,<br /><strong>Airport Transfer Team</strong></p>
+  </div>`;
+
+  try {
+    return await sendMail({ to: email, subject, text, html });
+  } catch (error) {
+    console.error('Failed to send SMTP booking confirmed email:', error);
+    return null;
+  }
+}
+
+export async function sendBookingCancelledEmail(params: {
+  email: string;
+  customerName: string;
+  reference: string;
+}) {
+  const { email, customerName, reference } = params;
+  
+  const subject = `Booking Cancelled - Ref: ${reference}`;
+  
+  const text = `Dear ${customerName},
+
+We are writing to politely inform you that your booking with Reference: ${reference} has been Cancelled.
+
+If you have any questions or require further assistance, please do not hesitate to contact our support team.
+
+Best regards,
+Airport Transfer Team`;
+
+  const html = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+    <h2 style="color: #b91c1c; margin-top: 0;">Booking Cancelled</h2>
+    <p>Dear <strong>${customerName}</strong>,</p>
+    <p>We are writing to politely inform you that your booking with Reference: <strong>${reference}</strong> has been Cancelled.</p>
+    <p>If you have any questions or require further assistance, please do not hesitate to contact our support team.</p>
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+    <p style="color: #718096; font-size: 0.85em;">This is an automated system notification.</p>
+    <p style="color: #4a5568; margin-top: 20px; border-top: 1px solid #edf2f7; padding-top: 10px;">Best regards,<br /><strong>Airport Transfer Team</strong></p>
+  </div>`;
+
+  try {
+    return await sendMail({ to: email, subject, text, html });
+  } catch (error) {
+    console.error('Failed to send SMTP booking cancelled email:', error);
+    return null;
+  }
+}
+
+

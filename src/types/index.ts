@@ -99,6 +99,7 @@ export interface BookingWithDetails {
   };
   driver: {
     name: string;
+    phone?: string;
   } | null;
 }
 

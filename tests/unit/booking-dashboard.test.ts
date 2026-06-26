@@ -5,6 +5,17 @@ import {
   assignDriverAction,
 } from '@/app/admin/bookings/actions';
 
+// Mock SMTP helpers
+const mockSendBookingConfirmedEmail = vi.fn().mockResolvedValue(true);
+const mockSendBookingCancelledEmail = vi.fn().mockResolvedValue(true);
+
+vi.mock('@/lib/mail/smtp', () => ({
+  sendBookingConfirmedEmail: (params: unknown) => mockSendBookingConfirmedEmail(params),
+  sendBookingCancelledEmail: (params: unknown) => mockSendBookingCancelledEmail(params),
+  sendBookingConfirmationEmail: vi.fn(),
+  sendAdminNotificationEmail: vi.fn(),
+}));
+
 // Mock database results
 let mockRangeData: Record<string, unknown>[] = [];
 let mockRangeError: { message: string } | null = null;
@@ -102,7 +113,7 @@ describe('Admin Bookings Dashboard Server Actions', () => {
   describe('updateBookingStatusAction', () => {
     const bookingId = '550e8400-e29b-41d4-a716-446655440000';
 
-    it('should successfully update status of a Pending booking', async () => {
+    it('should successfully update status of a Pending booking to Confirmed and trigger email', async () => {
       // Mock lookup: current status is 'Pending'
       mockSingle.mockResolvedValueOnce({
         data: { status: 'Pending' },
@@ -111,13 +122,91 @@ describe('Admin Bookings Dashboard Server Actions', () => {
 
       // Mock update query
       mockSingle.mockResolvedValueOnce({
-        data: { id: bookingId, status: 'Confirmed' },
+        data: {
+          id: bookingId,
+          booking_reference: 'REF-TEST-123',
+          pickup_location_id: 'loc-1',
+          destination_location_id: 'loc-2',
+          booking_date: '2026-06-28',
+          booking_time: '18:00',
+          price: 50.00,
+          customer_name: 'Alice',
+          customer_email: 'alice@example.com',
+          customer_phone: '+123456',
+          flight_number: null,
+          notes: null,
+          status: 'Confirmed',
+          driver_id: 'driver-1',
+          created_at: '2026-06-26T00:00:00Z',
+          pickup: { name: 'Airport' },
+          destination: { name: 'Hotel' },
+          driver: { name: 'Driver Bob', phone: '+987654321' }
+        },
         error: null,
       });
 
       const res = await updateBookingStatusAction({ bookingId, status: 'Confirmed' });
       expect(res.success).toBe(true);
       expect(mockUpdate).toHaveBeenCalledWith({ status: 'Confirmed' });
+      
+      // Wait for async non-blocking call
+      await new Promise(resolve => setTimeout(resolve, 10));
+      expect(mockSendBookingConfirmedEmail).toHaveBeenCalledWith({
+        email: 'alice@example.com',
+        customerName: 'Alice',
+        reference: 'REF-TEST-123',
+        pickupName: 'Airport',
+        destinationName: 'Hotel',
+        date: '2026-06-28',
+        time: '18:00',
+        driverName: 'Driver Bob',
+        driverPhone: '+987654321',
+      });
+    });
+
+    it('should successfully update status of a Pending booking to Cancelled and trigger email', async () => {
+      // Mock lookup: current status is 'Pending'
+      mockSingle.mockResolvedValueOnce({
+        data: { status: 'Pending' },
+        error: null,
+      });
+
+      // Mock update query
+      mockSingle.mockResolvedValueOnce({
+        data: {
+          id: bookingId,
+          booking_reference: 'REF-TEST-123',
+          pickup_location_id: 'loc-1',
+          destination_location_id: 'loc-2',
+          booking_date: '2026-06-28',
+          booking_time: '18:00',
+          price: 50.00,
+          customer_name: 'Alice',
+          customer_email: 'alice@example.com',
+          customer_phone: '+123456',
+          flight_number: null,
+          notes: null,
+          status: 'Cancelled',
+          driver_id: null,
+          created_at: '2026-06-26T00:00:00Z',
+          pickup: { name: 'Airport' },
+          destination: { name: 'Hotel' },
+          driver: null
+        },
+        error: null,
+      });
+
+      const res = await updateBookingStatusAction({ bookingId, status: 'Cancelled' });
+      expect(res.success).toBe(true);
+      expect(mockUpdate).toHaveBeenCalledWith({ status: 'Cancelled' });
+      
+      // Wait for async non-blocking call
+      await new Promise(resolve => setTimeout(resolve, 10));
+      expect(mockSendBookingCancelledEmail).toHaveBeenCalledWith({
+        email: 'alice@example.com',
+        customerName: 'Alice',
+        reference: 'REF-TEST-123',
+      });
     });
 
     it('should reject status changes when the current status is Completed', async () => {
@@ -151,7 +240,7 @@ describe('Admin Bookings Dashboard Server Actions', () => {
     const bookingId = '550e8400-e29b-41d4-a716-446655440000';
     const driverId = '880e8400-e29b-41d4-a716-446655440000';
 
-    it('should successfully assign a driver to a Confirmed booking', async () => {
+    it('should successfully assign a driver to a Confirmed booking and trigger email', async () => {
       // Mock lookup: current status is 'Confirmed'
       mockSingle.mockResolvedValueOnce({
         data: { status: 'Confirmed' },
@@ -160,13 +249,87 @@ describe('Admin Bookings Dashboard Server Actions', () => {
 
       // Mock update query
       mockSingle.mockResolvedValueOnce({
-        data: { id: bookingId, status: 'Confirmed', driver_id: driverId },
+        data: {
+          id: bookingId,
+          booking_reference: 'REF-TEST-123',
+          pickup_location_id: 'loc-1',
+          destination_location_id: 'loc-2',
+          booking_date: '2026-06-28',
+          booking_time: '18:00',
+          price: 50.00,
+          customer_name: 'Alice',
+          customer_email: 'alice@example.com',
+          customer_phone: '+123456',
+          flight_number: null,
+          notes: null,
+          status: 'Confirmed',
+          driver_id: driverId,
+          created_at: '2026-06-26T00:00:00Z',
+          pickup: { name: 'Airport' },
+          destination: { name: 'Hotel' },
+          driver: { name: 'Driver Bob', phone: '+987654321' }
+        },
         error: null,
       });
 
       const res = await assignDriverAction({ bookingId, driverId });
       expect(res.success).toBe(true);
       expect(mockUpdate).toHaveBeenCalledWith({ driver_id: driverId });
+
+      // Wait for async non-blocking call
+      await new Promise(resolve => setTimeout(resolve, 10));
+      expect(mockSendBookingConfirmedEmail).toHaveBeenCalledWith({
+        email: 'alice@example.com',
+        customerName: 'Alice',
+        reference: 'REF-TEST-123',
+        pickupName: 'Airport',
+        destinationName: 'Hotel',
+        date: '2026-06-28',
+        time: '18:00',
+        driverName: 'Driver Bob',
+        driverPhone: '+987654321',
+      });
+    });
+
+    it('should successfully assign a driver to a Pending booking but NOT trigger email', async () => {
+      // Mock lookup: current status is 'Pending'
+      mockSingle.mockResolvedValueOnce({
+        data: { status: 'Pending' },
+        error: null,
+      });
+
+      // Mock update query
+      mockSingle.mockResolvedValueOnce({
+        data: {
+          id: bookingId,
+          booking_reference: 'REF-TEST-123',
+          pickup_location_id: 'loc-1',
+          destination_location_id: 'loc-2',
+          booking_date: '2026-06-28',
+          booking_time: '18:00',
+          price: 50.00,
+          customer_name: 'Alice',
+          customer_email: 'alice@example.com',
+          customer_phone: '+123456',
+          flight_number: null,
+          notes: null,
+          status: 'Pending',
+          driver_id: driverId,
+          created_at: '2026-06-26T00:00:00Z',
+          pickup: { name: 'Airport' },
+          destination: { name: 'Hotel' },
+          driver: { name: 'Driver Bob', phone: '+987654321' }
+        },
+        error: null,
+      });
+
+      const res = await assignDriverAction({ bookingId, driverId });
+      expect(res.success).toBe(true);
+      expect(mockUpdate).toHaveBeenCalledWith({ driver_id: driverId });
+
+      // Wait for async non-blocking call
+      await new Promise(resolve => setTimeout(resolve, 10));
+      expect(mockSendBookingConfirmedEmail).not.toHaveBeenCalled();
     });
 
     it('should reject driver assignment when the booking is in a terminal state (Completed)', async () => {
