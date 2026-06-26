@@ -103,3 +103,19 @@ export interface BookingWithDetails {
   } | null;
 }
 
+export interface SiteSettings {
+  id: number;
+  hero_title: string;
+  about_text: string;
+  contact_phone: string;
+  contact_email: string;
+  brand_primary_color: string;
+  brand_secondary_color: string;
+  hero_image_url: string | null;
+  site_logo_url: string | null;
+  updated_at: string;
+}
+
+export type UpdateSiteSettingsInput = Omit<SiteSettings, 'id' | 'updated_at' | 'hero_image_url' | 'site_logo_url'>;
+
+
