@@ -40,6 +40,12 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
             <a href="/admin/pricing" className="text-white bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-lg">
               Pricing Management
             </a>
+            <a href="/admin/drivers" className="text-slate-400 hover:text-white transition-colors">
+              Drivers Management
+            </a>
+            <a href="/admin/bookings" className="text-slate-400 hover:text-white transition-colors">
+              Bookings
+            </a>
           </nav>
         </div>
       </header>

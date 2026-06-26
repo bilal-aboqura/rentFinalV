@@ -1,23 +1,29 @@
 import React from 'react';
-import { fetchDriversAction } from './actions';
-import DriversManager from '@/components/drivers-manager';
+import { fetchBookingsAction } from './actions';
+import BookingsManager from '@/components/bookings-manager';
+import { BookingWithDetails } from '@/types';
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function AdminDriversPage({ searchParams }: PageProps) {
+export default async function AdminBookingsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const pageParam = params.page;
   const page = typeof pageParam === 'string' ? parseInt(pageParam, 10) || 1 : 1;
-  const searchParam = params.search;
-  const search = typeof searchParam === 'string' ? searchParam : undefined;
+  const statusParam = params.status;
+  const statusFilter = typeof statusParam === 'string' ? statusParam : undefined;
   const limit = 10;
 
-  const driversRes = await fetchDriversAction({ page, limit, search });
+  let validStatus: BookingWithDetails['status'] | undefined = undefined;
+  if (statusFilter && ['Pending', 'Confirmed', 'Completed', 'Cancelled'].includes(statusFilter)) {
+    validStatus = statusFilter;
+  }
 
-  const drivers = driversRes.success && driversRes.data ? driversRes.data : [];
-  const totalCount = driversRes.success && driversRes.totalCount ? driversRes.totalCount : 0;
+  const bookingsRes = await fetchBookingsAction({ page, limit, statusFilter: validStatus });
+
+  const bookings = bookingsRes.success && bookingsRes.data ? bookingsRes.data.bookings : [];
+  const totalCount = bookingsRes.success && bookingsRes.data ? bookingsRes.data.totalCount : 0;
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -37,10 +43,10 @@ export default async function AdminDriversPage({ searchParams }: PageProps) {
             <a href="/admin/pricing" className="text-slate-400 hover:text-white transition-colors">
               Pricing Management
             </a>
-            <a href="/admin/drivers" className="text-white bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-lg">
+            <a href="/admin/drivers" className="text-slate-400 hover:text-white transition-colors">
               Drivers Management
             </a>
-            <a href="/admin/bookings" className="text-slate-400 hover:text-white transition-colors">
+            <a href="/admin/bookings" className="text-white bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-lg">
               Bookings
             </a>
           </nav>
@@ -52,19 +58,19 @@ export default async function AdminDriversPage({ searchParams }: PageProps) {
         <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight">
-              Fleet & Drivers Configuration
+              Bookings & Dispatch Center
             </h1>
             <p className="text-slate-400 text-base mt-2">
-              Manage the fleet of drivers, register contact details, and update availability status.
+              View, dispatch, and track customer bookings and driver assignments.
             </p>
           </div>
 
-          <DriversManager
-            initialDrivers={drivers}
+          <BookingsManager
+            initialBookings={bookings}
             totalCount={totalCount}
             currentPage={page}
             limit={limit}
-            initialSearch={search || ''}
+            initialStatusFilter={validStatus || 'All'}
           />
         </div>
       </div>

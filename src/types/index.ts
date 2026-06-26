@@ -74,3 +74,31 @@ export interface UpdateDriverInput {
   phone?: string;
   availability_status?: 'Available' | 'Busy' | 'Inactive';
 }
+
+export interface BookingWithDetails {
+  id: string;
+  booking_reference: string;
+  pickup_location_id: string;
+  destination_location_id: string;
+  booking_date: string;
+  booking_time: string;
+  price: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  flight_number: string | null;
+  notes: string | null;
+  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
+  driver_id: string | null;
+  created_at: string;
+  pickup: {
+    name: string;
+  };
+  destination: {
+    name: string;
+  };
+  driver: {
+    name: string;
+  } | null;
+}
+

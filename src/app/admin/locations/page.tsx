@@ -44,6 +44,18 @@ export default async function AdminLocationsPage({ searchParams }: PageProps) {
             >
               Pricing Management
             </a>
+            <a
+              href="/admin/drivers"
+              className="text-slate-400 hover:text-white transition-colors"
+            >
+              Drivers Management
+            </a>
+            <a
+              href="/admin/bookings"
+              className="text-slate-400 hover:text-white transition-colors"
+            >
+              Bookings
+            </a>
           </nav>
         </div>
       </header>
