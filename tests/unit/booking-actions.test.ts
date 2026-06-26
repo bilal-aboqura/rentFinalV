@@ -85,8 +85,8 @@ describe('submitBookingAction', () => {
     const res = await submitBookingAction(invalidPayload);
     expect(res.success).toBe(false);
     expect(res.validationErrors).toBeDefined();
-    expect(res.validationErrors?.customerEmail).toBeDefined();
-    expect(res.validationErrors?.customerPhone).toBeDefined();
+    expect((res.validationErrors as Record<string, string[]>)?.customerEmail).toBeDefined();
+    expect((res.validationErrors as Record<string, string[]>)?.customerPhone).toBeDefined();
   });
 
   it('should return error if route price lookup fails or price does not exist', async () => {

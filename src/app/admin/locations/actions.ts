@@ -71,6 +71,7 @@ export async function createLocationAction(
   }
 }
 
+
 export async function updateLocationAction(
   input: unknown
 ): Promise<ServerActionResponse<Location>> {
@@ -104,6 +105,7 @@ export async function updateLocationAction(
         return { success: false, error: 'A location with this name already exists.' };
       }
 
+
       if (error.code === 'PGRST116') {
         return { success: false, error: 'Location not found.' };
       }
@@ -114,13 +116,13 @@ export async function updateLocationAction(
     if (!data) {
       return { success: false, error: 'Location not found.' };
     }
-
     return { success: true, data: mapLocationRow(data) };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'An unexpected error occurred';
     return { success: false, error: message };
   }
 }
+
 
 export async function deleteLocationAction(
   id: string
