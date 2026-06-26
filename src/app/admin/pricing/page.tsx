@@ -22,6 +22,11 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
   const routePrices = pricingRes.success && pricingRes.data ? pricingRes.data : [];
   const totalCount = pricingRes.success && pricingRes.totalCount ? pricingRes.totalCount : 0;
   const activeLocations = locationsRes.success && locationsRes.data ? locationsRes.data : [];
+  const loadError = !pricingRes.success
+    ? pricingRes.error
+    : !locationsRes.success
+      ? locationsRes.error
+      : undefined;
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -33,10 +38,10 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
         <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight">
-              Settings & Configuration
+              Pricing Management
             </h1>
             <p className="text-slate-400 text-base mt-2">
-              Manage supported geographical locations, airport nodes, and direct flat-rate pricing rules.
+              Manage direct flat-rate pricing rules between active pickup and destination locations.
             </p>
           </div>
 
@@ -46,6 +51,7 @@ export default async function AdminPricingPage({ searchParams }: PageProps) {
             activeLocations={activeLocations}
             currentPage={page}
             limit={limit}
+            loadError={loadError}
           />
         </div>
       </div>

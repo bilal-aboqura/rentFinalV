@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS drivers (
 ALTER TABLE drivers ENABLE ROW LEVEL SECURITY;
 
 -- Policy 1: Admin Operations
--- Admins must be authenticated to perform any action on drivers.
+-- Admins must be authenticated and carry the admin role to perform any action on drivers.
 CREATE POLICY "Allow admin full access"
   ON drivers FOR ALL
   TO authenticated
-  USING (true)
-  WITH CHECK (true);
+  USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin')
+  WITH CHECK ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');

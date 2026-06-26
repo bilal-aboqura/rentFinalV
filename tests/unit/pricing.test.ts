@@ -85,6 +85,17 @@ describe('Route price validation schemas', () => {
       }
     });
 
+    it('should reject update payloads that do not change any editable field', () => {
+      const result = UpdateRoutePriceSchema.safeParse({
+        id: '770e8400-e29b-41d4-a716-446655440000',
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain('At least one pricing field must be provided');
+      }
+    });
+
     it('should require a valid UUID for pricing rule id', () => {
       const result = UpdateRoutePriceSchema.safeParse({
         id: 'invalid-id',

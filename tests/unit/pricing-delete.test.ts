@@ -45,6 +45,14 @@ describe('deleteRoutePriceAction', () => {
     }
   });
 
+  it('should reject invalid pricing rule IDs before deleting', async () => {
+    const response = await deleteRoutePriceAction('not-a-uuid');
+
+    expect(response.success).toBe(false);
+    expect(response.validationErrors?.id).toContain('Invalid ID format');
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
   it('should return error when Supabase delete fails', async () => {
     mockEq.mockResolvedValue({
       error: { message: 'Database delete failed' },

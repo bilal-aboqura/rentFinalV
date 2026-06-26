@@ -8,11 +8,29 @@ import {
   ServerActionResponse,
   UpdateRoutePriceInput,
 } from '@/types';
-import { CreateRoutePriceSchema, UpdateRoutePriceSchema } from '@/lib/validation/pricing';
+import {
+  CreateRoutePriceSchema,
+  RoutePriceIdSchema,
+  RoutePriceLookupSchema,
+  UpdateRoutePriceSchema,
+} from '@/lib/validation/pricing';
 
 interface FetchRoutePricesInput {
   page: number;
   limit: number;
+}
+
+interface FetchRoutePricesResponse extends ServerActionResponse<RoutePrice[]> {
+  totalCount?: number;
+}
+
+type ActiveLocationsResponse = ServerActionResponse<Location[]>;
+
+interface RoutePriceLookupResponse {
+  success: boolean;
+  price?: number | null;
+  error?: string;
+  validationErrors?: Record<string, string[]>;
 }
 
 interface RoutePriceRow {
@@ -45,8 +63,22 @@ type RoutePriceUpdateRow = Partial<{
   price: number;
 }>;
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
+
 const getErrorMessage = (err: unknown) =>
   err instanceof Error ? err.message : 'An unexpected error occurred';
+
+const normalizePage = (page: number) => {
+  if (!Number.isFinite(page) || page < 1) return DEFAULT_PAGE;
+  return Math.floor(page);
+};
+
+const normalizeLimit = (limit: number) => {
+  if (!Number.isFinite(limit) || limit < 1) return DEFAULT_LIMIT;
+  return Math.min(Math.floor(limit), MAX_LIMIT);
+};
 
 const firstJoinedName = (value: RoutePriceWithLocationsRow['pickup']) => {
   if (Array.isArray(value)) {
@@ -65,8 +97,25 @@ const validationErrorsFromIssues = (issues: { path: PropertyKey[]; message: stri
   return validationErrors;
 };
 
-export async function fetchRoutePricesAction(input: FetchRoutePricesInput) {
-  const { page, limit } = input;
+const formatRoutePrice = (row: RoutePriceRow): RoutePrice => ({
+  id: row.id,
+  pickupLocationId: row.pickup_location_id,
+  destinationLocationId: row.destination_location_id,
+  price: Number(row.price),
+  createdAt: row.created_at,
+});
+
+const formatRoutePriceWithLocations = (row: RoutePriceWithLocationsRow): RoutePrice => ({
+  ...formatRoutePrice(row),
+  pickupLocationName: firstJoinedName(row.pickup) || 'Unknown Location',
+  destinationLocationName: firstJoinedName(row.destination) || 'Unknown Location',
+});
+
+export async function fetchRoutePricesAction(
+  input: FetchRoutePricesInput
+): Promise<FetchRoutePricesResponse> {
+  const page = normalizePage(input.page);
+  const limit = normalizeLimit(input.limit);
   const start = (page - 1) * limit;
   const end = start + limit - 1;
 
@@ -82,20 +131,9 @@ export async function fetchRoutePricesAction(input: FetchRoutePricesInput) {
       return { success: false, error: `Failed to fetch route prices: ${error.message}` };
     }
 
-    const rows = (data || []) as RoutePriceWithLocationsRow[];
-    const formattedData: RoutePrice[] = rows.map(row => ({
-      id: row.id,
-      pickupLocationId: row.pickup_location_id,
-      destinationLocationId: row.destination_location_id,
-      price: Number(row.price),
-      createdAt: row.created_at,
-      pickupLocationName: firstJoinedName(row.pickup) || 'Unknown Location',
-      destinationLocationName: firstJoinedName(row.destination) || 'Unknown Location',
-    }));
-
     return {
       success: true,
-      data: formattedData,
+      data: ((data || []) as RoutePriceWithLocationsRow[]).map(formatRoutePriceWithLocations),
       totalCount: count || 0,
     };
   } catch (err: unknown) {
@@ -134,13 +172,7 @@ export async function createRoutePriceAction(
 
     return {
       success: true,
-      data: {
-        id: data.id,
-        pickupLocationId: data.pickup_location_id,
-        destinationLocationId: data.destination_location_id,
-        price: Number(data.price),
-        createdAt: data.created_at,
-      },
+      data: formatRoutePrice(data as RoutePriceRow),
     };
   } catch (err: unknown) {
     return { success: false, error: getErrorMessage(err) };
@@ -184,13 +216,7 @@ export async function updateRoutePriceAction(
 
     return {
       success: true,
-      data: {
-        id: data.id,
-        pickupLocationId: data.pickup_location_id,
-        destinationLocationId: data.destination_location_id,
-        price: Number(data.price),
-        createdAt: data.created_at,
-      },
+      data: formatRoutePrice(data as RoutePriceRow),
     };
   } catch (err: unknown) {
     return { success: false, error: getErrorMessage(err) };
@@ -200,12 +226,17 @@ export async function updateRoutePriceAction(
 export async function deleteRoutePriceAction(
   id: string
 ): Promise<ServerActionResponse<{ id: string }>> {
+  const validation = RoutePriceIdSchema.safeParse({ id });
+  if (!validation.success) {
+    return { success: false, validationErrors: validationErrorsFromIssues(validation.error.issues) };
+  }
+
   try {
     const supabase = await createClient();
     const { error } = await supabase
       .from('route_prices')
       .delete()
-      .eq('id', id);
+      .eq('id', validation.data.id);
 
     if (error) {
       return { success: false, error: error.message };
@@ -213,14 +244,14 @@ export async function deleteRoutePriceAction(
 
     return {
       success: true,
-      data: { id },
+      data: { id: validation.data.id },
     };
   } catch (err: unknown) {
     return { success: false, error: getErrorMessage(err) };
   }
 }
 
-export async function getActiveLocationsAction() {
+export async function getActiveLocationsAction(): Promise<ActiveLocationsResponse> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -247,14 +278,23 @@ export async function getActiveLocationsAction() {
   }
 }
 
-export async function getRoutePriceAction(pickupId: string, destinationId: string) {
+export async function getRoutePriceAction(
+  pickupId: string,
+  destinationId: string
+): Promise<RoutePriceLookupResponse> {
+  const validation = RoutePriceLookupSchema.safeParse({ pickupId, destinationId });
+  if (!validation.success) {
+    return { success: false, validationErrors: validationErrorsFromIssues(validation.error.issues) };
+  }
+
   try {
+    const { pickupId: validPickupId, destinationId: validDestinationId } = validation.data;
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('route_prices')
       .select('price')
-      .eq('pickup_location_id', pickupId)
-      .eq('destination_location_id', destinationId)
+      .eq('pickup_location_id', validPickupId)
+      .eq('destination_location_id', validDestinationId)
       .maybeSingle();
 
     if (error) {

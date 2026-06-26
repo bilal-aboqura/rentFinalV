@@ -82,6 +82,16 @@ describe('updateRoutePriceAction', () => {
     }
   });
 
+  it('should return validation errors when no editable fields are supplied', async () => {
+    const response = await updateRoutePriceAction({
+      id: '770e8400-e29b-41d4-a716-446655440000',
+    });
+
+    expect(response.success).toBe(false);
+    expect(response.validationErrors?.form).toContain('At least one pricing field must be provided');
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
   it('should return error when duplicate route is created during update (unique constraint violation)', async () => {
     const mockDbInput = {
       id: '770e8400-e29b-41d4-a716-446655440000',

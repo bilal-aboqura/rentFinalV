@@ -69,6 +69,17 @@ describe('getRoutePriceAction', () => {
     }
   });
 
+  it('should reject invalid route lookup IDs before querying Supabase', async () => {
+    const response = await getRoutePriceAction(
+      'not-a-uuid',
+      '660e8400-e29b-41d4-a716-446655440000'
+    );
+
+    expect(response.success).toBe(false);
+    expect(response.validationErrors?.pickupId).toContain('Invalid pickup location ID format');
+    expect(mockMaybeSingle).not.toHaveBeenCalled();
+  });
+
   it('should return error when Supabase select fails', async () => {
     mockMaybeSingle.mockResolvedValue({
       data: null,

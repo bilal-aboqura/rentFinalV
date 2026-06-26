@@ -68,6 +68,19 @@ describe('fetchRoutePricesAction', () => {
     }
   });
 
+  it('should clamp invalid page and limit inputs before querying Supabase', async () => {
+    mockRange.mockResolvedValue({
+      data: [],
+      error: null,
+      count: 0,
+    });
+
+    const response = await fetchRoutePricesAction({ page: 0, limit: 0 });
+
+    expect(response.success).toBe(true);
+    expect(mockRange).toHaveBeenCalledWith(0, 9);
+  });
+
   it('should return error status when Supabase fetch fails', async () => {
     mockRange.mockResolvedValue({
       data: null,

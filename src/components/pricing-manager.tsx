@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { CreateRoutePriceInput, RoutePrice, Location, UpdateRoutePriceInput } from '@/types';
 import PricingForm from './pricing-form';
 import { deleteRoutePriceAction, createRoutePriceAction, updateRoutePriceAction } from '@/app/admin/pricing/actions';
-import { Trash2, Edit, Plus, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Edit, Plus, AlertCircle, ChevronLeft, ChevronRight, BadgeDollarSign } from 'lucide-react';
 
 interface PricingManagerProps {
   initialRoutePrices: RoutePrice[];
@@ -13,6 +13,7 @@ interface PricingManagerProps {
   activeLocations: Location[];
   currentPage: number;
   limit: number;
+  loadError?: string;
 }
 
 export default function PricingManager({
@@ -21,6 +22,7 @@ export default function PricingManager({
   activeLocations,
   currentPage,
   limit,
+  loadError,
 }: PricingManagerProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -32,6 +34,7 @@ export default function PricingManager({
   const [successMessage, setSuccessMessage] = useState('');
 
   const totalPages = Math.ceil(totalCount / limit) || 1;
+  const canCreatePricing = activeLocations.length >= 2;
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
@@ -41,6 +44,10 @@ export default function PricingManager({
   };
 
   const handleOpenAdd = () => {
+    if (!canCreatePricing) {
+      setErrorMessage('At least two active locations are required before adding route pricing.');
+      return;
+    }
     setEditingRule(null);
     setIsFormOpen(true);
   };
@@ -69,12 +76,9 @@ export default function PricingManager({
     setErrorMessage('');
     setSuccessMessage('');
 
-    let res;
-    if (editingRule) {
-      res = await updateRoutePriceAction({ id: editingRule.id, ...formData } as UpdateRoutePriceInput);
-    } else {
-      res = await createRoutePriceAction(formData as CreateRoutePriceInput);
-    }
+    const res = editingRule
+      ? await updateRoutePriceAction({ id: editingRule.id, ...formData } as UpdateRoutePriceInput)
+      : await createRoutePriceAction(formData as CreateRoutePriceInput);
 
     if (res.success) {
       setSuccessMessage(
@@ -82,15 +86,17 @@ export default function PricingManager({
           ? 'Pricing rule updated successfully.'
           : 'Pricing rule created successfully.'
       );
+      setIsFormOpen(false);
+      setEditingRule(null);
       router.refresh();
       return { success: true };
-    } else {
-      return {
-        success: false,
-        error: res.error,
-        validationErrors: res.validationErrors,
-      };
     }
+
+    return {
+      success: false,
+      error: res.error,
+      validationErrors: res.validationErrors,
+    };
   };
 
   // Helper to determine if a location mapped in a pricing rule is inactive
@@ -103,6 +109,12 @@ export default function PricingManager({
   return (
     <div className="space-y-6">
       {/* Alert Banners */}
+      {loadError && (
+        <div className="p-4 bg-amber-950/40 border border-amber-900 text-amber-200 rounded-xl text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+          <span>{loadError}</span>
+        </div>
+      )}
       {errorMessage && (
         <div className="p-4 bg-red-950/50 border border-red-900 text-red-200 rounded-xl text-sm flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
@@ -117,16 +129,20 @@ export default function PricingManager({
       )}
 
       {/* Action Header */}
-      <div className="flex justify-between items-center bg-slate-900/40 border border-slate-800/80 p-6 rounded-2xl backdrop-blur-md">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center bg-slate-900/40 border border-slate-800/80 p-6 rounded-2xl backdrop-blur-md">
         <div>
-          <h2 className="text-xl font-semibold text-white">Route Pricing Matrix</h2>
+          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+            <BadgeDollarSign className="w-5 h-5 text-blue-400" />
+            Route Pricing Matrix
+          </h2>
           <p className="text-slate-400 text-sm mt-1">
             Configure flat-rate pricing rules for trips between active locations.
           </p>
         </div>
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm px-5 py-3 rounded-xl transition-all shadow-lg shadow-blue-950/30 active:scale-95 cursor-pointer"
+          disabled={!canCreatePricing}
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm px-5 py-3 rounded-xl transition-all shadow-lg shadow-blue-950/30 active:scale-95 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
           <span>Add Route Price</span>
@@ -199,14 +215,14 @@ export default function PricingManager({
                           <button
                             onClick={() => handleOpenEdit(rule)}
                             title="Edit Price"
-                            className="p-2 bg-slate-800/80 hover:bg-slate-750 border border-slate-700 text-slate-300 hover:text-white rounded-lg transition-all"
+                            className="p-2 bg-slate-800/80 hover:bg-slate-750 border border-slate-700 text-slate-300 hover:text-white rounded-lg transition-all cursor-pointer"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(rule.id)}
                             title="Delete Route"
-                            className="p-2 bg-red-950/20 hover:bg-red-950/50 border border-red-900/30 hover:border-red-900/60 text-red-400 hover:text-red-300 rounded-lg transition-all"
+                            className="p-2 bg-red-950/20 hover:bg-red-950/50 border border-red-900/30 hover:border-red-900/60 text-red-400 hover:text-red-300 rounded-lg transition-all cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

@@ -39,6 +39,17 @@ describe('Driver validation schemas', () => {
       }
     });
 
+    it('should reject names that are too short after trimming', () => {
+      const result = CreateDriverSchema.safeParse({
+        name: ' A ',
+        phone: '1234567890',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain('at least 2 characters');
+      }
+    });
+
     it('should reject names that are too long', () => {
       const result = CreateDriverSchema.safeParse({
         name: 'A'.repeat(101),
@@ -58,6 +69,28 @@ describe('Driver validation schemas', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues[0].message).toContain('at least 10 characters');
+      }
+    });
+
+    it('should reject phone numbers without at least 10 normalized digits', () => {
+      const result = CreateDriverSchema.safeParse({
+        name: 'John Doe',
+        phone: '(((((((((((',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain('at least 10 characters');
+      }
+    });
+
+    it('should reject phone numbers with invalid characters after normalization', () => {
+      const result = CreateDriverSchema.safeParse({
+        name: 'John Doe',
+        phone: '+15551234abc',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain('digits and an optional leading +');
       }
     });
 

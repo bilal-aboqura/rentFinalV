@@ -185,13 +185,28 @@ export async function deleteDriverAction(
 ): Promise<ServerActionResponse<{ id: string }>> {
   try {
     const supabase = await createClient();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('drivers')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .select('id')
+      .single();
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        return {
+          success: false,
+          error: 'Failed to delete driver. It may have already been removed or does not exist.',
+        };
+      }
       return { success: false, error: error.message };
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: 'Failed to delete driver. It may have already been removed or does not exist.',
+      };
     }
 
     return {
