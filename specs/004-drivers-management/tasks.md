@@ -25,8 +25,8 @@
 
 **Purpose**: Project initialization and database seeding
 
-- [ ] T001 Run the PostgreSQL DDL Script defined in data-model.md to create the drivers table and check constraints in the Supabase SQL editor
-- [ ] T002 Create the validation schema file at src/lib/validation/driver.ts
+- [X] T001 Run the PostgreSQL DDL Script defined in data-model.md to create the drivers table and check constraints in the Supabase SQL editor
+- [X] T002 Create the validation schema file at src/lib/validation/driver.ts
 
 ---
 
@@ -36,8 +36,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Write Vitest unit tests in tests/unit/driver.test.ts to validate CreateDriverSchema and UpdateDriverSchema, name length constraints, phone normalization, and availability status constraints
-- [ ] T004 Implement CreateDriverSchema and UpdateDriverSchema in src/lib/validation/driver.ts to make the tests in tests/unit/driver.test.ts pass
+- [X] T003 Write Vitest unit tests in tests/unit/driver.test.ts to validate CreateDriverSchema and UpdateDriverSchema, name length constraints, phone normalization, and availability status constraints
+- [X] T004 Implement CreateDriverSchema and UpdateDriverSchema in src/lib/validation/driver.ts to make the tests in tests/unit/driver.test.ts pass
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -53,12 +53,12 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T005 [P] [US1] Write unit tests in tests/unit/driver-fetch.test.ts for database fetching, search filtering (case-insensitive name/phone), and pagination options
+- [X] T005 [P] [US1] Write unit tests in tests/unit/driver-fetch.test.ts for database fetching, search filtering (case-insensitive name/phone), and pagination options
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Create the Server Component page at src/app/admin/drivers/page.tsx to fetch drivers from Supabase, applying search query parameters and limit/offset pagination parameters
-- [ ] T007 [P] [US1] Build the UI components (search input, paginated table list, and colored status badges) using Tailwind CSS inside src/app/admin/drivers/page.tsx
+- [X] T006 [US1] Create the Server Component page at src/app/admin/drivers/page.tsx to fetch drivers from Supabase, applying search query parameters and limit/offset pagination parameters
+- [X] T007 [P] [US1] Build the UI components (search input, paginated table list, and colored status badges) using Tailwind CSS inside src/app/admin/drivers/page.tsx
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently (MVP ready!)
 
@@ -72,13 +72,13 @@
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
 
-- [ ] T008 [P] [US2] Write unit tests in tests/unit/driver-create.test.ts to verify createDriverAction server action input validation and uniqueness error parsing
+- [X] T008 [P] [US2] Write unit tests in tests/unit/driver-create.test.ts to verify createDriverAction server action input validation and uniqueness error parsing
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Implement the Server Action createDriverAction in src/app/admin/drivers/actions.ts to validate inputs with CreateDriverSchema, insert records into Supabase, catch PostgreSQL unique constraint violations, and return structured error messages
-- [ ] T010 [P] [US2] Create the Client Component form at src/components/driver-form.tsx to handle field states, client-side validation, loading states, and displaying server validation errors
-- [ ] T011 [US2] Integrate the Add Driver modal and form trigger button into src/app/admin/drivers/page.tsx
+- [X] T009 [US2] Implement the Server Action createDriverAction in src/app/admin/drivers/actions.ts to validate inputs with CreateDriverSchema, insert records into Supabase, catch PostgreSQL unique constraint violations, and return structured error messages
+- [X] T010 [P] [US2] Create the Client Component form at src/components/driver-form.tsx to handle field states, client-side validation, loading states, and displaying server validation errors
+- [X] T011 [US2] Integrate the Add Driver modal and form trigger button into src/app/admin/drivers/page.tsx
 
 **Checkpoint**: At this point, User Stories 1 and 2 should both work independently
 
@@ -92,13 +92,13 @@
 
 ### Tests for User Story 3 (MANDATORY) ⚠️
 
-- [ ] T012 [P] [US3] Write unit tests in tests/unit/driver-update.test.ts to verify updateDriverAction server action updates, validations, and database constraints
+- [X] T012 [P] [US3] Write unit tests in tests/unit/driver-update.test.ts to verify updateDriverAction server action updates, validations, and database constraints
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Implement the Server Action updateDriverAction in src/app/admin/drivers/actions.ts to validate inputs with UpdateDriverSchema, update database records, and return structured success/error responses
-- [ ] T014 [US3] Update the driver-form.tsx component at src/components/driver-form.tsx to support edit mode (pre-populating values, switching submit target to updateDriverAction)
-- [ ] T015 [US3] Add the Edit modal trigger in the action columns of the drivers table at src/app/admin/drivers/page.tsx
+- [X] T013 [US3] Implement the Server Action updateDriverAction in src/app/admin/drivers/actions.ts to validate inputs with UpdateDriverSchema, update database records, and return structured success/error responses
+- [X] T014 [US3] Update the driver-form.tsx component at src/components/driver-form.tsx to support edit mode (pre-populating values, switching submit target to updateDriverAction)
+- [X] T015 [US3] Add the Edit modal trigger in the action columns of the drivers table at src/app/admin/drivers/page.tsx
 
 **Checkpoint**: At this point, User Stories 1, 2, and 3 should all be fully functional
 
@@ -112,12 +112,12 @@
 
 ### Tests for User Story 4 (MANDATORY) ⚠️
 
-- [ ] T016 [P] [US4] Write unit tests in tests/unit/driver-delete.test.ts to verify deleteDriverAction server action behaves correctly under success and not found scenarios
+- [X] T016 [P] [US4] Write unit tests in tests/unit/driver-delete.test.ts to verify deleteDriverAction server action behaves correctly under success and not found scenarios
 
 ### Implementation for User Story 4
 
-- [ ] T017 [US4] Implement the Server Action deleteDriverAction in src/app/admin/drivers/actions.ts to delete a driver by ID and return success/error responses
-- [ ] T018 [US4] Add a delete action button with a confirmation dialog to each driver row in the table at src/app/admin/drivers/page.tsx
+- [X] T017 [US4] Implement the Server Action deleteDriverAction in src/app/admin/drivers/actions.ts to delete a driver by ID and return success/error responses
+- [X] T018 [US4] Add a delete action button with a confirmation dialog to each driver row in the table at src/app/admin/drivers/page.tsx
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -127,9 +127,9 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T019 [P] Run quickstart.md validation scenarios to perform manual verification of all features
-- [ ] T020 [P] Run the entire Vitest test suite via npm run test to verify all tests pass and check build correctness
-- [ ] T021 [P] Format files and resolve any TypeScript or ESLint compile warnings
+- [X] T019 [P] Run quickstart.md validation scenarios to perform manual verification of all features
+- [X] T020 [P] Run the entire Vitest test suite via npm run test to verify all tests pass and check build correctness
+- [X] T021 [P] Format files and resolve any TypeScript or ESLint compile warnings
 
 ---
 
