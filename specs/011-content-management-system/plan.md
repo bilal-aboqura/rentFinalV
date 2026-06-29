@@ -34,12 +34,12 @@ Implement a Content Management System (CMS) that allows administrators to manage
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [x] **Modular Design**: Code organized into Server Actions, hooks, UI components, and test files.
-- [x] **Strict TypeScript**: Full type safety for site settings and upload payloads. No `any`.
-- [x] **Secure Server Operations**: Supabase database queries and storage uploads run securely with RLS policies and explicit error handling.
-- [x] **Vitest Testing**: Unit/integration tests written with Vitest.
-- [x] **Tailwind CSS UI**: Admin panel styled strictly with responsive Tailwind CSS.
-- [x] **No WYSIWYG/CDNs**: Avoided heavy WYSIWYG editors and third-party CDNs to remain lightweight.
+- [ ] **Modular Design**: Code organized into Server Actions, hooks, UI components, and test files.
+- [ ] **Strict TypeScript**: Full type safety for site settings and upload payloads. No `any`.
+- [ ] **Secure Server Operations**: Supabase database queries and storage uploads run securely with RLS policies and explicit error handling.
+- [ ] **Vitest Testing**: Unit/integration tests written with Vitest.
+- [ ] **Tailwind CSS UI**: Admin panel styled strictly with responsive Tailwind CSS.
+- [ ] **No WYSIWYG/CDNs**: Avoided heavy WYSIWYG editors and third-party CDNs to remain lightweight.
 
 ## Project Structure
 
