@@ -20,7 +20,7 @@
 
 **Purpose**: Project initialization and environment configuration
 
-- [ ] T001 Configure and define the `ADMIN_EMAIL` environment variable in `.env.local`
+- [X] T001 Configure and define the `ADMIN_EMAIL` environment variable in `.env.local`
 
 ---
 
@@ -34,13 +34,13 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T002 [P] [US1] Write unit tests for `sendAdminNotificationEmail` helper in `tests/unit/smtp.test.ts`
-- [ ] T003 [P] [US1] Write unit tests for `submitBookingAction` admin email trigger in `tests/unit/booking-actions.test.ts`
+- [X] T002 [P] [US1] Write unit tests for `sendAdminNotificationEmail` helper in `tests/unit/smtp.test.ts`
+- [X] T003 [P] [US1] Write unit tests for `submitBookingAction` admin email trigger in `tests/unit/booking-actions.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [P] [US1] Implement `sendAdminNotificationEmail` helper function in `src/lib/mail/smtp.ts`
-- [ ] T005 [US1] Modify `submitBookingAction` Server Action to invoke email helper in `src/app/actions/booking.ts` (depends on T004)
+- [X] T004 [P] [US1] Implement `sendAdminNotificationEmail` helper function in `src/lib/mail/smtp.ts`
+- [X] T005 [US1] Modify `submitBookingAction` Server Action to invoke email helper in `src/app/actions/booking.ts` (depends on T004)
 
 **Checkpoint**: User Story 1 is fully functional and can be tested independently.
 
@@ -56,16 +56,16 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T006 [P] [US2] Write unit tests for `getPendingBookingsCount` Server Action in `tests/unit/booking-actions.test.ts`
+- [X] T006 [P] [US2] Write unit tests for `getPendingBookingsCount` Server Action in `tests/unit/booking-actions.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T007 [P] [US2] Implement `getPendingBookingsCount` Server Action in `src/app/admin/bookings/actions.ts`
-- [ ] T008 [P] [US2] Create reusable `AdminNavbar` React Server Component in `src/components/admin-navbar.tsx` (depends on T007)
-- [ ] T009 [US2] Update Admin Locations page to use `AdminNavbar` in `src/app/admin/locations/page.tsx` (depends on T008)
-- [ ] T010 [US2] Update Admin Pricing page to use `AdminNavbar` in `src/app/admin/pricing/page.tsx` (depends on T008)
-- [ ] T011 [US2] Update Admin Drivers page to use `AdminNavbar` in `src/app/admin/drivers/page.tsx` (depends on T008)
-- [ ] T012 [US2] Update Admin Bookings page to use `AdminNavbar` in `src/app/admin/bookings/page.tsx` (depends on T008)
+- [X] T007 [P] [US2] Implement `getPendingBookingsCount` Server Action in `src/app/admin/bookings/actions.ts`
+- [X] T008 [P] [US2] Create reusable `AdminNavbar` React Server Component in `src/components/admin-navbar.tsx` (depends on T007)
+- [X] T009 [US2] Update Admin Locations page to use `AdminNavbar` in `src/app/admin/locations/page.tsx` (depends on T008)
+- [X] T010 [US2] Update Admin Pricing page to use `AdminNavbar` in `src/app/admin/pricing/page.tsx` (depends on T008)
+- [X] T011 [US2] Update Admin Drivers page to use `AdminNavbar` in `src/app/admin/drivers/page.tsx` (depends on T008)
+- [X] T012 [US2] Update Admin Bookings page to use `AdminNavbar` in `src/app/admin/bookings/page.tsx` (depends on T008)
 
 **Checkpoint**: User Story 2 is fully functional, and the dashboard count badge is active across all admin views.
 
@@ -75,7 +75,7 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T013 Verify system build and execute complete test suite using `npm run build` and `npx vitest run`
+- [X] T013 Verify system build and execute complete test suite using `npm run build` and `npx vitest run`
 - [ ] T014 Run `quickstart.md` validation scenarios to manually verify email sending and badge updates in the browser
 
 ---

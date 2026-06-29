@@ -142,3 +142,104 @@ export async function sendBookingConfirmationEmail(
     console.error('[smtp] Failed to send booking confirmation email:', error);
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// T004 [US1] — Send admin "New Booking Request" notification email
+// Spec: specs/008-new-request-alert/contracts/alert-contracts.md
+// ─────────────────────────────────────────────────────────────
+
+export interface AdminNotificationPayload {
+  reference: string;
+  pickupName: string;
+  destinationName: string;
+  date: string;   // YYYY-MM-DD
+  time: string;   // HH:mm
+  customerName: string;
+  adminEmail: string;
+}
+
+/**
+ * Dispatches a "New Booking Request" alert email to the administrator
+ * whenever a customer submits a new booking.
+ *
+ * Formats both a plain-text and an HTML template containing the booking
+ * details and a deep link to the admin bookings panel.
+ *
+ * Failures are intentionally non-fatal: errors are caught, logged, and
+ * `null` is returned so the customer checkout flow is never interrupted.
+ */
+export async function sendAdminNotificationEmail(
+  params: AdminNotificationPayload
+): Promise<null> {
+  const {
+    reference,
+    pickupName,
+    destinationName,
+    date,
+    time,
+    customerName,
+    adminEmail,
+  } = params;
+
+  const adminUrl = `/admin/bookings?ref=${reference}`;
+  const subject = `New Booking Request — ${reference}`;
+
+  const text = [
+    'New Booking Request',
+    '',
+    `Reference: ${reference}`,
+    `Customer:  ${customerName}`,
+    `Route:     ${pickupName} → ${destinationName}`,
+    `Date:      ${date} at ${time}`,
+    '',
+    `Review it in the admin panel: ${adminUrl}`,
+  ].join('\n');
+
+  try {
+    await transporter.sendMail({
+      from: `"AirTransfer" <${process.env.SMTP_FROM ?? 'noreply@airtransfer.com'}>`,
+      to: adminEmail,
+      subject,
+      text,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc;">
+          <div style="background: linear-gradient(135deg, #b91c1c, #dc2626); padding: 32px 24px; border-radius: 12px 12px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">New Booking Request</h1>
+            <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0;">A customer has submitted a new transfer request.</p>
+          </div>
+
+          <div style="background: white; padding: 32px 24px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+            <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+              <tr style="background: #f1f5f9;">
+                <td style="padding: 12px 16px; font-weight: 600; color: #475569; width: 40%;">Reference</td>
+                <td style="padding: 12px 16px; color: #1e293b; font-family: monospace; font-size: 13px;">${reference}</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px; font-weight: 600; color: #475569; border-top: 1px solid #e2e8f0;">Customer</td>
+                <td style="padding: 12px 16px; color: #1e293b; border-top: 1px solid #e2e8f0;">${customerName}</td>
+              </tr>
+              <tr style="background: #f8fafc;">
+                <td style="padding: 12px 16px; font-weight: 600; color: #475569; border-top: 1px solid #e2e8f0;">Route</td>
+                <td style="padding: 12px 16px; color: #1e293b; border-top: 1px solid #e2e8f0;">${pickupName} &rarr; ${destinationName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px; font-weight: 600; color: #475569; border-top: 1px solid #e2e8f0;">Date &amp; Time</td>
+                <td style="padding: 12px 16px; color: #1e293b; border-top: 1px solid #e2e8f0;">${date} at ${time}</td>
+              </tr>
+            </table>
+
+            <div style="text-align: center; margin-top: 8px;">
+              <a href="${adminUrl}" style="display: inline-block; background: #4f46e5; color: white; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 8px;">View Booking in Admin Panel</a>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+  } catch (error) {
+    // Non-fatal: must not interrupt the guest checkout flow.
+    console.warn('[smtp] Failed to send admin notification email:', error);
+    return null;
+  }
+
+  return null;
+}

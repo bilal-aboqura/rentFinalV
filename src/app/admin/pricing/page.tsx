@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getRoutePricesAction } from './actions';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { PricingManager } from '@/components/pricing-manager';
+import AdminNavbar from '@/components/admin-navbar';
 
 export const metadata = {
   title: 'Pricing Management | Admin',
@@ -44,8 +45,11 @@ export default async function AdminPricingPage({
 
   if (!result.success) {
     return (
-      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-        <p className="text-red-400 text-sm">Failed to load pricing rules: {result.error}</p>
+      <div className="space-y-6">
+        <AdminNavbar activeTab="pricing" />
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+          <p className="text-red-400 text-sm">Failed to load pricing rules: {result.error}</p>
+        </div>
       </div>
     );
   }
@@ -54,13 +58,16 @@ export default async function AdminPricingPage({
   const locations = locationsData ?? [];
 
   return (
-    <PricingManager
-      initialPrices={prices}
-      initialTotal={total}
-      initialPage={page}
-      initialPageSize={pageSize}
-      initialTotalPages={totalPages}
-      locations={locations}
-    />
+    <div className="space-y-6">
+      <AdminNavbar activeTab="pricing" />
+      <PricingManager
+        initialPrices={prices}
+        initialTotal={total}
+        initialPage={page}
+        initialPageSize={pageSize}
+        initialTotalPages={totalPages}
+        locations={locations}
+      />
+    </div>
   );
 }

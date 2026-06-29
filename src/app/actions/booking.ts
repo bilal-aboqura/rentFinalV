@@ -17,7 +17,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { SubmitBookingSchema } from '@/lib/validation/booking';
-import { sendBookingConfirmationEmail } from '@/lib/mail/smtp';
+import { sendBookingConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail/smtp';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -167,7 +167,9 @@ export async function validateBookingScheduleAction(
 /**
  * Validates the full booking payload, verifies the route price against the
  * database (tamper prevention), inserts the booking record, dispatches a
- * transactional confirmation email, and returns the booking reference UUID.
+ * transactional confirmation email to the passenger, dispatches a "New Booking
+ * Request" alert to the configured ADMIN_EMAIL, and returns the booking
+ * reference UUID.
  *
  * Price verification: The client-submitted price is compared against the
  * server-side pricing matrix. If it differs by more than $0.01, the action
@@ -285,6 +287,21 @@ export async function submitBookingAction(
       flightNumber: flightNumber ?? null,
       notes: notes ?? null,
     });
+
+    // ── Step 6: Dispatch admin "New Booking Request" alert (non-fatal) ──
+    // Spec 008 (F-08): notify the administrator of a new pending request.
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (adminEmail) {
+      void sendAdminNotificationEmail({
+        reference: bookingReference,
+        pickupName,
+        destinationName: destName,
+        date,
+        time,
+        customerName,
+        adminEmail,
+      });
+    }
 
     return { success: true, data: { bookingReference } };
   } catch (error) {

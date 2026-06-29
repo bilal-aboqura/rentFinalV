@@ -233,3 +233,37 @@ export async function fetchActiveDriversAction(): Promise<
 
   return { success: true, data: (data ?? []) as ActiveDriverOption[] };
 }
+
+// ----------------------------------------------------------------
+// Spec 008 / US2 — Pending bookings count (T007)
+// Contract: specs/008-new-request-alert/contracts/alert-contracts.md
+// ----------------------------------------------------------------
+
+/**
+ * Returns the total number of bookings currently in the 'Pending' state.
+ * Uses a head-only exact count query for high performance (no rows fetched).
+ * Rendered as a badge in the shared AdminNavbar.
+ */
+export async function getPendingBookingsCount(): Promise<
+  ServerActionResponse<{ count: number }>
+> {
+  const session = await getAdminClient();
+  if (!session.authorized) {
+    return unauthorized();
+  }
+  const { supabase } = session;
+
+  const { count, error } = await supabase
+    .from('bookings')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'Pending');
+
+  if (error) {
+    return {
+      success: false,
+      error: `Failed to retrieve pending booking count: ${error.message}`,
+    };
+  }
+
+  return { success: true, data: { count: count ?? 0 } };
+}

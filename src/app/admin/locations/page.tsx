@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getLocationsData } from './data';
 import { LocationsManager } from '@/components/locations-manager';
+import AdminNavbar from '@/components/admin-navbar';
 
 interface LocationsPageProps {
   searchParams: Promise<{ search?: string; page?: string }>;
@@ -34,8 +35,11 @@ export default async function AdminLocationsPage({ searchParams }: LocationsPage
 
   if (!result.success) {
     return (
-      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-        <p className="text-red-400 text-sm">Failed to load locations: {result.error}</p>
+      <div className="space-y-6">
+        <AdminNavbar activeTab="locations" />
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+          <p className="text-red-400 text-sm">Failed to load locations: {result.error}</p>
+        </div>
       </div>
     );
   }
@@ -43,15 +47,18 @@ export default async function AdminLocationsPage({ searchParams }: LocationsPage
   const { locations, total, totalPages } = result.data;
 
   return (
-    <Suspense fallback={<div className="text-slate-500 text-sm">Loading...</div>}>
-      <LocationsManager
-        initialLocations={locations}
-        initialTotal={total}
-        initialPage={page}
-        initialPageSize={pageSize}
-        initialTotalPages={totalPages}
-        initialSearch={search}
-      />
-    </Suspense>
+    <div className="space-y-6">
+      <AdminNavbar activeTab="locations" />
+      <Suspense fallback={<div className="text-slate-500 text-sm">Loading...</div>}>
+        <LocationsManager
+          initialLocations={locations}
+          initialTotal={total}
+          initialPage={page}
+          initialPageSize={pageSize}
+          initialTotalPages={totalPages}
+          initialSearch={search}
+        />
+      </Suspense>
+    </div>
   );
 }

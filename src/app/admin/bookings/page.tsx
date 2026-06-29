@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import BookingsManager from '@/components/bookings-manager';
+import AdminNavbar from '@/components/admin-navbar';
 import { fetchBookingsAction, fetchActiveDriversAction } from './actions';
 import type { BookingStatusFilter } from '@/lib/validation/booking';
 import { BOOKING_STATUS_FILTERS } from '@/lib/validation/booking';
@@ -47,30 +48,33 @@ export default async function BookingsPage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-bold">Bookings</h1>
-            <p className="text-slate-400 text-sm mt-1">
-              View, filter, and manage customer booking requests
-            </p>
-          </div>
-          <a
-            href="/admin/dashboard/bookings"
-            className="text-xs text-slate-500 hover:text-slate-300 transition-colors self-start sm:self-auto"
-          >
-            ← Legacy dashboard
-          </a>
-        </header>
+      <div className="mx-auto max-w-6xl">
+        <AdminNavbar activeTab="bookings" />
+        <div className="space-y-6">
+          <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h1 className="text-2xl font-bold">Bookings</h1>
+              <p className="text-slate-400 text-sm mt-1">
+                View, filter, and manage customer booking requests
+              </p>
+            </div>
+            <a
+              href="/admin/dashboard/bookings"
+              className="text-xs text-slate-500 hover:text-slate-300 transition-colors self-start sm:self-auto"
+            >
+              ← Legacy dashboard
+            </a>
+          </header>
 
-        <BookingsManager
-          bookings={bookings}
-          totalCount={totalCount}
-          page={page}
-          totalPages={totalPages}
-          statusFilter={statusFilter}
-          activeDrivers={activeDrivers}
-        />
+          <BookingsManager
+            bookings={bookings}
+            totalCount={totalCount}
+            page={page}
+            totalPages={totalPages}
+            statusFilter={statusFilter}
+            activeDrivers={activeDrivers}
+          />
+        </div>
       </div>
     </div>
   );
