@@ -1,29 +1,37 @@
 import Link from 'next/link';
 import { getPendingBookingsCount } from '@/app/admin/bookings/actions';
+import { getUnreadInquiriesCount } from '@/app/admin/inquiries/actions';
 
 /**
  * Spec 008 (F-08) — AdminNavbar (T008 / US2)
+ * Spec 010 (F-10) — Inquiries tab + unread badge (US4)
  *
  * Reusable React Server Component rendered across every admin page.
- * Fetches the current count of pending bookings and renders a badge
- * next to the "Bookings" link so administrators can see new requests
- * at a glance.
+ * Fetches the current counts of pending bookings and unread inquiries and
+ * renders a badge next to the respective links so administrators can see
+ * new requests at a glance.
  *
  * Spec: specs/008-new-request-alert/research.md#3
+ *       specs/010-contact-inquiries/research.md#4
  */
 
-export type AdminTab = 'bookings' | 'locations' | 'pricing' | 'drivers';
+export type AdminTab = 'bookings' | 'inquiries' | 'locations' | 'pricing' | 'drivers';
 
 const TABS: { key: AdminTab; label: string; href: string }[] = [
   { key: 'bookings', label: 'Bookings', href: '/admin/bookings' },
+  { key: 'inquiries', label: 'Inquiries', href: '/admin/inquiries' },
   { key: 'locations', label: 'Locations', href: '/admin/locations' },
   { key: 'pricing', label: 'Pricing', href: '/admin/pricing' },
   { key: 'drivers', label: 'Drivers', href: '/admin/drivers' },
 ];
 
 export default async function AdminNavbar({ activeTab }: { activeTab: AdminTab }) {
-  const result = await getPendingBookingsCount();
-  const pendingCount = result.success ? result.data.count : 0;
+  const [bookingsResult, inquiriesResult] = await Promise.all([
+    getPendingBookingsCount(),
+    getUnreadInquiriesCount(),
+  ]);
+  const pendingCount = bookingsResult.success ? bookingsResult.data.count : 0;
+  const unreadCount = inquiriesResult.success ? inquiriesResult.data.count : 0;
 
   return (
     <nav
@@ -54,6 +62,18 @@ export default async function AdminNavbar({ activeTab }: { activeTab: AdminTab }
                 }`}
               >
                 {pendingCount}
+              </span>
+            )}
+            {tab.key === 'inquiries' && (
+              <span
+                title={`${unreadCount} unread inquir${unreadCount === 1 ? 'y' : 'ies'}`}
+                className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold ${
+                  unreadCount > 0
+                    ? 'bg-red-500 text-white'
+                    : 'bg-slate-700 text-slate-400'
+                }`}
+              >
+                {unreadCount}
               </span>
             )}
           </Link>

@@ -20,7 +20,7 @@
 
 **Purpose**: Database schema creation and migration execution.
 
-- [ ] T001 Create database schema migration SQL script in supabase/migrations/20260626000002_create_contact_inquiries.sql
+- [X] T001 Create database schema migration SQL script in supabase/migrations/20260626000002_create_contact_inquiries.sql
 - [ ] T002 Apply database migration to local/Supabase instance
 
 ---
@@ -29,8 +29,8 @@
 
 **Purpose**: Common validation rules and types used across public and admin sections.
 
-- [ ] T003 Write failing Zod validation schema unit tests in tests/unit/contact-validation.test.ts
-- [ ] T004 Create Zod validation schema in src/lib/validation/contact.ts and verify tests pass
+- [X] T003 Write failing Zod validation schema unit tests in tests/unit/contact-validation.test.ts
+- [X] T004 Create Zod validation schema in src/lib/validation/contact.ts and verify tests pass
 
 ---
 
@@ -42,14 +42,14 @@
 
 ### Tests for User Story 1 (MANDATORY) ⚠️
 
-- [ ] T005 [P] [US1] Write failing unit tests for submitContactForm server action in tests/unit/contact-actions.test.ts
+- [X] T005 [P] [US1] Write failing unit tests for submitContactForm server action in tests/unit/contact-actions.test.ts
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Implement submitContactForm Server Action in src/app/actions/contact.ts
-- [ ] T007 [US1] Verify submitContactForm unit tests pass by running npx vitest
-- [ ] T008 [P] [US1] Create the responsive public contact form page UI in src/app/contact/page.tsx
-- [ ] T009 [US1] Integrate submitContactForm Action with the contact form client component in src/app/contact/page.tsx
+- [X] T006 [US1] Implement submitContactForm Server Action in src/app/actions/contact.ts
+- [X] T007 [US1] Verify submitContactForm unit tests pass by running npx vitest
+- [X] T008 [P] [US1] Create the responsive public contact form page UI in src/app/contact/page.tsx
+- [X] T009 [US1] Integrate submitContactForm Action with the contact form client component in src/app/contact/page.tsx
 
 **Checkpoint**: At this point, User Story 1 (customer UI and persistence) is fully functional and testable.
 
@@ -63,13 +63,13 @@
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
 
-- [ ] T010 [P] [US2] Write failing unit tests for fetchInquiriesAction server action in tests/unit/contact-actions.test.ts
+- [X] T010 [P] [US2] Write failing unit tests for fetchInquiriesAction server action in tests/unit/contact-actions.test.ts
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Implement fetchInquiriesAction Server Action in src/app/admin/inquiries/actions.ts
-- [ ] T012 [US2] Verify fetchInquiriesAction unit tests pass
-- [ ] T013 [US2] Create admin inquiries dashboard page UI with pagination in src/app/admin/inquiries/page.tsx
+- [X] T011 [US2] Implement fetchInquiriesAction Server Action in src/app/admin/inquiries/actions.ts
+- [X] T012 [US2] Verify fetchInquiriesAction unit tests pass
+- [X] T013 [US2] Create admin inquiries dashboard page UI with pagination in src/app/admin/inquiries/page.tsx
 
 **Checkpoint**: At this point, the admin inquiries table and page routing are functional.
 
@@ -83,14 +83,14 @@
 
 ### Tests for User Story 3 (MANDATORY) ⚠️
 
-- [ ] T014 [P] [US3] Write failing unit tests for updateInquiryStatusAction server action in tests/unit/contact-actions.test.ts
+- [X] T014 [P] [US3] Write failing unit tests for updateInquiryStatusAction server action in tests/unit/contact-actions.test.ts
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Implement updateInquiryStatusAction Server Action in src/app/admin/inquiries/actions.ts
-- [ ] T016 [US3] Verify updateInquiryStatusAction unit tests pass
-- [ ] T017 [US3] Create details modal and status dropdown UI in src/app/admin/inquiries/page.tsx
-- [ ] T018 [US3] Integrate details modal and status actions with the table view in src/app/admin/inquiries/page.tsx
+- [X] T015 [US3] Implement updateInquiryStatusAction Server Action in src/app/admin/inquiries/actions.ts
+- [X] T016 [US3] Verify updateInquiryStatusAction unit tests pass
+- [X] T017 [US3] Create details modal and status dropdown UI in src/app/admin/inquiries/page.tsx
+- [X] T018 [US3] Integrate details modal and status actions with the table view in src/app/admin/inquiries/page.tsx
 
 **Checkpoint**: Admin details modal and status management are fully functional.
 
@@ -104,13 +104,13 @@
 
 ### Tests for User Story 4 (MANDATORY) ⚠️
 
-- [ ] T019 [P] [US4] Write failing unit tests for getUnreadInquiriesCount server action in tests/unit/contact-actions.test.ts
+- [X] T019 [P] [US4] Write failing unit tests for getUnreadInquiriesCount server action in tests/unit/contact-actions.test.ts
 
 ### Implementation for User Story 4
 
-- [ ] T020 [US4] Implement getUnreadInquiriesCount Server Action in src/app/admin/inquiries/actions.ts
-- [ ] T021 [US4] Verify getUnreadInquiriesCount unit tests pass
-- [ ] T022 [US4] Update AdminNavbar component in src/components/admin-navbar.tsx to fetch and display the badge count
+- [X] T020 [US4] Implement getUnreadInquiriesCount Server Action in src/app/admin/inquiries/actions.ts
+- [X] T021 [US4] Verify getUnreadInquiriesCount unit tests pass
+- [X] T022 [US4] Update AdminNavbar component in src/components/admin-navbar.tsx to fetch and display the badge count
 
 **Checkpoint**: The unread inquiries badge is fully integrated into the global admin navigation.
 
@@ -120,9 +120,9 @@
 
 **Purpose**: General cleanup, full test coverage validation, and manual verification.
 
-- [ ] T023 Run Vitest test suite to ensure all unit tests (locations, pricing, drivers, bookings, contacts) pass
+- [X] T023 Run Vitest test suite to ensure all unit tests (locations, pricing, drivers, bookings, contacts) pass
 - [ ] T024 Manually verify all contact scenarios on localhost per quickstart.md
-- [ ] T025 Run ESLint and TypeScript compiler type-check to verify build readiness
+- [X] T025 Run ESLint and TypeScript compiler type-check to verify build readiness
 
 ---
 

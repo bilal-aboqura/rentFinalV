@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server';
 import {
   createBookingSchema,
-  contactSchema,
   formatZodErrors,
 } from '@/lib/validation/schema';
 import type {
@@ -145,34 +144,6 @@ export async function createBookingAction(
 
 // ----------------------------------------------------------------
 // T016: Guest contact message submission
+// Moved to specs/010-contact-inquiries: src/app/actions/contact.ts
+// (submitContactForm) — persisted to the dedicated contact_inquiries table.
 // ----------------------------------------------------------------
-export async function submitContactAction(
-  input: unknown
-): Promise<ServerActionResponse<{ success: boolean }>> {
-  const parsed = contactSchema.safeParse(input);
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: 'Validation failed.',
-      validationErrors: formatZodErrors(parsed.error),
-    };
-  }
-
-  const { name, email, message } = parsed.data;
-
-  const supabase = await createClient();
-
-  // Store contact message as a notification log
-  const { error } = await supabase.from('notifications').insert({
-    message: `Contact form: [${name} <${email}>] ${message}`,
-    type: 'admin_new_booking',
-    recipient_email: email,
-    read_status: false,
-  });
-
-  if (error) {
-    return { success: false, error: 'Failed to submit your message. Please try again.' };
-  }
-
-  return { success: true, data: { success: true } };
-}
