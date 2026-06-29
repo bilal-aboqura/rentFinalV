@@ -1,14 +1,24 @@
 /**
- * T019 [US5] - Customer-facing Booking Wizard with grouped active location dropdowns.
- * Groups active locations by type: Cities, Airports, Pickup Points.
- * Uses <optgroup> for semantic grouping.
+ * T017 — Booking Wizard Parent Orchestrator
+ *
+ * Manages multi-step booking flow state.
+ * Renders BookingWizardStep1 for Step 1 (Route & Time selection).
+ * Step 2 (Trip Details) will be implemented in spec 006.
+ *
+ * Also re-exports GroupedLocationSelect for use by other components.
  */
 'use client';
 
 import React, { useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, CheckCircle } from 'lucide-react';
 import type { GroupedLocations } from '@/lib/utils/groupLocations';
 import type { LocationRow } from '@/lib/validation/location';
+import { BookingWizardStep1 } from '@/components/booking-wizard-step1';
+import type { BookingStep1State } from '@/components/booking-wizard-step1';
+
+// ----------------------------------------------------------------
+// Re-exported: GroupedLocationSelect (for other consumers)
+// ----------------------------------------------------------------
 
 interface GroupedLocationSelectProps {
   id: string;
@@ -77,133 +87,106 @@ export function GroupedLocationSelect({
 }
 
 // ----------------------------------------------------------------
-// Booking Wizard Preview component (standalone demo for US5)
+// Booking Wizard — Parent multi-step orchestrator
 // ----------------------------------------------------------------
-interface BookingWizardProps {
-  groupedLocations: GroupedLocations;
-}
 
-type PriceState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'found'; price: number }
-  | { status: 'not_found' }
-  | { status: 'error' };
+type WizardStep = 1 | 2;
 
-export function BookingWizard({ groupedLocations }: BookingWizardProps) {
-  const [pickup, setPickup] = useState('');
-  const [destination, setDestination] = useState('');
-  const [priceState, setPriceState] = useState<PriceState>({ status: 'idle' });
+/**
+ * BookingWizard manages multi-step booking state.
+ * Step 1: Route & Time (BookingWizardStep1)
+ * Step 2: Trip Details (spec 006 — placeholder)
+ */
+export function BookingWizard() {
+  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+  const [step1State, setStep1State] = useState<BookingStep1State | null>(null);
 
-  // Fetch price whenever both locations are selected
-  const handlePickupChange = (value: string) => {
-    setPickup(value);
-    setPriceState({ status: 'idle' });
+  const handleStep1Next = (state: BookingStep1State) => {
+    setStep1State(state);
+    setCurrentStep(2);
   };
 
-  const handleDestinationChange = (value: string) => {
-    setDestination(value);
-    setPriceState({ status: 'idle' });
-  };
-
-  const fetchPrice = async () => {
-    if (!pickup || !destination) return;
-    setPriceState({ status: 'loading' });
-    try {
-      const { getRoutePriceAction } = await import('@/app/admin/pricing/actions');
-      const result = await getRoutePriceAction(pickup, destination);
-      if (result.success && result.data) {
-        setPriceState({ status: 'found', price: result.data.price });
-      } else {
-        setPriceState({ status: 'not_found' });
-      }
-    } catch {
-      setPriceState({ status: 'error' });
-    }
+  const handleBack = () => {
+    setCurrentStep(1);
   };
 
   return (
-    <div className="glass rounded-2xl border border-white/10 p-6 space-y-4" id="booking-wizard">
-      <h2 className="text-lg font-semibold text-white">Book Your Transfer</h2>
+    <div className="glass rounded-2xl overflow-hidden glow" id="booking-wizard">
+      {/* Step indicator */}
+      <div className="flex border-b border-white/10">
+        {(['Route & Time', 'Trip Details'] as const).map((label, idx) => {
+          const stepNum = (idx + 1) as WizardStep;
+          const isDone = currentStep > stepNum;
+          const isCurrent = currentStep === stepNum;
+          return (
+            <button
+              key={label}
+              id={`wizard-step-${stepNum}-tab`}
+              onClick={() => isDone && setCurrentStep(stepNum)}
+              className={`flex-1 py-4 text-sm font-medium transition-all ${
+                isCurrent
+                  ? 'text-indigo-400 border-b-2 border-indigo-500'
+                  : isDone
+                  ? 'text-emerald-400 cursor-pointer hover:text-emerald-300'
+                  : 'text-slate-500 cursor-default'
+              }`}
+            >
+              <span className="mr-2">
+                {isDone ? <CheckCircle className="inline w-4 h-4 mb-0.5" /> : stepNum}
+              </span>
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
-      <GroupedLocationSelect
-        id="pickup-location"
-        label="Pickup Location"
-        value={pickup}
-        onChange={handlePickupChange}
-        groupedLocations={groupedLocations}
-        excludeId={destination}
-        placeholder="Select pickup location..."
-      />
+      <div className="p-6 md:p-8">
+        {/* Step 1: Route & Time */}
+        {currentStep === 1 && <BookingWizardStep1 onNext={handleStep1Next} />}
 
-      <GroupedLocationSelect
-        id="destination-location"
-        label="Destination"
-        value={destination}
-        onChange={handleDestinationChange}
-        groupedLocations={groupedLocations}
-        excludeId={pickup}
-        placeholder="Select destination..."
-      />
+        {/* Step 2: Trip Details — placeholder for spec 006 */}
+        {currentStep === 2 && step1State && (
+          <div className="space-y-5" id="step2-placeholder">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-1">Trip Details</h3>
+              <p className="text-sm text-slate-400">
+                Step 2 (Trip Details) will be implemented in spec 006.
+              </p>
+            </div>
 
-      {/* Check Price button */}
-      {pickup && destination && priceState.status === 'idle' && (
-        <button
-          id="check-route-price-btn"
-          onClick={fetchPrice}
-          className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all"
-        >
-          Check Route Price
-        </button>
-      )}
+            {/* Summary of step 1 selections */}
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 space-y-2 text-sm">
+              <p className="text-slate-400 font-medium mb-3">Step 1 Summary</p>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Date</span>
+                <span className="text-white">{step1State.date}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Time</span>
+                <span className="text-white">{step1State.time}</span>
+              </div>
+              {step1State.price !== null && (
+                <div className="flex justify-between border-t border-slate-700 pt-2 mt-2">
+                  <span className="text-white font-semibold">Route Price</span>
+                  <span className="text-emerald-400 font-bold">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+                      step1State.price
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
 
-      {/* Loading */}
-      {priceState.status === 'loading' && (
-        <div className="p-3 rounded-xl bg-slate-800/50 border border-white/10" id="price-loading">
-          <p className="text-slate-400 text-sm animate-pulse">Looking up route price…</p>
-        </div>
-      )}
-
-      {/* Price found */}
-      {priceState.status === 'found' && (
-        <div
-          className="p-4 rounded-xl bg-green-500/10 border border-green-500/20"
-          id="price-found"
-        >
-          <p className="text-slate-400 text-xs mb-1">Estimated flat-rate price</p>
-          <p className="text-2xl font-bold text-green-400" id="route-price-display">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-              priceState.price
-            )}
-          </p>
-          <p className="text-slate-500 text-xs mt-1">Continue to select date and time.</p>
-        </div>
-      )}
-
-      {/* No price configured */}
-      {priceState.status === 'not_found' && (
-        <div
-          className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
-          id="price-not-found"
-        >
-          <p className="text-amber-300 text-sm">
-            Online pricing is not available for this route. Please{' '}
-            <a href="/contact" className="underline hover:text-amber-200">
-              contact us
-            </a>{' '}
-            for a custom quote.
-          </p>
-        </div>
-      )}
-
-      {/* Error */}
-      {priceState.status === 'error' && (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20" id="price-error">
-          <p className="text-red-300 text-sm">
-            Unable to retrieve pricing. Please try again or contact support.
-          </p>
-        </div>
-      )}
+            <button
+              id="step2-back-btn"
+              onClick={handleBack}
+              className="w-full bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-3 font-semibold transition-all"
+            >
+              ← Back to Route & Time
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

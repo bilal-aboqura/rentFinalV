@@ -20,8 +20,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize Vitest tests for the booking wizard component and state logic in tests/unit/booking.test.ts
-- [ ] T002 [P] Create initial Zod schemas file structure in src/lib/validation/booking.ts
+- [X] T001 Initialize Vitest tests for the booking wizard component and state logic in tests/unit/booking.test.ts
+- [X] T002 [P] Create initial Zod schemas file structure in src/lib/validation/booking.ts
 
 ---
 
@@ -31,8 +31,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 [P] Implement Zod schemas for Step 1 input validation in src/lib/validation/booking.ts
-- [ ] T004 [P] Implement timezone-safe same-day schedule validation helper function in src/app/actions/booking.ts
+- [X] T003 [P] Implement Zod schemas for Step 1 input validation in src/lib/validation/booking.ts
+- [X] T004 [P] Implement timezone-safe same-day schedule validation helper function in src/app/actions/booking.ts
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -48,13 +48,13 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T005 [P] [US1] Write unit tests for same-location validation constraints and active location dropdown rendering logic in tests/unit/booking.test.ts
+- [X] T005 [P] [US1] Write unit tests for same-location validation constraints and active location dropdown rendering logic in tests/unit/booking.test.ts
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Implement base BookingWizardStep1 component rendering pickup and destination dropdowns in src/components/booking-wizard-step1.tsx
-- [ ] T007 [US1] Integrate active location fetching via fetchActiveLocationsAction and layout grouping via groupLocationsByType in src/components/booking-wizard-step1.tsx
-- [ ] T008 [US1] Add frontend check to block same-location selections and display validation errors in src/components/booking-wizard-step1.tsx
+- [X] T006 [US1] Implement base BookingWizardStep1 component rendering pickup and destination dropdowns in src/components/booking-wizard-step1.tsx
+- [X] T007 [US1] Integrate active location fetching via fetchActiveLocationsAction and layout grouping via groupLocationsByType in src/components/booking-wizard-step1.tsx
+- [X] T008 [US1] Add frontend check to block same-location selections and display validation errors in src/components/booking-wizard-step1.tsx
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -68,13 +68,13 @@
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
 
-- [ ] T009 [P] [US2] Write unit tests for dynamic pricing lookups, price displaying, and contact redirect logic in tests/unit/booking.test.ts
+- [X] T009 [P] [US2] Write unit tests for dynamic pricing lookups, price displaying, and contact redirect logic in tests/unit/booking.test.ts
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Implement dynamic getRoutePriceAction lookup inside BookingWizardStep1 when valid distinct locations are selected in src/components/booking-wizard-step1.tsx
-- [ ] T011 [US2] Add loading spinner state and display route price once retrieved in src/components/booking-wizard-step1.tsx
-- [ ] T012 [US2] Add fallback UI handling unpriced routes by disabling the Next button and showing /contact redirect link in src/components/booking-wizard-step1.tsx
+- [X] T010 [US2] Implement dynamic getRoutePriceAction lookup inside BookingWizardStep1 when valid distinct locations are selected in src/components/booking-wizard-step1.tsx
+- [X] T011 [US2] Add loading spinner state and display route price once retrieved in src/components/booking-wizard-step1.tsx
+- [X] T012 [US2] Add fallback UI handling unpriced routes by disabling the Next button and showing /contact redirect link in src/components/booking-wizard-step1.tsx
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -88,13 +88,13 @@
 
 ### Tests for User Story 3 (MANDATORY) ⚠️
 
-- [ ] T013 [P] [US3] Write unit tests for same-day 2-hour lead-time buffer checking logic in tests/unit/booking.test.ts
+- [X] T013 [P] [US3] Write unit tests for same-day 2-hour lead-time buffer checking logic in tests/unit/booking.test.ts
 
 ### Implementation for User Story 3
 
-- [ ] T014 [US3] Implement server-side action validateBookingScheduleAction that verifies the lead-time buffer in src/app/actions/booking.ts
-- [ ] T015 [US3] Add date and time input fields to BookingWizardStep1 component with client-side min-date restriction in src/components/booking-wizard-step1.tsx
-- [ ] T016 [US3] Integrate the validateBookingScheduleAction call into the component step submission logic to validate lead time before letting users proceed in src/components/booking-wizard-step1.tsx
+- [X] T014 [US3] Implement server-side action validateBookingScheduleAction that verifies the lead-time buffer in src/app/actions/booking.ts
+- [X] T015 [US3] Add date and time input fields to BookingWizardStep1 component with client-side min-date restriction in src/components/booking-wizard-step1.tsx
+- [X] T016 [US3] Integrate the validateBookingScheduleAction call into the component step submission logic to validate lead time before letting users proceed in src/components/booking-wizard-step1.tsx
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -104,9 +104,9 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T017 [P] Refactor the parent BookingWizard to store step 1 state, orchestrate components, and transition to step 2 in src/components/booking-wizard.tsx
-- [ ] T018 Apply responsive, mobile-first styling check and clean up styling classes in src/components/booking-wizard-step1.tsx
-- [ ] T019 Run quickstart.md validation and ensure all tests pass cleanly in tests/unit/booking.test.ts
+- [X] T017 [P] Refactor the parent BookingWizard to store step 1 state, orchestrate components, and transition to step 2 in src/components/booking-wizard.tsx
+- [X] T018 Apply responsive, mobile-first styling check and clean up styling classes in src/components/booking-wizard-step1.tsx
+- [X] T019 Run quickstart.md validation and ensure all tests pass cleanly in tests/unit/booking.test.ts
 
 ---
 
