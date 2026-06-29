@@ -1,150 +1,146 @@
 # Airport Transfer and Driver Booking System
 
-A decoupled web application with a public-facing customer booking interface and a secure admin dashboard. Customers can get flat-rate quotes and book airport transfers; admins manage bookings, drivers, pricing, locations, content, and notifications.
+A unified Next.js web application with a public-facing customer booking interface and a secure, private administration dashboard. Customers can calculate flat-rate quotes and book airport transfers as guest users; authenticated admins manage bookings, drivers, route pricing, locations, site content, and notifications.
 
 ## Architecture
 
-- **Backend**: Node.js + Express + TypeScript, PostgreSQL via Sequelize ORM, JWT auth in HTTP-only cookies, Nodemailer SMTP notifications.
-- **Frontend**: Vite + React + TypeScript SPA, Tailwind CSS, React Router.
-- **Deployment**: PM2 (Node) behind Nginx (static + reverse proxy) on a Linux VPS with TLS (Let's Encrypt).
+- **Framework**: Next.js (v14+ App Router) written in TypeScript.
+- **Database & Storage**: Supabase PostgreSQL with Row Level Security (RLS) policies, and Supabase Storage for visual branding assets.
+- **Authentication**: Supabase Auth (via `@supabase/ssr` for secure, cookie-based sessions).
+- **Styling**: Responsive, mobile-first UI built strictly using Tailwind CSS.
+- **Notifications**: Transactional customer updates dispatched via SMTP using Nodemailer; admin alerts logged directly in the database.
+- **Testing**: Test-Driven Development (TDD) enforced using Vitest.
 
-```
-backend/   # Express REST API
-├── src/
-│   ├── config/       # database & env
-│   ├── controllers/  # request handlers
-│   ├── middleware/   # auth, logging, error handling
-│   ├── models/       # Sequelize models & associations
-│   ├── routes/       # API route registration
-│   ├── services/     # email & notification logic
-│   └── app.ts        # Express app factory
-├── migrations/       # umzug-style DB migrations
-├── seeders/          # initial admin + mock data
-└── tests/            # Vitest unit & integration tests
+---
 
-frontend/  # Vite React SPA
-├── src/
-│   ├── components/   # BookingForm, AdminLayout, AdminNotifications
-│   ├── pages/        # Booking, Contact, Login, Admin* pages
-│   ├── services/     # typed API clients
-│   ├── contexts/     # AuthContext
-│   └── App.tsx       # router
-└── tests/            # Vitest component tests
+## Directory Structure
+
+```text
+src/
+├── app/
+│   ├── (customer)/
+│   │   ├── page.tsx              # Public customer booking interface
+│   │   ├── actions.ts            # Public Server Actions (bookings / contact)
+│   │   └── contact/
+│   │       └── page.tsx          # Guest contact form page
+│   ├── admin/
+│   │   ├── login/
+│   │   │   └── page.tsx          # Admin authentication screen
+│   │   └── dashboard/
+│   │       ├── layout.tsx        # Responsive dashboard layout & sidebar
+│   │       ├── bookings/
+│   │       │   └── page.tsx      # Admin bookings dashboard (search/filter/details)
+│   │       ├── drivers/
+│   │       │   └── page.tsx      # Driver profiles CRUD panel
+│   │       ├── settings/
+│   │       │   └── page.tsx      # Locations & flat-rate pricing configuration
+│   │       └── content/
+│   │           └── page.tsx      # Dynamic CMS (FAQ & website info) settings
+│   │       └── actions.ts        # Admin Server Actions (status update, assignment, CRUDs)
+│   ├── layout.tsx                # Base HTML & metadata wrapper
+│   └── page.tsx
+├── components/
+│   ├── ui/                       # Shared UI kit (Button, Modal, Card, Table)
+│   ├── booking-form.tsx          # Customer booking wizard component
+│   └── notifications-list.tsx    # Admin dashboard notification panel
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts             # Supabase browser client
+│   │   └── server.ts             # Supabase server-side client
+│   ├── validation/
+│   │   └── schema.ts             # Zod data validation rules
+│   └── email/
+│       └── nodemailer.ts         # SMTP transactional email utility
+└── types/
+    └── index.ts                  # Shared TypeScript types & interfaces
+
+tests/
+├── unit/                         # Schema validation and component rendering unit tests
+└── integration/                  # Server Actions and database integration tests
+
+supabase/
+└── migrations/                   # SQL migration scripts for tables and RLS policies
 ```
+
+---
 
 ## Prerequisites
 
-- Node.js **v18+**
-- npm **v9+**
-- PostgreSQL **v14+**
+- **Node.js**: v18.0.0 or higher
+- **NPM**: v9.0.0 or higher
+- **Supabase CLI** (optional for local database migrations) or an active Supabase project
+
+---
 
 ## Environment Setup
 
-1. Create a PostgreSQL database:
-   ```bash
-   createdb airport_transfer_booking
-   ```
+Create a `.env.local` file in the project root directory and populate it with your credentials:
 
-2. Copy the example env files and fill in real values:
-   ```bash
-   cp backend/.env.example backend/.env
-   cp frontend/.env.example frontend/.env
-   ```
+```ini
+NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SMTP_HOST=smtp.mailtrap.io
+SMTP_PORT=2525
+SMTP_USER=test_smtp_user
+SMTP_PASS=test_smtp_password
+SMTP_FROM=noreply@airporttransfers.com
+```
 
-   Key variables (see `backend/.env.example`):
-   - `DATABASE_URL` – PostgreSQL connection string
-   - `JWT_SECRET` – secret used to sign admin session tokens
-   - `SMTP_*` – SMTP credentials for transactional email
-   - `CORS_ORIGIN` – frontend origin (default `http://localhost:5173`)
-
-   Frontend: `VITE_API_URL` – backend URL (default `http://localhost:5000`).
+---
 
 ## Installation & Database Setup
 
+1. Install all dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Apply database schemas, relations, and RLS policies:
+   ```bash
+   # Run local migration via Supabase CLI
+   npx supabase migration up
+   
+   # Or copy the contents of supabase/migrations/ to the Supabase SQL editor
+   ```
+
+---
+
+## Running the Application (Development)
+
+Start the Next.js local development server:
+
 ```bash
-# 1. Install dependencies for both workspaces
-npm --prefix backend install
-npm --prefix frontend install
-
-# 2. Run database migrations
-npm --prefix backend run migrate
-
-# 3. Seed initial data (admin user, locations, pricing rules, FAQ content)
-npm --prefix backend run seed
+npm run dev
 ```
 
-Default admin credentials (from seeder): **`admin` / `SecurePassword123`**
+Visit `http://localhost:3000` to access the customer interface and `http://localhost:3000/admin/login` to access the secure admin dashboard.
 
-## Running the App (Development)
-
-```bash
-# Backend API on :5000
-npm --prefix backend run dev
-
-# Frontend SPA on :5173
-npm --prefix frontend run dev
-```
-
-Visit `http://localhost:5173` for the customer site and `http://localhost:5173/admin` for the admin dashboard.
+---
 
 ## Testing
 
-All tests use **Vitest** (tests are written first per the TDD constitution).
+Run the test suite using Vitest (TDD is enforced; tests must fail before implementation):
 
 ```bash
-npm --prefix backend test     # backend unit + integration
-npm --prefix frontend test    # frontend component tests
+# Run unit and integration tests
+npx vitest
+
+# Run in watch mode
+npx vitest watch
 ```
 
-Type checking:
-```bash
-npm --prefix backend run typecheck
-npm --prefix frontend run typecheck
-```
-
-## Production Build
-
-```bash
-# Backend -> backend/dist
-npm --prefix backend run build
-
-# Frontend -> frontend/dist
-npm --prefix frontend run build
-```
-
-Run the backend in production with PM2:
-```bash
-pm2 start "node backend/dist/server.js" --name airport-api
-pm2 save
-pm2 startup
-```
-
-### Nginx + TLS
-
-Use `nginx.conf` as a template. Replace `airporttransfers.example.com` with your domain, provision certs with Certbot:
-
-```bash
-sudo certbot certonly --webroot -w /var/www/certbot -d airporttransfers.example.com
-sudo cp nginx.conf /etc/nginx/sites-available/airport-transfers
-sudo ln -s /etc/nginx/sites-available/airport-transfers /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-```
+---
 
 ## Manual Validation Scenarios
 
 ### Customer Booking
-1. Open the booking page, pick pickup + destination, a future date, vehicle class.
-2. The price renders dynamically; fill contact details and submit.
-3. A confirmation screen shows `BK-XXXXXX`; the booking is saved with status `pending` and an admin notification is logged.
+1. Open the booking landing page and fill out pickup, destination, future date/time, and vehicle class.
+2. Verify the flat-rate estimate calculates dynamically.
+3. Complete passenger details and submit the form.
+4. Verify the confirmation screen displays a reference code, a pending booking record is created in Supabase, and an admin notification is logged.
 
-### Admin Status Transition
-1. Go to `/admin`, log in as `admin` / `SecurePassword123`.
-2. Open Bookings, confirm a pending booking.
-3. Status becomes `confirmed` and a customer email is dispatched via SMTP (check your SMTP trap).
-
-See `specs/001-airport-transfer-booking/quickstart.md` for the full end-to-end guide.
-
-## Project Documentation
-
-Full design artifacts live under `specs/001-airport-transfer-booking/`:
-`plan.md`, `data-model.md`, `contracts/api.md`, `research.md`, `tasks.md`.
+### Admin status changes & driver assignment
+1. Access `/admin/login`, log in, and view the Bookings list.
+2. Confirm the pending booking, and verify the customer receives a confirmation email.
+3. Assign an active driver, and verify that the system blocks overlapping schedule assignments (within 3 hours).

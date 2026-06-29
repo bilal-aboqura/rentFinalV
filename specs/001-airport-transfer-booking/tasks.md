@@ -2,17 +2,9 @@
 
 **Input**: Design documents from `/specs/001-airport-transfer-booking/`
 
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/api.md
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/actions.md
 
 **Tests**: Tests are MANDATORY and must be written first using Vitest, ensuring they fail before implementation, per the project constitution.
-
-**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
-
-## Format: `[ID] [P?] [Story] Description`
-
-- **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
-- Include exact file paths in descriptions
 
 ---
 
@@ -20,27 +12,23 @@
 
 **Purpose**: Project initialization and basic workspace structure
 
-- [X] T001 Create backend and frontend directories in backend/ and frontend/
-- [X] T002 Initialize backend project and install express, sequelize, pg, and typescript dependencies in backend/package.json
-- [X] T003 Initialize frontend React Vite project and install tailwindcss, react-router-dom, and vitest dependencies in frontend/package.json
-- [X] T004 [P] Configure TypeScript compile rules in backend/tsconfig.json and frontend/tsconfig.json
-- [X] T005 [P] Configure Vitest test environments in backend/vitest.config.ts and frontend/vite.config.ts
+- [ ] T001 Initialize Next.js project and configure tailwindcss, lucide-react, zod, and typescript dependencies in package.json
+- [ ] T002 Configure TypeScript compile rules in tsconfig.json
+- [ ] T003 Configure Vitest testing environments in vitest.config.ts
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Core database connections, environment configs, and routing setups
+**Purpose**: Core database connections, environment configs, and Supabase integrations
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [X] T006 Configure database connection pool in backend/src/config/database.ts
-- [X] T007 Create base migrations for Locations, Drivers, Users, PricingRules, Bookings, Content, and Notifications tables in backend/migrations/
-- [X] T008 [P] Define database schemas and relationships in backend/src/models/
-- [X] T009 [P] Implement env configuration parsing in backend/src/config/env.ts
-- [X] T010 Setup Express global logging and error handling middlewares in backend/src/middleware/logger.ts and backend/src/middleware/error.ts
-- [X] T011 Create database seed files with initial admin credentials and location mock data in backend/seeders/
-- [X] T012 [P] Configure Axios/fetch base client API client wrapper in frontend/src/services/api.ts
+- [ ] T004 Create Supabase client and server configuration helpers in src/lib/supabase/client.ts and src/lib/supabase/server.ts
+- [ ] T005 Write PostgreSQL migrations for locations, drivers, pricing_rules, bookings, content, and notifications tables with RLS policies in supabase/migrations/20260623000000_init_schema.sql
+- [ ] T006 Define TS Types for all entities in src/types/index.ts
+- [ ] T007 Define Zod validation schemas for booking, contact, driver, and pricing validation in src/lib/validation/schema.ts
+- [ ] T008 Setup Nodemailer SMTP email configuration utility in src/lib/email/nodemailer.ts
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -53,21 +41,17 @@
 **Independent Test**: Users can access booking page, select routes, view estimates, and submit, resulting in a database pending record.
 
 ### Tests for User Story 1 (MANDATORY) ⚠️
-
-> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
-
-- [X] T013 [P] [US1] Write failing Vitest integration tests for locations, pricing quote, and booking submissions in backend/tests/integration/booking.test.ts
-- [X] T014 [P] [US1] Write failing Vitest unit tests for booking form component validation and submit states in frontend/tests/unit/BookingForm.test.ts
+- [ ] T009 [US1] Write failing Vitest unit tests for booking form validation and submit states in tests/unit/components.test.ts
+- [ ] T010 [US1] Write failing Vitest integration tests for booking creation and pricing calculation in tests/integration/actions.test.ts
 
 ### Implementation for User Story 1
-
-- [X] T015 [US1] Implement location list endpoint and controller in backend/src/routes/location.ts and backend/src/controllers/location.ts
-- [X] T016 [US1] Implement price estimate calculation endpoint in backend/src/routes/booking.ts and backend/src/controllers/booking.ts
-- [X] T017 [US1] Implement ride booking creation endpoint with future-date validation in backend/src/controllers/booking.ts
-- [X] T018 [US1] Create responsive React booking form component styled with Tailwind in frontend/src/components/BookingForm.tsx
-- [X] T019 [US1] Create booking page view integrating form and confirmation feedback in frontend/src/pages/Booking.tsx
-- [X] T020 [P] [US1] Implement contact message submission endpoint and controller in backend/src/routes/contact.ts and backend/src/controllers/contact.ts
-- [X] T021 [P] [US1] Create contact page with message submission actions in frontend/src/pages/Contact.tsx
+- [ ] T011 [US1] Implement Server Action to fetch active locations in src/app/(customer)/actions.ts
+- [ ] T012 [US1] Implement Server Action to query route pricing rules in src/app/(customer)/actions.ts
+- [ ] T013 [US1] Implement Server Action to create booking request with future-date validation in src/app/(customer)/actions.ts
+- [ ] T014 [US1] Create responsive booking wizard form component styled with Tailwind CSS in src/components/booking-form.tsx
+- [ ] T015 [US1] Create main customer landing page view integrating the booking form in src/app/(customer)/page.tsx
+- [ ] T016 [US1] Implement Server Action for guest contact message submission in src/app/(customer)/actions.ts
+- [ ] T017 [US1] Create contact page with form in src/app/(customer)/contact/page.tsx
 
 **Checkpoint**: User Story 1 is fully functional and testable independently.
 
@@ -80,18 +64,15 @@
 **Independent Test**: Only authenticated users can access `/admin/*` routes; admins can transition booking status to confirmed.
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
-
-- [X] T022 [P] [US2] Write failing Vitest unit tests for admin auth controller and JWT validation middleware in backend/tests/unit/auth.test.ts
-- [X] T023 [P] [US2] Write failing Vitest integration tests for booking query filters, search, and status updates in backend/tests/integration/adminBookings.test.ts
+- [ ] T018 [US2] Write failing Vitest integration tests for admin auth checking, bookings retrieval, and status changes in tests/integration/actions.test.ts
 
 ### Implementation for User Story 2
-
-- [X] T024 [US2] Implement admin login, logout, and token parsing in backend/src/routes/auth.ts and backend/src/controllers/auth.ts
-- [X] T025 [US2] Implement auth check and JWT validation middleware in backend/src/middleware/auth.ts
-- [X] T026 [US2] Implement booking query and status transition endpoints in backend/src/controllers/adminBooking.ts
-- [X] T027 [US2] Create admin login screen with JWT cookie credentials management in frontend/src/pages/Login.tsx
-- [X] T028 [US2] Create admin dashboard shell with responsive sidebar navigations in frontend/src/components/AdminLayout.tsx
-- [X] T029 [US2] Create admin bookings listing page with search/filters and status updates in frontend/src/pages/AdminBookings.tsx
+- [ ] T019 [US2] Setup Supabase authentication helpers and routes in src/app/admin/login/page.tsx and Server Action in src/app/admin/dashboard/actions.ts
+- [ ] T020 [US2] Create middleware to protect dashboard routes (`/admin/dashboard/*`) in src/middleware.ts
+- [ ] T021 [US2] Implement Server Action to fetch bookings with search, pagination, and status filters in src/app/admin/dashboard/actions.ts
+- [ ] T022 [US2] Implement Server Action to update booking status in src/app/admin/dashboard/actions.ts
+- [ ] T023 [US2] Create dashboard layout with responsive sidebar in src/app/admin/dashboard/layout.tsx
+- [ ] T024 [US2] Create bookings listing and management dashboard in src/app/admin/dashboard/bookings/page.tsx
 
 **Checkpoint**: User Stories 1 and 2 are fully functional and secure.
 
@@ -104,16 +85,13 @@
 **Independent Test**: Admin can assign an active driver, and system blocks assignment if there's an overlapping schedule.
 
 ### Tests for User Story 3 (MANDATORY) ⚠️
-
-- [X] T030 [P] [US3] Write failing Vitest integration tests for driver assignment conflict validation (3-hour overlap check) in backend/tests/integration/driverAssignment.test.ts
-- [X] T031 [P] [US3] Write failing Vitest integration tests for drivers, locations, and pricing rules CRUD APIs in backend/tests/integration/settingsCrud.test.ts
+- [ ] T025 [US3] Write failing Vitest integration tests for driver assignment conflict validation (3-hour overlap check) and settings CRUD Server Actions in tests/integration/actions.test.ts
 
 ### Implementation for User Story 3
-
-- [X] T032 [US3] Implement CRUD APIs for drivers, locations, and pricing rules in backend/src/controllers/settings.ts and backend/src/routes/admin.ts
-- [X] T033 [US3] Implement driver assignment logic with 3-hour overlap validation in backend/src/controllers/adminBooking.ts
-- [X] T034 [US3] Create admin driver CRUD and profile settings page in frontend/src/pages/AdminDrivers.tsx
-- [X] T035 [US3] Create admin city/airport location and pricing rule management views in frontend/src/pages/AdminSettings.tsx
+- [ ] T026 [US3] Implement CRUD Server Actions for drivers, locations, and pricing rules in src/app/admin/dashboard/actions.ts
+- [ ] T027 [US3] Implement driver assignment logic with 3-hour overlap validation checks in src/app/admin/dashboard/actions.ts
+- [ ] T028 [US3] Create driver profile management page in src/app/admin/dashboard/drivers/page.tsx
+- [ ] T029 [US3] Create cities, airports, and pricing rules settings page in src/app/admin/dashboard/settings/page.tsx
 
 **Checkpoint**: Admins can manage active settings and dispatch drivers with schedule safety.
 
@@ -126,14 +104,12 @@
 **Independent Test**: Booking updates send real-time mail simulation to SMTP trap; new bookings trigger dashboard logs.
 
 ### Tests for User Story 4 (MANDATORY) ⚠️
-
-- [X] T036 [P] [US4] Write failing Vitest unit tests for SMTP email sending and notification database triggers in backend/tests/unit/notification.test.ts
+- [ ] T030 [US4] Write failing Vitest unit tests for Nodemailer SMTP email dispatches and notification database logs in tests/unit/email.test.ts
 
 ### Implementation for User Story 4
-
-- [X] T037 [US4] Implement SMTP mail dispatcher helper using Nodemailer in backend/src/services/email.ts
-- [X] T038 [US4] Integrate database model hooks or services to write notification logs on booking events in backend/src/services/notification.ts
-- [X] T039 [US4] Implement admin notification dropdown list and unread alert count in frontend/src/components/AdminNotifications.tsx and backend/src/controllers/notification.ts
+- [ ] T031 [US4] Integrate Nodemailer utility to dispatch customer status updates inside booking status change Server Actions
+- [ ] T032 [US4] Create Server Action to create database notifications on booking events in src/app/admin/dashboard/actions.ts
+- [ ] T033 [US4] Implement admin notifications dashboard widget and unread alerts counter in src/components/notifications-list.tsx
 
 **Checkpoint**: Event-driven notification system is live and verified.
 
@@ -146,13 +122,11 @@
 **Independent Test**: Modifying FAQ in admin panel renders immediately on public customer index page.
 
 ### Tests for User Story 5 (MANDATORY) ⚠️
-
-- [X] T040 [P] [US5] Write failing Vitest tests for dynamic page content CRUD in backend/tests/integration/content.test.ts
+- [ ] T034 [US5] Write failing Vitest tests for dynamic page content CRUD in tests/integration/actions.test.ts
 
 ### Implementation for User Story 5
-
-- [X] T041 [US5] Implement content CRUD API controller and route registration in backend/src/controllers/content.ts and backend/src/routes/content.ts
-- [X] T042 [US5] Create admin content and FAQ customization screen in frontend/src/pages/AdminContent.tsx
+- [ ] T035 [US5] Implement dynamic content update Server Action in src/app/admin/dashboard/actions.ts
+- [ ] T036 [US5] Create admin content and FAQ customization screen in src/app/admin/dashboard/content/page.tsx
 
 ---
 
@@ -160,46 +134,5 @@
 
 **Purpose**: System optimizations, documentation, and final deployment setup
 
-- [X] T043 [P] Document environment configuration setup and deployment guide in README.md
-- [X] T044 Create Nginx configuration files with TLS settings and proxy rules in nginx.conf
-- [X] T045 Run final Vitest test runner suites and validate quickstart.md guidelines end-to-end in specs/001-airport-transfer-booking/quickstart.md
-
----
-
-## Dependencies & Execution Order
-
-### Phase Dependencies
-
-- **Setup (Phase 1)**: Can start immediately.
-- **Foundational (Phase 2)**: Depends on Phase 1. Blocks all subsequent User Stories.
-- **User Stories (Phase 3+)**: All depend on Phase 2.
-  - Phase 3 (US1) is the core MVP.
-  - Phase 4 (US2) depends on Phase 3 structures.
-  - Phase 5 (US3) depends on Phase 4 auth mechanisms.
-  - Phase 6 (US4) depends on Phase 3 and 4 event triggers.
-  - Phase 7 (US5) is independent but recommended after US2.
-- **Polish (Phase 8)**: Depends on all user stories being implemented.
-
-### Parallel Opportunities
-
-- Setup tasks T004 and T005 can run in parallel.
-- Foundational tasks T008, T009, and T012 can run in parallel.
-- Integration tests T013 and T014 can be written in parallel.
-- Admin dashboard pages (T034, T035, T039, T042) can run in parallel once layout T028 is complete.
-
----
-
-## Implementation Strategy
-
-### MVP First (User Story 1 Only)
-1. Complete Phase 1: Setup
-2. Complete Phase 2: Foundational (Enables DB & API Routing)
-3. Complete Phase 3: User Story 1
-4. **STOP and VALIDATE**: Verify customer can book a ride, calculate price, and record is saved in database in pending state.
-
-### Incremental Delivery
-1. Add User Story 2 → Test secure login and booking state transitions.
-2. Add User Story 3 → Verify driver assignments, schedule conflicts, and pricing rule creations.
-3. Add User Story 4 → Validate customer email dispatches and admin dashboard alerts.
-4. Add User Story 5 → Add FAQ and marketing text customization controls.
-5. Deploy static assets and PM2 Node process behind Nginx proxy.
+- [ ] T037 Document environment configuration setup and deployment instructions in README.md
+- [ ] T038 Run final Vitest test runner suites and validate quickstart.md guidelines end-to-end

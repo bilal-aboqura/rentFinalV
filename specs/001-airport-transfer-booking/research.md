@@ -2,69 +2,53 @@
 
 This document outlines the architectural decisions, technical choices, and rationale for the implementation of the Airport Transfer and Driver Booking System.
 
-## 1. Project Architecture (Separate Frontend & Backend)
+## 1. Unified Application Architecture (Next.js App Router)
 
-- **Decision**: Implement a decoupled architecture consisting of a React + Vite frontend and a Node.js + Express backend, both using TypeScript.
-- **Rationale**: 
-  - Allows clean separation of concerns. The frontend can be served as a static bundle, optimizing performance and load times.
-  - The backend acts as a stateless REST API, facilitating testing, security configurations, and database query tuning.
-  - Facilitates deployment on a Linux VPS, where the backend can run via PM2 and Nginx can serve the frontend static files and reverse-proxy API requests.
-- **Alternatives Considered**: Next.js App Router (defined in the original constitution). However, the user explicitly requested a separate Node.js/Sequelize backend and Vite/React frontend to optimize for standard VPS hosting constraints and custom JWT authentication.
+- **Decision**: Implement a unified web application using Next.js App Router (React Server Components and Server Actions) in TypeScript.
+- **Rationale**:
+  - Unifies client and server code into a single, cohesive repository, eliminating the need to coordinate separate deployments for frontend and backend.
+  - Leverages React Server Components (RSC) for fast, secure, direct database querying on the server without client-side API requests.
+  - Simplifies routing and layouts using Next.js file-system routing.
+- **Alternatives Considered**: Separate React + Vite SPA frontend and Express backend. This was the previous architecture choice, which was rejected because it introduces unnecessary dev-ops overhead (running PM2 and Nginx reverse proxies separately), duplicates TypeScript interfaces, and violates the RentFinal Constitution.
 
 ---
 
-## 2. Backend Tech Stack (Node.js, Express, PostgreSQL, Sequelize ORM)
+## 2. Server Data Mutations (Next.js Server Actions)
 
-- **Decision**: Build the REST API using Node.js, Express, and TypeScript. Use PostgreSQL for relational data storage and Sequelize ORM for schema definitions, migrations, and relationship management.
+- **Decision**: Use Next.js Server Actions for all form submissions and data mutations (creating bookings, changing statuses, CRUDing drivers, etc.).
 - **Rationale**:
-  - PostgreSQL provides strong ACID compliance, transaction support, and relational integrity necessary for scheduling, pricing rules, and driver assignments.
-  - Sequelize ORM handles complex relationships (e.g., Bookings belong to Locations/Drivers, PricingRules connect Locations).
-  - TypeScript ensures compile-time type safety for models, request payloads, and API responses.
-- **Alternatives Considered**: 
-  - Prisma ORM: While very type-safe, Sequelize is highly robust for standard PostgreSQL setups and integrates natively with traditional migration patterns.
-  - Supabase (original constitution stack): Rejected in favor of Sequelize/PostgreSQL to support custom on-premise VPS deployments without external SaaS dependencies.
+  - Provides a secure, RPC-like mechanism to call server-side functions directly from client components.
+  - Integrates natively with React form actions, enabling progressive enhancement and simple state management.
+  - Eliminates the need to write REST controllers, register routes, and configure CORS on an Express server.
+- **Alternatives Considered**: Standard REST API endpoints (e.g. `/api/bookings`). Rejected because it requires redundant boilerplate for endpoints that are only consumed by this application.
 
 ---
 
-## 3. Frontend Tech Stack (Vite, React, Tailwind CSS)
+## 3. Database Layer (Supabase PostgreSQL & Storage)
 
-- **Decision**: Use Vite to scaffold a React single-page application (SPA) styled with Tailwind CSS.
+- **Decision**: Use Supabase PostgreSQL as the primary database, utilizing Supabase Storage for brand and page media assets.
 - **Rationale**:
-  - Vite offers extremely fast hot-module replacement (HMR) and optimized rollup-based production builds.
-  - Tailwind CSS enables responsive, utility-first styling with minimal CSS overhead, adhering to the mobile-first UI requirement.
-- **Alternatives Considered**: 
-  - Next.js (Static Export): Next.js static builds are powerful, but Vite + React is simpler, lightweight, and has fewer dependency complexities when building client-only SPAs.
+  - PostgreSQL provides ACID compliance, structured schemas, unique constraints, and foreign key relations needed for scheduling, driver schedules, and flat-rate pricing rules.
+  - Row Level Security (RLS) policies provide database-level security checks, ensuring only authenticated admins can manage locations, drivers, and pricing.
+  - Supabase Storage manages image asset storage (such as logo and hero images) securely and simply using the unified `@supabase/supabase-js` client.
+- **Alternatives Considered**: Custom PostgreSQL VPS database managed via Sequelize ORM. Rejected to keep the setup aligned with the project constitution and use Supabase's built-in security layer (RLS).
 
 ---
 
-## 4. Secure Authentication (JWT & HTTP-Only Cookies)
+## 4. Secure Authentication (Supabase Auth)
 
-- **Decision**: Implement JSON Web Tokens (JWT) for admin session management. The server will sign tokens upon successful credentials verification and send them via `HttpOnly`, `Secure`, `SameSite=Strict` cookies.
+- **Decision**: Authenticate administrators using Supabase Auth with server-side helper `@supabase/ssr` to maintain secure, cookie-based sessions.
 - **Rationale**:
-  - Storing JWTs in HTTP-Only cookies mitigates Cross-Site Scripting (XSS) attacks.
-  - Stateless authentication avoids database lookups for session validation on every API request.
-- **Alternatives Considered**: 
-  - Local Storage JWT storage: Rejected due to vulnerability to XSS attacks.
-  - Session-based sessions (Express-Session with Redis): Rejected to avoid operational complexity of running Redis on the VPS for a single-admin dashboard.
+  - Out-of-the-box user management, secure password hashing, and session management.
+  - Seamlessly links authenticated user roles with Supabase RLS policies.
+- **Alternatives Considered**: Custom JWT authentication with custom tables in a standard database. Rejected because writing security-critical code from scratch is error-prone, whereas Supabase Auth is standardized and highly secure.
 
 ---
 
-## 5. Notification Dispatch (Nodemailer with SMTP)
+## 5. Notification Dispatch (Nodemailer via SMTP)
 
-- **Decision**: Use Nodemailer to send transactional emails via SMTP when bookings are created or updated. SMTP credentials will be loaded securely from `.env` environment variables.
+- **Decision**: Send guest transactional email alerts (booking submissions, status transitions, driver assignments) using Nodemailer via SMTP from Server Actions.
 - **Rationale**:
-  - Nodemailer is lightweight, requires no external HTTP API SDKs, and can connect to any SMTP provider (like Resend, SendGrid, or mail servers).
-  - Offers secure SMTP TLS options.
-- **Alternatives Considered**:
-  - Resend/SendGrid API Client: Rejected to avoid hard-coupling the code to a specific SaaS provider; standard SMTP works with any service.
-
----
-
-## 6. VPS Deployment Configuration (PM2, Nginx, SSL)
-
-- **Decision**: Configure Nginx as the primary reverse proxy and static file server. Use PM2 to run the Node.js API server, ensuring automatic restarts on failure. SSL certificates will be managed via Certbot (Let's Encrypt).
-- **Rationale**:
-  - Nginx handles static file serving of the Vite React bundle with extremely high performance and handles SSL/TLS termination securely.
-  - Nginx routes `/api/*` to the local PM2 service and blocks direct external access to backend ports.
-- **Alternatives Considered**:
-  - Docker Compose: While excellent for containerization, direct PM2 + Nginx VPS deployment is simpler, has less CPU/memory overhead, and is standard for minimal Linux VPS instances.
+  - Nodemailer is a robust, standard library for sending emails in Node.js.
+  - SMTP configuration is provider-agnostic, allowing the system to use any email provider (e.g. Resend, Mailgun, or standard mail servers) simply by changing environment variables.
+- **Alternatives Considered**: Coupling directly to a proprietary SaaS API (like SendGrid or Resend SDK). Rejected to ensure the email system is fully SMTP-compliant and portable.

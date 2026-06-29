@@ -4,35 +4,31 @@
 
 **Input**: Feature specification from `/specs/001-airport-transfer-booking/spec.md`
 
-**Note**: This plan defines the custom tech stack, architecture, and project structure as requested by the user, and details the alignment with the project constitution.
-
 ## Summary
 
-The Airport Transfer and Driver Booking System is a decoupled web application comprising a public-facing customer booking interface and a secure, private administration dashboard. 
+The Airport Transfer and Driver Booking System is a unified web application comprising a public-facing customer booking interface and a secure, private administration dashboard.
 
-The customer interface allows guest users to calculate flat-rate route quotes, select vehicle classes, and book airport transfers. The admin dashboard facilitates comprehensive management of bookings, driver profiles, locations, flat-rate pricing, and dynamic website content. 
+The customer interface allows guest users to calculate flat-rate route quotes, select vehicle classes, and book airport transfers. The admin dashboard facilitates comprehensive management of bookings, driver profiles, locations, flat-rate pricing, and dynamic website content.
 
-The technical approach implements a Node.js + Express backend written in TypeScript, interacting with a PostgreSQL database via the Sequelize ORM. The frontend is built as a single-page React application using Vite and styled with Tailwind CSS. Authentication uses JWT stored in HTTP-Only cookies. Automatic notifications are generated internally as database logs for admins and dispatched via Nodemailer SMTP for customer booking updates.
+The technical approach leverages Next.js App Router with TypeScript. Database interactions and user authentication are securely managed by Supabase, and styling is handled strictly using Tailwind CSS. Automated notifications are logged in the database, and customer notifications are sent via transactional email using Nodemailer.
 
 ## Technical Context
 
-**Language/Version**: Node.js (v18+), TypeScript (v5+)
+**Language/Version**: TypeScript (v5+), Node.js (v18+)
 
-**Primary Dependencies**: 
-- **Backend**: `express`, `sequelize`, `pg`, `pg-hstore`, `jsonwebtoken`, `cookie-parser`, `bcryptjs`, `nodemailer`, `cors`
-- **Frontend**: `react`, `react-dom`, `react-router-dom`, `tailwindcss`, `lucide-react`
+**Primary Dependencies**: Next.js (v14+), React (v18+), `@supabase/supabase-js`, `@supabase/ssr`, `zod`, `lucide-react`, `tailwindcss`, `nodemailer`
 
-**Storage**: PostgreSQL (v14+)
+**Storage**: PostgreSQL (via Supabase)
 
 **Testing**: Vitest (v1.0+)
 
-**Target Platform**: Linux VPS (Ubuntu 22.04 LTS recommended, with Nginx and PM2)
+**Target Platform**: Vercel (or any Node.js production hosting environment)
 
-**Project Type**: Web application (Decoupled frontend client + backend API service)
+**Project Type**: Next.js Web Application
 
 **Performance Goals**:
 - Page load times under 1 second.
-- Admin search/filter query response times under 1 second.
+- Admin search/filter query response times under 500ms.
 - Notification event logs generated within 500ms of trigger events.
 
 **Constraints**:
@@ -46,12 +42,12 @@ The technical approach implements a Node.js + Express backend written in TypeScr
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 ### Compliance Log
-- **Principle I: Clean and Modular Code** -> **PASS**. Codebase structured with clear Separation of Concerns: controllers, services, models, and routes in the backend; components, pages, and API clients in the frontend.
-- **Principle II: Strict TypeScript** -> **PASS**. Strict type checking enabled on both frontend and backend configurations.
-- **Principle IV: Test-Driven Development (TDD) with Vitest** -> **PASS**. Vitest test suites configured in both `backend/` and `frontend/` workspaces. Tests must fail before implementation.
+- **Principle I: Clean and Modular Code** -> **PASS**. Codebase structured with clear Separation of Concerns: Server Actions, UI components, types, database migrations.
+- **Principle II: Strict TypeScript & Next.js App Router Best Practices** -> **PASS**. Strict type checking enabled, separation of Client and Server Components, layout-based routing.
+- **Principle III: Secure Server-Side Operations & Supabase Integration** -> **PASS**. Supabase PostgreSQL with RLS policies enabled; Admin operations secured behind authentication checks in Server Actions.
+- **Principle IV: Test-Driven Development (TDD) with Vitest** -> **PASS**. Vitest test suite configured to validate schemas and functions before writing business logic.
 - **Principle V: Responsive, Mobile-First Tailwind UI** -> **PASS**. Styled strictly using Tailwind CSS utility classes and designed for mobile screens first.
-- **Principle III: Secure Server-Side Operations & Supabase Integration** -> **VIOLATION (Justified)**. The project does not use Supabase. It uses a custom Node.js/PostgreSQL/Sequelize backend with custom JWT authentication.
-- **Tech Stack Constraints (Next.js App Router)** -> **VIOLATION (Justified)**. Next.js App Router is replaced by Vite + React for the frontend and Node.js + Express for the backend.
+- **Tech Stack Constraints (Next.js App Router)** -> **PASS**. Tech stack centered on Next.js, Supabase, Tailwind, TypeScript, and Vitest.
 
 ## Project Structure
 
@@ -64,7 +60,7 @@ specs/001-airport-transfer-booking/
 ├── data-model.md        # Phase 1 database design
 ├── quickstart.md        # Phase 1 validation instructions
 ├── contracts/
-│   └── api.md           # Phase 1 REST API contract
+│   └── actions.md       # Phase 1 Server Actions contract
 └── checklists/
     └── requirements.md  # Specification quality checklist
 ```
@@ -72,44 +68,79 @@ specs/001-airport-transfer-booking/
 ### Source Code (repository root)
 
 ```text
-backend/
-├── src/
-│   ├── config/          # Database connection & Sequelize config
-│   ├── controllers/     # Route request handlers
-│   ├── middleware/      # Auth, error, and validation middleware
-│   ├── models/          # Sequelize schema model classes
-│   ├── routes/          # API route registrations
-│   ├── services/        # Business logic & SMTP notification services
-│   └── app.ts           # Express application initialization
-├── tests/
-│   ├── integration/     # REST API endpoint tests
-│   └── unit/            # Business validation & controller tests
-├── migrations/          # DB schema migration scripts
-├── seeders/             # Initial mock data and admin account seed scripts
-├── tsconfig.json
-└── package.json
+src/
+├── app/
+│   ├── (customer)/
+│   │   ├── page.tsx              # Booking landing page (RSC)
+│   │   ├── actions.ts            # Public Server Actions (booking / contact submission)
+│   │   └── contact/
+│   │       └── page.tsx          # Contact form page
+│   ├── admin/
+│   │   ├── login/
+│   │   │   └── page.tsx          # Admin Login page
+│   │   └── dashboard/
+│   │       ├── layout.tsx        # Dashboard sidebar layout
+│   │       ├── bookings/
+│   │       │   └── page.tsx      # Admin Bookings listing (search/filter/details)
+│   │       ├── drivers/
+│   │       │   └── page.tsx      # Driver profiles CRUD
+│   │       ├── settings/
+│   │       │   └── page.tsx      # Location & pricing configuration
+│   │       └── content/
+│   │           └── page.tsx      # CMS content management
+│   │       └── actions.ts        # Admin Server Actions (auth, updates, drivers, pricing)
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── ui/                       # Reusable UI components (Button, Modal, Card, Table)
+│   ├── booking-form.tsx          # Customer booking Wizard flow (Client component)
+│   ├── contact-form.tsx          # Guest contact form component
+│   └── notifications-list.tsx    # Admin notifications sidebar/panel
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts             # Supabase client (Client Components)
+│   │   └── server.ts             # Supabase client (Server Actions / RSCs)
+│   ├── validation/
+│   │   └── schema.ts             # Zod validation schemas
+│   └── email/
+│       └── nodemailer.ts         # SMTP email utility for customer emails
+└── types/
+    └── index.ts                  # Shared TypeScript type definitions
 
-frontend/
-├── src/
-│   ├── components/      # Common UI elements (Button, Card, Input)
-│   ├── pages/           # Page views (Booking, Contact, AdminDashboard)
-│   ├── services/        # Backend API integration clients
-│   ├── App.tsx          # Router layout and entry structure
-│   └── main.tsx         # React DOM mount point
-├── tests/
-│   └── unit/            # Component rendering & utility tests
-├── tailwind.config.js
-├── vite.config.ts
-├── tsconfig.json
-└── package.json
+tests/
+├── unit/
+│   ├── validation.test.ts        # Zod verification tests
+│   └── components.test.ts        # React Component rendering tests
+└── integration/
+    └── actions.test.ts           # Next.js Server Actions integration tests
+
+supabase/
+└── migrations/
+    └── 20260623000000_init_schema.sql # Database schema, constraints, and RLS policies
 ```
-
-**Structure Decision**: Decoupled multi-workspace layout with separate `backend/` (Express API) and `frontend/` (Vite SPA React app) folders.
 
 ## Complexity Tracking
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| Custom Node.js + Sequelize Backend (Replaces Supabase) | User requested custom PostgreSQL relational schema management, Sequelize ORM, and deployment optimization on standard Linux VPS. | Direct Supabase hosting was rejected to keep the system self-hosted, minimal, and fully self-contained on a VPS without SaaS dependencies. |
-| Vite + React Frontend (Replaces Next.js) | Decoupled client/server model specifically requested. Allows static build serving via Nginx. | Next.js App Router static exports have complex path behaviors for custom backend routing on standard VPS reverse proxies. |
-| JWT Cookie Auth (Replaces Supabase Auth) | Stateless secure authentication required for custom Express API server. | Session-based state requires Redis or database session tables, which adds resource overhead. |
+*No violations identified. Design adheres strictly to the project constitution.*
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Run Vitest tests:
+  ```bash
+  npx vitest tests/unit
+  npx vitest tests/integration
+  ```
+
+### Manual Verification
+1. Run local dev server:
+   ```bash
+   npm run dev
+   ```
+2. Open `http://localhost:3000` to access the booking interface.
+3. Test guest booking and contact form submissions, verifying records are inserted into Supabase.
+4. Log into admin dashboard at `/admin/login`.
+5. Access dashboard links to assign drivers, update booking statuses, and edit pricing rules.
+6. Verify transactional email dispatch logs on status change.
