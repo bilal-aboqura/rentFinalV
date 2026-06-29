@@ -1,20 +1,23 @@
 /**
- * T017 — Booking Wizard Parent Orchestrator
+ * T008 / T011 / T017 — Booking Wizard Parent Orchestrator
  *
  * Manages multi-step booking flow state.
- * Renders BookingWizardStep1 for Step 1 (Route & Time selection).
- * Step 2 (Trip Details) will be implemented in spec 006.
+ * Renders:
+ *   - Step 1: BookingWizardStep1 (Route & Time)
+ *   - Step 2: BookingWizardStep2 (Passenger Details & Confirmation)
  *
  * Also re-exports GroupedLocationSelect for use by other components.
  */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, CheckCircle } from 'lucide-react';
 import type { GroupedLocations } from '@/lib/utils/groupLocations';
 import type { LocationRow } from '@/lib/validation/location';
 import { BookingWizardStep1 } from '@/components/booking-wizard-step1';
 import type { BookingStep1State } from '@/components/booking-wizard-step1';
+import { BookingWizardStep2 } from '@/components/booking-wizard-step2';
+import { createClient } from '@/lib/supabase/client';
 
 // ----------------------------------------------------------------
 // Re-exported: GroupedLocationSelect (for other consumers)
@@ -94,12 +97,30 @@ type WizardStep = 1 | 2;
 
 /**
  * BookingWizard manages multi-step booking state.
- * Step 1: Route & Time (BookingWizardStep1)
- * Step 2: Trip Details (spec 006 — placeholder)
+ *   Step 1: Route & Time (BookingWizardStep1)
+ *   Step 2: Passenger Details & Confirmation (BookingWizardStep2)
  */
 export function BookingWizard() {
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [step1State, setStep1State] = useState<BookingStep1State | null>(null);
+  const [pickupName, setPickupName] = useState('');
+  const [destinationName, setDestinationName] = useState('');
+
+  // ── Fetch location names whenever step1State is set ──
+  useEffect(() => {
+    if (!step1State) return;
+
+    const supabase = createClient();
+    supabase
+      .from('locations')
+      .select('id, name')
+      .in('id', [step1State.pickupLocationId, step1State.destinationLocationId])
+      .then(({ data }) => {
+        if (!data) return;
+        setPickupName(data.find((l) => l.id === step1State.pickupLocationId)?.name ?? 'Unknown');
+        setDestinationName(data.find((l) => l.id === step1State.destinationLocationId)?.name ?? 'Unknown');
+      });
+  }, [step1State]);
 
   const handleStep1Next = (state: BookingStep1State) => {
     setStep1State(state);
@@ -107,6 +128,14 @@ export function BookingWizard() {
   };
 
   const handleBack = () => {
+    setCurrentStep(1);
+  };
+
+  // ── Reset wizard state entirely after successful booking ──
+  const handleReset = () => {
+    setStep1State(null);
+    setPickupName('');
+    setDestinationName('');
     setCurrentStep(1);
   };
 
@@ -144,47 +173,15 @@ export function BookingWizard() {
         {/* Step 1: Route & Time */}
         {currentStep === 1 && <BookingWizardStep1 onNext={handleStep1Next} />}
 
-        {/* Step 2: Trip Details — placeholder for spec 006 */}
+        {/* Step 2: Passenger Details & Confirmation */}
         {currentStep === 2 && step1State && (
-          <div className="space-y-5" id="step2-placeholder">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-1">Trip Details</h3>
-              <p className="text-sm text-slate-400">
-                Step 2 (Trip Details) will be implemented in spec 006.
-              </p>
-            </div>
-
-            {/* Summary of step 1 selections */}
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 space-y-2 text-sm">
-              <p className="text-slate-400 font-medium mb-3">Step 1 Summary</p>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Date</span>
-                <span className="text-white">{step1State.date}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Time</span>
-                <span className="text-white">{step1State.time}</span>
-              </div>
-              {step1State.price !== null && (
-                <div className="flex justify-between border-t border-slate-700 pt-2 mt-2">
-                  <span className="text-white font-semibold">Route Price</span>
-                  <span className="text-emerald-400 font-bold">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-                      step1State.price
-                    )}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <button
-              id="step2-back-btn"
-              onClick={handleBack}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-3 font-semibold transition-all"
-            >
-              ← Back to Route & Time
-            </button>
-          </div>
+          <BookingWizardStep2
+            step1State={step1State}
+            pickupLocationName={pickupName}
+            destinationLocationName={destinationName}
+            onBack={handleBack}
+            onReset={handleReset}
+          />
         )}
       </div>
     </div>
