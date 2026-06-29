@@ -20,7 +20,7 @@
 
 **Purpose**: Project initialization and validation checks
 
-- [ ] T001 [P] Verify that workspace directories and configuration files exist
+- [X] T001 [P] Verify that workspace directories and configuration files exist
 
 ---
 
@@ -30,8 +30,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Create Supabase migration to add `driver_id` and update status check constraints in `supabase/migrations/20260626000001_update_bookings_schema.sql`
-- [ ] T003 [P] Update validation schemas to add `UpdateBookingStatusSchema` and `AssignDriverSchema` in `src/lib/validation/booking.ts`
+- [X] T002 Create Supabase migration to add `driver_id` and update status check constraints in `supabase/migrations/20260626000001_update_bookings_schema.sql`
+- [X] T003 [P] Update validation schemas to add `UpdateBookingStatusSchema` and `AssignDriverSchema` in `src/lib/validation/booking.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -45,13 +45,13 @@
 
 ### Tests for User Story 1 (MANDATORY) ⚠️
 
-- [ ] T004 [P] [US1] Write failing unit test in `tests/unit/booking-dashboard.test.ts` for `fetchBookingsAction` validating pagination ranges and status filter queries.
+- [X] T004 [P] [US1] Write failing unit test in `tests/unit/booking-dashboard.test.ts` for `fetchBookingsAction` validating pagination ranges and status filter queries.
 
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] Implement `fetchBookingsAction` in `src/app/admin/bookings/actions.ts` with pagination, filter, and locations/drivers joins.
-- [ ] T006 [P] [US1] Build interactive list view UI component in `src/components/bookings-manager.tsx` utilizing the fetch action and managing pagination/filter states.
-- [ ] T007 [US1] Build Server component page in `src/app/admin/bookings/page.tsx` to handle page routing, searchParams parsing, and loading `BookingsManager`.
+- [X] T005 [P] [US1] Implement `fetchBookingsAction` in `src/app/admin/bookings/actions.ts` with pagination, filter, and locations/drivers joins.
+- [X] T006 [P] [US1] Build interactive list view UI component in `src/components/bookings-manager.tsx` utilizing the fetch action and managing pagination/filter states.
+- [X] T007 [US1] Build Server component page in `src/app/admin/bookings/page.tsx` to handle page routing, searchParams parsing, and loading `BookingsManager`.
 
 **Checkpoint**: User Story 1 (MVP) is fully functional and testable independently.
 
@@ -65,13 +65,13 @@
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
 
-- [ ] T008 [P] [US2] Write failing unit tests in `tests/unit/booking-dashboard.test.ts` for `updateBookingStatusAction` validating input schemas and terminal status restrictions.
+- [X] T008 [P] [US2] Write failing unit tests in `tests/unit/booking-dashboard.test.ts` for `updateBookingStatusAction` validating input schemas and terminal status restrictions.
 
 ### Implementation for User Story 2
 
-- [ ] T009 [P] [US2] Implement `updateBookingStatusAction` in `src/app/admin/bookings/actions.ts` containing authentication checks and terminal state verification.
-- [ ] T010 [US2] Build modal UI component in `src/components/booking-details-modal.tsx` showing customer contact details, flight number, notes, and status transition buttons.
-- [ ] T011 [US2] Integrate `BookingDetailsModal` into `BookingsManager` to trigger details view on table row clicks and handle status saving.
+- [X] T009 [P] [US2] Implement `updateBookingStatusAction` in `src/app/admin/bookings/actions.ts` containing authentication checks and terminal state verification.
+- [X] T010 [US2] Build modal UI component in `src/components/booking-details-modal.tsx` showing customer contact details, flight number, notes, and status transition buttons.
+- [X] T011 [US2] Integrate `BookingDetailsModal` into `BookingsManager` to trigger details view on table row clicks and handle status saving.
 
 **Checkpoint**: User Stories 1 and 2 are fully functional and integrated.
 
@@ -85,12 +85,12 @@
 
 ### Tests for User Story 3 (MANDATORY) ⚠️
 
-- [ ] T012 [P] [US3] Write failing unit tests in `tests/unit/booking-dashboard.test.ts` for `assignDriverAction` validating driver ID assignment and terminal status locks.
+- [X] T012 [P] [US3] Write failing unit tests in `tests/unit/booking-dashboard.test.ts` for `assignDriverAction` validating driver ID assignment and terminal status locks.
 
 ### Implementation for User Story 3
 
-- [ ] T013 [P] [US3] Implement `assignDriverAction` in `src/app/admin/bookings/actions.ts` verifying authentication and terminal status locks before updating `driver_id`.
-- [ ] T014 [US3] Update `BookingDetailsModal` in `src/components/booking-details-modal.tsx` to display the driver assignment dropdown loaded with active drivers and disable it if terminal.
+- [X] T013 [P] [US3] Implement `assignDriverAction` in `src/app/admin/bookings/actions.ts` verifying authentication and terminal status locks before updating `driver_id`.
+- [X] T014 [US3] Update `BookingDetailsModal` in `src/components/booking-details-modal.tsx` to display the driver assignment dropdown loaded with active drivers and disable it if terminal.
 
 **Checkpoint**: Driver assignment functionality is complete and validated.
 
@@ -100,9 +100,9 @@
 
 **Purpose**: Cleanup, full testing, and validation check
 
-- [ ] T015 [P] Update developer documentation or quickstart validation run.
-- [ ] T016 [P] Run automated Vitest test suite and ensure 100% pass rate.
-- [ ] T017 Verify layout responsiveness across mobile and desktop viewports.
+- [X] T015 [P] Update developer documentation or quickstart validation run.
+- [X] T016 [P] Run automated Vitest test suite and ensure 100% pass rate.
+- [X] T017 Verify layout responsiveness across mobile and desktop viewports.
 
 ---
 

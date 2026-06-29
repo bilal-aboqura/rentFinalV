@@ -24,6 +24,7 @@ src/
 │   │   └── actions.ts      # Public Server Actions
 │   ├── admin/
 │   │   ├── login/          # Admin auth
+│   │   ├── bookings/       # Bookings dashboard (list, filter, status, driver assign)
 │   │   └── dashboard/      # Protected admin area
 │   │       ├── bookings/   # Booking management
 │   │       ├── drivers/    # Driver profiles
@@ -43,7 +44,8 @@ src/
 
 supabase/
 └── migrations/
-    └── 20260623000000_init_schema.sql
+    ├── 20260623000000_init_schema.sql
+    └── 20260626000001_update_bookings_schema.sql  # driver_id + Completed status
 
 tests/
 ├── unit/

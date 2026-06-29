@@ -53,12 +53,9 @@ export interface LocationRow {
   created_at: string;
 }
 
-export interface ServerActionResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  validationErrors?: { [key: string]: string[] };
-}
+export type ServerActionResponse<T> =
+  | { success: true; data: T }
+  | { success: false; error: string; validationErrors?: Record<string, string[]> };
 
 // ----------------------------------------------------------------
 // Format Zod errors into a flat Record

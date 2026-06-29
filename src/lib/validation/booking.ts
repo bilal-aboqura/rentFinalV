@@ -1,9 +1,11 @@
 /**
  * T002 / T003 — Booking Step 1 Zod Validation Schemas
  * T005       — Booking Step 2 & Full Submission Zod Schemas
+ * T003       — Booking Dashboard status update & driver assignment schemas
  *
  * Spec: specs/005-booking-wizard-step1/data-model.md
  *       specs/006-booking-wizard-step2/data-model.md
+ *       specs/007-bookings-dashboard/data-model.md
  */
 
 import { z } from 'zod';
@@ -119,5 +121,90 @@ export interface BookingStep2State {
   customerPhone: string;
   flightNumber?: string;
   notes?: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Booking Dashboard — Status & Driver Assignment Schemas (Spec 007)
+// ─────────────────────────────────────────────────────────────
+
+/** Booking lifecycle statuses managed from the admin dashboard. */
+export const BOOKING_STATUSES = [
+  'Pending',
+  'Confirmed',
+  'Completed',
+  'Cancelled',
+] as const;
+
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+/** Statuses that lock a booking from any further modifications. */
+export const TERMINAL_BOOKING_STATUSES: ReadonlyArray<BookingStatus> = [
+  'Completed',
+  'Cancelled',
+];
+
+/** Returns true when a status can no longer be modified. */
+export function isTerminalBookingStatus(status: string): boolean {
+  return (TERMINAL_BOOKING_STATUSES as readonly string[]).includes(status);
+}
+
+/** Status filter values accepted by the bookings dashboard. */
+export const BOOKING_STATUS_FILTERS = ['All', ...BOOKING_STATUSES] as const;
+export type BookingStatusFilter = (typeof BOOKING_STATUS_FILTERS)[number];
+
+/**
+ * Zod schema for validating a booking status update payload.
+ * Used by `updateBookingStatusAction` (Spec 007).
+ */
+export const UpdateBookingStatusSchema = z.object({
+  bookingId: z.string().uuid({ message: 'Invalid booking ID.' }),
+  status: z.enum(BOOKING_STATUSES, {
+    errorMap: () => ({ message: 'Invalid booking status selection.' }),
+  }),
+});
+
+export type UpdateBookingStatusInput = z.infer<typeof UpdateBookingStatusSchema>;
+
+/**
+ * Zod schema for validating a driver assignment payload.
+ * `driverId` is nullable to allow un-assigning a driver.
+ * Used by `assignDriverAction` (Spec 007).
+ */
+export const AssignDriverSchema = z.object({
+  bookingId: z.string().uuid({ message: 'Invalid booking ID.' }),
+  driverId: z.string().uuid({ message: 'Invalid driver ID.' }).nullable(),
+});
+
+export type AssignDriverInput = z.infer<typeof AssignDriverSchema>;
+
+/**
+ * A booking record enriched with its joined route and driver display names.
+ * Matches the nested Supabase select used by `fetchBookingsAction`.
+ */
+export interface BookingWithDetails {
+  id: string;
+  booking_reference: string;
+  pickup_location_id: string;
+  destination_location_id: string;
+  booking_date: string;
+  booking_time: string;
+  price: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  flight_number: string | null;
+  notes: string | null;
+  status: BookingStatus;
+  driver_id: string | null;
+  created_at: string;
+  pickup: {
+    name: string;
+  };
+  destination: {
+    name: string;
+  };
+  driver?: {
+    name: string;
+  } | null;
 }
 
