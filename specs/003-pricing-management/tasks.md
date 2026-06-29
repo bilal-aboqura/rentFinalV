@@ -24,8 +24,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Setup database schema and constraints for `route_prices` table in Supabase
-- [ ] T002 Configure local environment variables for Supabase in `.env.local`
+- [X] T001 Setup database schema and constraints for `route_prices` table in Supabase
+- [X] T002 Configure local environment variables for Supabase in `.env.local`
 
 ---
 
@@ -35,10 +35,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 [P] Create TypeScript interfaces for RoutePrice in `src/types/index.ts`
-- [ ] T004 [P] Create validation schemas in `src/lib/validation/pricing.ts`
-- [ ] T005 [P] Create Vitest validation tests in `tests/unit/pricing.test.ts`
-- [ ] T006 Run and verify Vitest validation tests pass for `tests/unit/pricing.test.ts`
+- [X] T003 [P] Create TypeScript interfaces for RoutePrice in `src/types/index.ts`
+- [X] T004 [P] Create validation schemas in `src/lib/validation/pricing.ts`
+- [X] T005 [P] Create Vitest validation tests in `tests/unit/pricing.test.ts`
+- [X] T006 Run and verify Vitest validation tests pass for `tests/unit/pricing.test.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -52,12 +52,12 @@
 
 ### Tests for User Story 1 (MANDATORY) ⚠️
 
-- [ ] T007 [P] [US1] Create Vitest mock tests for fetching route prices in `tests/unit/pricing-fetch.test.ts`
+- [X] T007 [P] [US1] Create Vitest mock tests for fetching route prices in `tests/unit/pricing-fetch.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Implement Server Action to retrieve paginated route prices with location joins in `src/app/admin/pricing/actions.ts`
-- [ ] T009 [US1] Create the Admin Pricing page and paginated table view in `src/app/admin/pricing/page.tsx`
+- [X] T008 [US1] Implement Server Action to retrieve paginated route prices with location joins in `src/app/admin/pricing/actions.ts`
+- [X] T009 [US1] Create the Admin Pricing page and paginated table view in `src/app/admin/pricing/page.tsx`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -71,10 +71,10 @@
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
 
-- [ ] T010 [P] [US2] Create Vitest mock tests for createRoutePriceAction in `tests/unit/pricing-create.test.ts`
-- [ ] T011 [US2] Implement `createRoutePriceAction` Server Action in `src/app/admin/pricing/actions.ts` with validation and database duplicate error handling
-- [ ] T012 [US2] Create the Add Route Price modal form component in `src/components/pricing-form.tsx`
-- [ ] T013 [US2] Integrate the pricing form modal into the admin pricing page at `src/app/admin/pricing/page.tsx`
+- [X] T010 [P] [US2] Create Vitest mock tests for createRoutePriceAction in `tests/unit/pricing-create.test.ts`
+- [X] T011 [US2] Implement `createRoutePriceAction` Server Action in `src/app/admin/pricing/actions.ts` with validation and database duplicate error handling
+- [X] T012 [US2] Create the Add Route Price modal form component in `src/components/pricing-form.tsx`
+- [X] T013 [US2] Integrate the pricing form modal into the admin pricing page at `src/app/admin/pricing/page.tsx`
 
 **Checkpoint**: At this point, User Stories 1 and 2 should both work independently
 
@@ -88,10 +88,10 @@
 
 ### Tests for User Story 3 (MANDATORY) ⚠️
 
-- [ ] T014 [P] [US3] Create Vitest mock tests for updateRoutePriceAction in `tests/unit/pricing-update.test.ts`
-- [ ] T015 [US3] Implement `updateRoutePriceAction` Server Action in `src/app/admin/pricing/actions.ts` with validation and duplicate error checking
-- [ ] T016 [US3] Update the form modal in `src/components/pricing-form.tsx` to support Edit mode and populate with existing data
-- [ ] T017 [US3] Connect Edit button in `src/app/admin/pricing/page.tsx` to the form modal
+- [X] T014 [P] [US3] Create Vitest mock tests for updateRoutePriceAction in `tests/unit/pricing-update.test.ts`
+- [X] T015 [US3] Implement `updateRoutePriceAction` Server Action in `src/app/admin/pricing/actions.ts` with validation and duplicate error checking
+- [X] T016 [US3] Update the form modal in `src/components/pricing-form.tsx` to support Edit mode and populate with existing data
+- [X] T017 [US3] Connect Edit button in `src/app/admin/pricing/page.tsx` to the form modal
 
 **Checkpoint**: At this point, User Stories 1, 2, and 3 should work independently
 
@@ -105,9 +105,9 @@
 
 ### Tests for User Story 4 (MANDATORY) ⚠️
 
-- [ ] T018 [P] [US4] Create Vitest mock tests for deleteRoutePriceAction in `tests/unit/pricing-delete.test.ts`
-- [ ] T019 [US4] Implement `deleteRoutePriceAction` Server Action in `src/app/admin/pricing/actions.ts`
-- [ ] T020 [US4] Bind the Delete action to the Delete button in the table at `src/app/admin/pricing/page.tsx`
+- [X] T018 [P] [US4] Create Vitest mock tests for deleteRoutePriceAction in `tests/unit/pricing-delete.test.ts`
+- [X] T019 [US4] Implement `deleteRoutePriceAction` Server Action in `src/app/admin/pricing/actions.ts`
+- [X] T020 [US4] Bind the Delete action to the Delete button in the table at `src/app/admin/pricing/page.tsx`
 
 **Checkpoint**: All admin pricing CRUD flows should now be functional
 
@@ -121,9 +121,9 @@
 
 ### Tests for User Story 5 (MANDATORY) ⚠️
 
-- [ ] T021 [P] [US5] Create Vitest tests for customer pricing query utilities in `tests/unit/booking-pricing.test.ts`
-- [ ] T022 [US5] Implement public route price lookup action or endpoint in `src/app/admin/pricing/actions.ts`
-- [ ] T023 [US5] Integrate the price lookup in the public booking wizard page/component in `src/components/booking-wizard.tsx`
+- [X] T021 [P] [US5] Create Vitest tests for customer pricing query utilities in `tests/unit/booking-pricing.test.ts`
+- [X] T022 [US5] Implement public route price lookup action or endpoint in `src/app/admin/pricing/actions.ts`
+- [X] T023 [US5] Integrate the price lookup in the public booking wizard page/component in `src/components/booking-wizard.tsx`
 
 ---
 
@@ -131,9 +131,9 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T024 Documentation updates in `specs/003-pricing-management/`
-- [ ] T025 Run full Vitest suite to verify 100% of tests pass
-- [ ] T026 Run the verification scenarios outlined in `specs/003-pricing-management/quickstart.md`
+- [X] T024 Documentation updates in `specs/003-pricing-management/`
+- [X] T025 Run full Vitest suite to verify 100% of tests pass
+- [X] T026 Run the verification scenarios outlined in `specs/003-pricing-management/quickstart.md`
 
 ---
 

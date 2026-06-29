@@ -1,15 +1,17 @@
+/**
+ * Layout for /admin/pricing — reuses dashboard-style sidebar navigation.
+ * Protects all routes under /admin/pricing behind auth.
+ */
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import {
-  LayoutDashboard,
   CalendarCheck,
   Users,
   Settings,
   FileText,
   LogOut,
   Plane,
-  Bell,
   MapPin,
   DollarSign,
 } from 'lucide-react';
@@ -25,13 +27,15 @@ const NAV_LINKS = [
   { href: '/admin/dashboard/content', label: 'Content', icon: FileText },
 ];
 
-export default async function DashboardLayout({
+export default async function PricingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect('/admin/login');
@@ -107,9 +111,7 @@ export default async function DashboardLayout({
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-8 overflow-auto">
-          {children}
-        </main>
+        <main className="flex-1 p-8 overflow-auto">{children}</main>
       </div>
     </div>
   );

@@ -36,17 +36,23 @@ export interface Driver {
 }
 
 // ----------------------------------------------------------------
-// Pricing Rule
+// Pricing Rule (RoutePrice) — Spec 003
 // ----------------------------------------------------------------
-export interface PricingRule {
+export interface RoutePrice {
   id: string;
   pickup_location_id: string;
   destination_location_id: string;
-  vehicle_class: VehicleClass;
   price: number;
   created_at: string;
-  updated_at: string;
-  // Joined fields (optional)
+  // Joined fields for display
+  pickup_location_name?: string;
+  destination_location_name?: string;
+}
+
+/** @deprecated Use RoutePrice instead */
+export interface PricingRule extends RoutePrice {
+  vehicle_class?: VehicleClass;
+  updated_at?: string;
   pickup_location?: Location;
   destination_location?: Location;
 }
@@ -152,17 +158,26 @@ export interface UpdateLocationInput {
   status?: LocationStatus;
 }
 
-export interface CreatePricingRuleInput {
+export interface CreateRoutePriceInput {
   pickupLocationId: string;
   destinationLocationId: string;
-  vehicleClass: VehicleClass;
   price: number;
 }
 
-export interface UpdatePricingRuleInput {
+export interface UpdateRoutePriceInput {
   id: string;
-  price: number;
+  pickupLocationId?: string;
+  destinationLocationId?: string;
+  price?: number;
 }
+
+/** @deprecated Use CreateRoutePriceInput */
+export interface CreatePricingRuleInput extends CreateRoutePriceInput {
+  vehicleClass?: VehicleClass;
+}
+
+/** @deprecated Use UpdateRoutePriceInput */
+export interface UpdatePricingRuleInput extends UpdateRoutePriceInput {}
 
 export interface UpdateContentInput {
   key: string;

@@ -14,6 +14,7 @@ import {
   LogOut,
   Plane,
   MapPin,
+  DollarSign,
 } from 'lucide-react';
 import { adminLogoutAction } from '@/app/admin/dashboard/actions';
 import NotificationsList from '@/components/notifications-list';
@@ -22,6 +23,7 @@ const NAV_LINKS = [
   { href: '/admin/dashboard/bookings', label: 'Bookings', icon: CalendarCheck },
   { href: '/admin/dashboard/drivers', label: 'Drivers', icon: Users },
   { href: '/admin/locations', label: 'Locations', icon: MapPin },
+  { href: '/admin/pricing', label: 'Pricing', icon: DollarSign },
   { href: '/admin/dashboard/settings', label: 'Settings', icon: Settings },
   { href: '/admin/dashboard/content', label: 'Content', icon: FileText },
 ];
