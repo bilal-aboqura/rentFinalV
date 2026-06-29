@@ -23,10 +23,11 @@ import {
   type BookingStatus,
   type BookingStatusFilter,
 } from '@/lib/validation/booking';
+import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from '@/lib/mail/smtp';
 
 /** Select string used to load a booking with its joined route + driver names. */
 const BOOKING_WITH_DETAILS_SELECT =
-  '*, pickup:locations!pickup_location_id(name), destination:locations!destination_location_id(name), driver:drivers(name)';
+  '*, pickup:locations!pickup_location_id(name), destination:locations!destination_location_id(name), driver:drivers(name, phone)';
 
 /** Unauthorized error response shared by every admin action. */
 function unauthorized(): ServerActionResponse<never> {
@@ -54,6 +55,49 @@ async function getAdminClient(): Promise<
     return { authorized: false };
   }
   return { authorized: true, supabase };
+}
+
+/**
+ * Builds the parameter object for `sendBookingConfirmedEmail` from an
+ * updated booking record (Spec 009 / US1). Centralized here so both the
+ * status-update and driver-assignment paths compose identical payloads.
+ */
+function buildConfirmedEmailParams(booking: BookingWithDetails) {
+  return {
+    email: booking.customer_email,
+    customerName: booking.customer_name,
+    reference: booking.booking_reference,
+    pickupName: booking.pickup.name,
+    destinationName: booking.destination.name,
+    date: booking.booking_date,
+    time: booking.booking_time,
+    driverName: booking.driver?.name,
+    driverPhone: booking.driver?.phone,
+  };
+}
+
+/**
+ * Dispatches a transactional email asynchronously (fire-and-forget) so the
+ * admin request thread is never blocked by SMTP latency (Spec 009, SC-004).
+ * Failures are caught and logged — they MUST NOT roll back the DB write.
+ */
+function dispatchStatusEmail(
+  status: BookingStatus,
+  booking: BookingWithDetails
+): void {
+  if (status === 'Confirmed') {
+    sendBookingConfirmedEmail(buildConfirmedEmailParams(booking)).catch((error) =>
+      console.error('[actions] sendBookingConfirmedEmail failed:', error)
+    );
+  } else if (status === 'Cancelled') {
+    sendBookingCancelledEmail({
+      email: booking.customer_email,
+      customerName: booking.customer_name,
+      reference: booking.booking_reference,
+    }).catch((error) =>
+      console.error('[actions] sendBookingCancelledEmail failed:', error)
+    );
+  }
 }
 
 // ----------------------------------------------------------------
@@ -149,8 +193,14 @@ export async function updateBookingStatusAction(input: {
     return { success: false, error: updateError?.message ?? 'Failed to update booking status.' };
   }
 
+  const updatedBooking = updated as unknown as BookingWithDetails;
+
   revalidatePath('/admin/bookings');
-  return { success: true, data: updated as unknown as BookingWithDetails };
+
+  // Spec 009: trigger the status-change email asynchronously (non-blocking).
+  dispatchStatusEmail(status, updatedBooking);
+
+  return { success: true, data: updatedBooking };
 }
 
 // ----------------------------------------------------------------
@@ -199,8 +249,19 @@ export async function assignDriverAction(input: {
     return { success: false, error: updateError?.message ?? 'Failed to assign driver.' };
   }
 
+  const updatedBooking = updated as unknown as BookingWithDetails;
+
   revalidatePath('/admin/bookings');
-  return { success: true, data: updated as unknown as BookingWithDetails };
+
+  // Spec 009 / US1 (FR-010): re-trigger the confirmation email when a driver
+  // is assigned/updated on a booking that is already Confirmed (non-blocking).
+  if (currentBooking.status === 'Confirmed') {
+    sendBookingConfirmedEmail(buildConfirmedEmailParams(updatedBooking)).catch((error) =>
+      console.error('[actions] sendBookingConfirmedEmail failed:', error)
+    );
+  }
+
+  return { success: true, data: updatedBooking };
 }
 
 // ----------------------------------------------------------------

@@ -27,8 +27,13 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
+vi.mock('@/lib/mail/smtp', () => ({
+  sendBookingConfirmedEmail: vi.fn().mockResolvedValue(null),
+  sendBookingCancelledEmail: vi.fn().mockResolvedValue(null),
+}));
 
 import { createClient } from '@/lib/supabase/server';
+import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from '@/lib/mail/smtp';
 import {
   fetchBookingsAction,
   updateBookingStatusAction,
@@ -124,6 +129,8 @@ function mockSupabase(config: MockClientConfig = {}) {
 
 beforeEach(() => {
   vi.mocked(createClient).mockReset();
+  vi.mocked(sendBookingConfirmedEmail).mockClear();
+  vi.mocked(sendBookingCancelledEmail).mockClear();
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -507,5 +514,157 @@ describe('assignDriverAction — driver assignment & terminal locks (US3)', () =
 
     expect(result.success).toBe(true);
     expect(calls.update).toContainEqual([{ driver_id: null }]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Spec 009 — Status Change Alert: email trigger wiring
+// - T005 [US1]: sendBookingConfirmedEmail on Confirmed transition
+// - T011 [US2]: sendBookingCancelledEmail on Cancelled transition
+// - FR-006:     no email on Completed/Pending transitions
+// - T006 [US1]: sendBookingConfirmedEmail on driver assign to Confirmed booking
+// ─────────────────────────────────────────────────────────────
+
+describe('Spec 009 — status change email triggers', () => {
+  it('dispatches sendBookingConfirmedEmail when status transitions to Confirmed (T005)', async () => {
+    mockSupabase({
+      singleQueue: [
+        { data: { status: 'Pending' }, error: null },
+        { data: { ...sampleBooking, status: 'Confirmed' }, error: null },
+      ],
+    });
+
+    const result = await updateBookingStatusAction({ bookingId: BOOKING_ID, status: 'Confirmed' });
+
+    expect(result.success).toBe(true);
+    expect(sendBookingConfirmedEmail).toHaveBeenCalledTimes(1);
+    expect(sendBookingConfirmedEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'alice@example.com',
+        customerName: 'Alice Johnson',
+        reference: sampleBooking.booking_reference,
+        pickupName: 'Airport Terminal 1',
+        destinationName: 'Downtown Hotel',
+        date: '2026-07-01',
+        time: '14:30:00',
+      })
+    );
+  });
+
+  it('includes driver name/phone in the confirmed email when a driver is assigned (T005)', async () => {
+    mockSupabase({
+      singleQueue: [
+        { data: { status: 'Pending' }, error: null },
+        {
+          data: {
+            ...sampleBooking,
+            status: 'Confirmed',
+            driver: { name: 'Sam Driver', phone: '+15559990000' },
+          },
+          error: null,
+        },
+      ],
+    });
+
+    await updateBookingStatusAction({ bookingId: BOOKING_ID, status: 'Confirmed' });
+
+    expect(sendBookingConfirmedEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        driverName: 'Sam Driver',
+        driverPhone: '+15559990000',
+      })
+    );
+  });
+
+  it('dispatches sendBookingCancelledEmail when status transitions to Cancelled (T011)', async () => {
+    mockSupabase({
+      singleQueue: [
+        { data: { status: 'Pending' }, error: null },
+        { data: { ...sampleBooking, status: 'Cancelled' }, error: null },
+      ],
+    });
+
+    const result = await updateBookingStatusAction({ bookingId: BOOKING_ID, status: 'Cancelled' });
+
+    expect(result.success).toBe(true);
+    expect(sendBookingCancelledEmail).toHaveBeenCalledTimes(1);
+    expect(sendBookingCancelledEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'alice@example.com',
+        customerName: 'Alice Johnson',
+        reference: sampleBooking.booking_reference,
+      })
+    );
+  });
+
+  it('does NOT dispatch any email when status transitions to Completed or Pending (FR-006)', async () => {
+    mockSupabase({
+      singleQueue: [
+        { data: { status: 'Confirmed' }, error: null },
+        { data: { ...sampleBooking, status: 'Completed' }, error: null },
+      ],
+    });
+
+    await updateBookingStatusAction({ bookingId: BOOKING_ID, status: 'Completed' });
+
+    expect(sendBookingConfirmedEmail).not.toHaveBeenCalled();
+    expect(sendBookingCancelledEmail).not.toHaveBeenCalled();
+  });
+
+  it('dispatches sendBookingConfirmedEmail when a driver is assigned to an already-Confirmed booking (T006)', async () => {
+    mockSupabase({
+      singleQueue: [
+        { data: { status: 'Confirmed' }, error: null },
+        {
+          data: {
+            ...sampleBooking,
+            status: 'Confirmed',
+            driver: { name: 'Sam Driver', phone: '+15559990000' },
+          },
+          error: null,
+        },
+      ],
+    });
+
+    const result = await assignDriverAction({ bookingId: BOOKING_ID, driverId: DRIVER_ID });
+
+    expect(result.success).toBe(true);
+    expect(sendBookingConfirmedEmail).toHaveBeenCalledTimes(1);
+    expect(sendBookingConfirmedEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'alice@example.com',
+        reference: sampleBooking.booking_reference,
+        driverName: 'Sam Driver',
+        driverPhone: '+15559990000',
+      })
+    );
+  });
+
+  it('does NOT dispatch a confirmation email when a driver is assigned to a non-Confirmed booking (T006)', async () => {
+    mockSupabase({
+      singleQueue: [
+        { data: { status: 'Pending' }, error: null },
+        { data: { ...sampleBooking, status: 'Pending', driver: { name: 'Sam Driver', phone: '+15559990000' } }, error: null },
+      ],
+    });
+
+    await assignDriverAction({ bookingId: BOOKING_ID, driverId: DRIVER_ID });
+
+    expect(sendBookingConfirmedEmail).not.toHaveBeenCalled();
+    expect(sendBookingCancelledEmail).not.toHaveBeenCalled();
+  });
+
+  it('does NOT dispatch any email when the status update fails (FR-007)', async () => {
+    mockSupabase({
+      singleQueue: [
+        { data: { status: 'Pending' }, error: null },
+        { data: null, error: { message: 'update failed' } },
+      ],
+    });
+
+    const result = await updateBookingStatusAction({ bookingId: BOOKING_ID, status: 'Confirmed' });
+
+    expect(result.success).toBe(false);
+    expect(sendBookingConfirmedEmail).not.toHaveBeenCalled();
   });
 });

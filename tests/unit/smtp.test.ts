@@ -116,3 +116,159 @@ describe('[US1] sendAdminNotificationEmail', () => {
     errorSpy.mockRestore();
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Spec 009 / US1 — sendBookingConfirmedEmail (T004)
+// Contract: specs/009-status-change-alert/contracts/smtp.md
+// ─────────────────────────────────────────────────────────────
+
+const CONFIRMED_PARAMS = {
+  email: 'alice@example.com',
+  customerName: 'Alice Johnson',
+  reference: 'BK-2026-0001',
+  pickupName: 'JFK Airport Terminal 4',
+  destinationName: 'Grand Central Hotel',
+  date: '2026-07-15',
+  time: '14:30',
+  driverName: 'Sam Smith',
+  driverPhone: '+15551234567',
+};
+
+describe('[US1] sendBookingConfirmedEmail', () => {
+  it('dispatches the email to the customer email address', async () => {
+    const { sendBookingConfirmedEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingConfirmedEmail(CONFIRMED_PARAMS);
+
+    expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+    expect(mocks.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'alice@example.com' })
+    );
+  });
+
+  it('uses a subject that indicates a confirmation and includes the reference', async () => {
+    const { sendBookingConfirmedEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingConfirmedEmail(CONFIRMED_PARAMS);
+
+    const call = mocks.sendMail.mock.calls[0][0] as Record<string, string>;
+    expect(call.subject).toMatch(/confirm/i);
+    expect(call.subject).toContain(CONFIRMED_PARAMS.reference);
+  });
+
+  it('includes the trip details (pickup, destination, date, time) and customer name in the body', async () => {
+    const { sendBookingConfirmedEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingConfirmedEmail(CONFIRMED_PARAMS);
+
+    const call = mocks.sendMail.mock.calls[0][0] as Record<string, string>;
+    expect(call.html).toContain('JFK Airport Terminal 4');
+    expect(call.html).toContain('Grand Central Hotel');
+    expect(call.html).toContain('2026-07-15');
+    expect(call.html).toContain('14:30');
+    expect(call.html).toContain('Alice Johnson');
+  });
+
+  it('includes the assigned driver name and phone number when provided', async () => {
+    const { sendBookingConfirmedEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingConfirmedEmail(CONFIRMED_PARAMS);
+
+    const call = mocks.sendMail.mock.calls[0][0] as Record<string, string>;
+    expect(call.html).toContain('Sam Smith');
+    expect(call.html).toContain('+15551234567');
+  });
+
+  it('omits driver block and states a driver will be assigned soon when no driver is provided (FR-008)', async () => {
+    const { sendBookingConfirmedEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingConfirmedEmail({ ...CONFIRMED_PARAMS, driverName: undefined, driverPhone: undefined });
+
+    const call = mocks.sendMail.mock.calls[0][0] as Record<string, string>;
+    expect(call.html).not.toContain('Sam Smith');
+    expect(call.html).toMatch(/assign(ed)?|soon|later|to be/i);
+  });
+
+  it('sends from the configured SMTP_FROM address', async () => {
+    const { sendBookingConfirmedEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingConfirmedEmail(CONFIRMED_PARAMS);
+
+    const call = mocks.sendMail.mock.calls[0][0] as Record<string, string>;
+    expect(call.from).toContain('noreply@airporttransfers.com');
+  });
+
+  it('does NOT throw when sendMail rejects — failures are non-fatal', async () => {
+    const { sendBookingConfirmedEmail } = await import('@/lib/mail/smtp');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.sendMail.mockRejectedValueOnce(new Error('SMTP down'));
+
+    await expect(sendBookingConfirmedEmail(CONFIRMED_PARAMS)).resolves.not.toThrow();
+
+    errorSpy.mockRestore();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Spec 009 / US2 — sendBookingCancelledEmail (T010)
+// Contract: specs/009-status-change-alert/contracts/smtp.md
+// ─────────────────────────────────────────────────────────────
+
+const CANCELLED_PARAMS = {
+  email: 'alice@example.com',
+  customerName: 'Alice Johnson',
+  reference: 'BK-2026-0001',
+};
+
+describe('[US2] sendBookingCancelledEmail', () => {
+  it('dispatches the email to the customer email address', async () => {
+    const { sendBookingCancelledEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingCancelledEmail(CANCELLED_PARAMS);
+
+    expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+    expect(mocks.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'alice@example.com' })
+    );
+  });
+
+  it('uses a subject that indicates a cancellation and includes the reference', async () => {
+    const { sendBookingCancelledEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingCancelledEmail(CANCELLED_PARAMS);
+
+    const call = mocks.sendMail.mock.calls[0][0] as Record<string, string>;
+    expect(call.subject).toMatch(/cancel/i);
+    expect(call.subject).toContain(CANCELLED_PARAMS.reference);
+  });
+
+  it('includes the customer name, the booking reference, and a polite cancellation message in the body', async () => {
+    const { sendBookingCancelledEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingCancelledEmail(CANCELLED_PARAMS);
+
+    const call = mocks.sendMail.mock.calls[0][0] as Record<string, string>;
+    expect(call.html).toContain('Alice Johnson');
+    expect(call.html).toContain('BK-2026-0001');
+    expect(call.html).toMatch(/cancel/i);
+  });
+
+  it('sends from the configured SMTP_FROM address', async () => {
+    const { sendBookingCancelledEmail } = await import('@/lib/mail/smtp');
+
+    await sendBookingCancelledEmail(CANCELLED_PARAMS);
+
+    const call = mocks.sendMail.mock.calls[0][0] as Record<string, string>;
+    expect(call.from).toContain('noreply@airporttransfers.com');
+  });
+
+  it('does NOT throw when sendMail rejects — failures are non-fatal', async () => {
+    const { sendBookingCancelledEmail } = await import('@/lib/mail/smtp');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.sendMail.mockRejectedValueOnce(new Error('SMTP down'));
+
+    await expect(sendBookingCancelledEmail(CANCELLED_PARAMS)).resolves.not.toThrow();
+
+    errorSpy.mockRestore();
+  });
+});

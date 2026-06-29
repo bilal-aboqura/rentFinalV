@@ -20,7 +20,7 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Configure local SMTP test settings (if needed) in `.env.local`
+- [X] T001 Configure local SMTP test settings (if needed) in `.env.local`
 
 ---
 
@@ -30,8 +30,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Extend `BookingWithDetails` interface in `src/types/index.ts` to support optional `phone?: string` under the `driver` sub-property
-- [ ] T003 Update `BookingRow` interface in `src/app/admin/bookings/actions.ts` to include `phone: string` in the driver property
+- [X] T002 Extend `BookingWithDetails` interface in `src/types/index.ts` to support optional `phone?: string` under the `driver` sub-property
+- [X] T003 Update `BookingRow` interface in `src/app/admin/bookings/actions.ts` to include `phone: string` in the driver property
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -45,15 +45,15 @@
 
 ### Tests for User Story 1 (MANDATORY) ⚠️
 
-- [ ] T004 [P] [US1] Write Vitest unit tests in `tests/unit/smtp.test.ts` for the new `sendBookingConfirmedEmail` SMTP helper function
-- [ ] T005 [US1] Write failing Vitest unit tests in `tests/unit/booking-dashboard.test.ts` to mock SMTP and assert that `sendBookingConfirmedEmail` is called when a booking status transitions to "Confirmed" via `updateBookingStatusAction`
-- [ ] T006 [US1] Write failing Vitest unit tests in `tests/unit/booking-dashboard.test.ts` to assert that `sendBookingConfirmedEmail` is called when a driver is assigned/updated via `assignDriverAction` on a booking already in "Confirmed" status, and NOT called on other statuses
+- [X] T004 [P] [US1] Write Vitest unit tests in `tests/unit/smtp.test.ts` for the new `sendBookingConfirmedEmail` SMTP helper function
+- [X] T005 [US1] Write failing Vitest unit tests in `tests/unit/booking-dashboard.test.ts` to mock SMTP and assert that `sendBookingConfirmedEmail` is called when a booking status transitions to "Confirmed" via `updateBookingStatusAction`
+- [X] T006 [US1] Write failing Vitest unit tests in `tests/unit/booking-dashboard.test.ts` to assert that `sendBookingConfirmedEmail` is called when a driver is assigned/updated via `assignDriverAction` on a booking already in "Confirmed" status, and NOT called on other statuses
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Implement `sendBookingConfirmedEmail` SMTP helper function in `src/lib/mail/smtp.ts` using Nodemailer
-- [ ] T008 [US1] Update `updateBookingStatusAction` in `src/app/admin/bookings/actions.ts` to select `driver:drivers(name, phone)` and trigger `sendBookingConfirmedEmail` asynchronously on "Confirmed" status transitions
-- [ ] T009 [US1] Update `assignDriverAction` in `src/app/admin/bookings/actions.ts` to select `driver:drivers(name, phone)` and trigger `sendBookingConfirmedEmail` asynchronously if the booking status is already "Confirmed"
+- [X] T007 [P] [US1] Implement `sendBookingConfirmedEmail` SMTP helper function in `src/lib/mail/smtp.ts` using Nodemailer
+- [X] T008 [US1] Update `updateBookingStatusAction` in `src/app/admin/bookings/actions.ts` to select `driver:drivers(name, phone)` and trigger `sendBookingConfirmedEmail` asynchronously on "Confirmed" status transitions
+- [X] T009 [US1] Update `assignDriverAction` in `src/app/admin/bookings/actions.ts` to select `driver:drivers(name, phone)` and trigger `sendBookingConfirmedEmail` asynchronously if the booking status is already "Confirmed"
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -67,13 +67,13 @@
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
 
-- [ ] T010 [P] [US2] Write Vitest unit tests in `tests/unit/smtp.test.ts` for the new `sendBookingCancelledEmail` SMTP helper function
-- [ ] T011 [US2] Write failing Vitest unit tests in `tests/unit/booking-dashboard.test.ts` to mock SMTP and assert that `sendBookingCancelledEmail` is called when a booking status transitions to "Cancelled" via `updateBookingStatusAction`
+- [X] T010 [P] [US2] Write Vitest unit tests in `tests/unit/smtp.test.ts` for the new `sendBookingCancelledEmail` SMTP helper function
+- [X] T011 [US2] Write failing Vitest unit tests in `tests/unit/booking-dashboard.test.ts` to mock SMTP and assert that `sendBookingCancelledEmail` is called when a booking status transitions to "Cancelled" via `updateBookingStatusAction`
 
 ### Implementation for User Story 2
 
-- [ ] T012 [P] [US2] Implement `sendBookingCancelledEmail` SMTP helper function in `src/lib/mail/smtp.ts` using Nodemailer
-- [ ] T013 [US2] Update `updateBookingStatusAction` in `src/app/admin/bookings/actions.ts` to trigger `sendBookingCancelledEmail` asynchronously on "Cancelled" status transitions
+- [X] T012 [P] [US2] Implement `sendBookingCancelledEmail` SMTP helper function in `src/lib/mail/smtp.ts` using Nodemailer
+- [X] T013 [US2] Update `updateBookingStatusAction` in `src/app/admin/bookings/actions.ts` to trigger `sendBookingCancelledEmail` asynchronously on "Cancelled" status transitions
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -83,8 +83,8 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T014 [P] Code cleanup, type verification, and running `npm run lint`
-- [ ] T015 Run quickstart.md validation to verify end-to-end flow
+- [X] T014 [P] Code cleanup, type verification, and running `npm run lint`
+- [X] T015 Run quickstart.md validation to verify end-to-end flow
 
 ---
 
