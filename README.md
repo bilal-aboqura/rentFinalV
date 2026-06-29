@@ -1,146 +1,132 @@
-# Airport Transfer and Driver Booking System
+# Airport Transfer & Driver Booking System
 
-A unified Next.js web application with a public-facing customer booking interface and a secure, private administration dashboard. Customers can calculate flat-rate quotes and book airport transfers as guest users; authenticated admins manage bookings, drivers, route pricing, locations, site content, and notifications.
+A full-stack web application for managing airport transfers, built with Next.js 14+ App Router and Supabase.
 
-## Architecture
+## Tech Stack
 
-- **Framework**: Next.js (v14+ App Router) written in TypeScript.
-- **Database & Storage**: Supabase PostgreSQL with Row Level Security (RLS) policies, and Supabase Storage for visual branding assets.
-- **Authentication**: Supabase Auth (via `@supabase/ssr` for secure, cookie-based sessions).
-- **Styling**: Responsive, mobile-first UI built strictly using Tailwind CSS.
-- **Notifications**: Transactional customer updates dispatched via SMTP using Nodemailer; admin alerts logged directly in the database.
-- **Testing**: Test-Driven Development (TDD) enforced using Vitest.
+- **Framework**: Next.js 14+ (App Router, Server Actions)
+- **Database**: PostgreSQL via Supabase (with RLS policies)
+- **Auth**: Supabase Auth
+- **Styling**: Tailwind CSS v4
+- **Validation**: Zod
+- **Testing**: Vitest + Testing Library
+- **Email**: Nodemailer (SMTP)
+- **Icons**: Lucide React
 
----
+## Project Structure
 
-## Directory Structure
-
-```text
+```
 src/
 ├── app/
-│   ├── (customer)/
-│   │   ├── page.tsx              # Public customer booking interface
-│   │   ├── actions.ts            # Public Server Actions (bookings / contact)
-│   │   └── contact/
-│   │       └── page.tsx          # Guest contact form page
+│   ├── (customer)/         # Public booking interface
+│   │   ├── page.tsx        # Landing page
+│   │   ├── contact/        # Contact form
+│   │   └── actions.ts      # Public Server Actions
 │   ├── admin/
-│   │   ├── login/
-│   │   │   └── page.tsx          # Admin authentication screen
-│   │   └── dashboard/
-│   │       ├── layout.tsx        # Responsive dashboard layout & sidebar
-│   │       ├── bookings/
-│   │       │   └── page.tsx      # Admin bookings dashboard (search/filter/details)
-│   │       ├── drivers/
-│   │       │   └── page.tsx      # Driver profiles CRUD panel
-│   │       ├── settings/
-│   │       │   └── page.tsx      # Locations & flat-rate pricing configuration
-│   │       └── content/
-│   │           └── page.tsx      # Dynamic CMS (FAQ & website info) settings
-│   │       └── actions.ts        # Admin Server Actions (status update, assignment, CRUDs)
-│   ├── layout.tsx                # Base HTML & metadata wrapper
-│   └── page.tsx
+│   │   ├── login/          # Admin auth
+│   │   └── dashboard/      # Protected admin area
+│   │       ├── bookings/   # Booking management
+│   │       ├── drivers/    # Driver profiles
+│   │       ├── settings/   # Locations & pricing
+│   │       ├── content/    # CMS
+│   │       └── actions.ts  # Admin Server Actions
+│   └── layout.tsx
 ├── components/
-│   ├── ui/                       # Shared UI kit (Button, Modal, Card, Table)
-│   ├── booking-form.tsx          # Customer booking wizard component
-│   └── notifications-list.tsx    # Admin dashboard notification panel
+│   ├── booking-form.tsx    # 3-step booking wizard
+│   └── notifications-list.tsx
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts             # Supabase browser client
-│   │   └── server.ts             # Supabase server-side client
-│   ├── validation/
-│   │   └── schema.ts             # Zod data validation rules
-│   └── email/
-│       └── nodemailer.ts         # SMTP transactional email utility
+│   ├── supabase/           # Client & server helpers
+│   ├── validation/         # Zod schemas
+│   └── email/              # Nodemailer utility
 └── types/
-    └── index.ts                  # Shared TypeScript types & interfaces
-
-tests/
-├── unit/                         # Schema validation and component rendering unit tests
-└── integration/                  # Server Actions and database integration tests
+    └── index.ts            # TypeScript types
 
 supabase/
-└── migrations/                   # SQL migration scripts for tables and RLS policies
+└── migrations/
+    └── 20260623000000_init_schema.sql
+
+tests/
+├── unit/
+│   ├── components.test.ts
+│   └── email.test.ts
+└── integration/
+    └── actions.test.ts
 ```
-
----
-
-## Prerequisites
-
-- **Node.js**: v18.0.0 or higher
-- **NPM**: v9.0.0 or higher
-- **Supabase CLI** (optional for local database migrations) or an active Supabase project
-
----
 
 ## Environment Setup
 
-Create a `.env.local` file in the project root directory and populate it with your credentials:
+Create `.env.local` in the project root:
 
 ```ini
-NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 SMTP_HOST=smtp.mailtrap.io
 SMTP_PORT=2525
-SMTP_USER=test_smtp_user
-SMTP_PASS=test_smtp_password
-SMTP_FROM=noreply@airporttransfers.com
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+SMTP_FROM=noreply@yourdomain.com
 ```
 
----
+## Database Setup
 
-## Installation & Database Setup
+### Option A — Supabase CLI (Local)
+```bash
+npx supabase migration up
+```
 
-1. Install all dependencies:
-   ```bash
-   npm install
-   ```
+### Option B — Supabase SQL Editor
+Copy the contents of `supabase/migrations/20260623000000_init_schema.sql` and run in the Supabase project SQL Editor.
 
-2. Apply database schemas, relations, and RLS policies:
-   ```bash
-   # Run local migration via Supabase CLI
-   npx supabase migration up
-   
-   # Or copy the contents of supabase/migrations/ to the Supabase SQL editor
-   ```
-
----
-
-## Running the Application (Development)
-
-Start the Next.js local development server:
+## Installation & Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Start dev server
 npm run dev
 ```
 
-Visit `http://localhost:3000` to access the customer interface and `http://localhost:3000/admin/login` to access the secure admin dashboard.
+Open [http://localhost:3000](http://localhost:3000) for the booking interface.
+Admin dashboard: [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
 
----
-
-## Testing
-
-Run the test suite using Vitest (TDD is enforced; tests must fail before implementation):
+## Running Tests
 
 ```bash
-# Run unit and integration tests
-npx vitest
+# Run all tests
+npx vitest run
 
-# Run in watch mode
-npx vitest watch
+# Watch mode
+npx vitest
 ```
 
----
+## Deployment
 
-## Manual Validation Scenarios
+### Vercel (Recommended)
 
-### Customer Booking
-1. Open the booking landing page and fill out pickup, destination, future date/time, and vehicle class.
-2. Verify the flat-rate estimate calculates dynamically.
-3. Complete passenger details and submit the form.
-4. Verify the confirmation screen displays a reference code, a pending booking record is created in Supabase, and an admin notification is logged.
+1. Connect the repository to Vercel
+2. Set all environment variables in Vercel project settings
+3. Deploy — Vercel automatically handles Next.js App Router
 
-### Admin status changes & driver assignment
-1. Access `/admin/login`, log in, and view the Bookings list.
-2. Confirm the pending booking, and verify the customer receives a confirmation email.
-3. Assign an active driver, and verify that the system blocks overlapping schedule assignments (within 3 hours).
+### Manual Build
+
+```bash
+npm run build
+npm start
+```
+
+## Admin Setup
+
+1. Create an admin user in Supabase Authentication (email + password)
+2. Navigate to `/admin/login` and sign in with those credentials
+3. Start managing bookings, drivers, locations, and pricing from the dashboard
+
+## Key Features
+
+- **Customer Booking**: 3-step wizard with real-time pricing lookup
+- **Admin Dashboard**: Bookings management with search, filter, and pagination
+- **Driver Assignment**: 3-hour conflict validation enforced server-side
+- **Notifications**: Real-time admin alerts + customer email notifications
+- **Content CMS**: Dynamic homepage content and FAQ management
+- **Security**: Row-Level Security (RLS) on all Supabase tables

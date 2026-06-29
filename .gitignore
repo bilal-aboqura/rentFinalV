@@ -42,17 +42,3 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# ---- Feature 001: Airport Transfer Booking (backend/ & frontend/ workspaces) ----
-# backend (Node.js + Express + TypeScript)
-/backend/node_modules
-/backend/dist
-/backend/build
-/backend/coverage
-/backend/*.log
-
-# frontend (Vite + React + TypeScript)
-/frontend/node_modules
-/frontend/dist
-/frontend/build
-/frontend/coverage
-/frontend/*.log
