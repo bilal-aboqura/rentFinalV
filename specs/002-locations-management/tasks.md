@@ -24,10 +24,10 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize Next.js App Router project with TypeScript and Tailwind CSS in the repository root
-- [ ] T003 [P] Configure ESLint and formatting tools in the project root
-- [ ] T004 [P] Configure Vitest and setup testing environment in package.json and vite.config.ts
+- [X] T001 Create project structure per implementation plan
+- [X] T002 Initialize Next.js App Router project with TypeScript and Tailwind CSS in the repository root
+- [X] T003 [P] Configure ESLint and formatting tools in the project root
+- [X] T004 [P] Configure Vitest and setup testing environment in package.json and vite.config.ts
 
 ---
 
@@ -37,12 +37,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Setup Supabase database schema by running migrations/SQL scripts to create `locations` table in Supabase SQL editor
-- [ ] T006 [P] Configure Row Level Security (RLS) policies for the `locations` table in Supabase SQL editor
-- [ ] T007 [P] Create Supabase server client and client-side setup in src/lib/supabase/server.ts and src/lib/supabase/client.ts
-- [ ] T008 [P] Create Zod schemas and validation utilities for Locations in src/lib/validation/location.ts
-- [ ] T009 Write Vitest unit tests for validation utilities in tests/unit/validation.test.ts
-- [ ] T010 Verify foundational validation tests pass by running npm run test
+- [X] T005 Setup Supabase database schema by running migrations/SQL scripts to create `locations` table in Supabase SQL editor
+- [X] T006 [P] Configure Row Level Security (RLS) policies for the `locations` table in Supabase SQL editor
+- [X] T007 [P] Create Supabase server client and client-side setup in src/lib/supabase/server.ts and src/lib/supabase/client.ts
+- [X] T008 [P] Create Zod schemas and validation utilities for Locations in src/lib/validation/location.ts
+- [X] T009 Write Vitest unit tests for validation utilities in tests/unit/validation.test.ts
+- [X] T010 Verify foundational validation tests pass by running npm run test
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -58,14 +58,14 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T011 [P] [US1] Write unit/integration tests using Vitest for fetching and searching locations in tests/unit/fetchLocations.test.ts
+- [X] T011 [P] [US1] Write unit/integration tests using Vitest for fetching and searching locations in tests/unit/fetchLocations.test.ts
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Implement server-side fetching function with search and pagination filters in src/app/admin/locations/data.ts
-- [ ] T013 [P] [US1] Create Table and Pagination UI elements using Tailwind CSS in src/components/ui/table.tsx
-- [ ] T014 [US1] Build Admin Locations Page component using RSC to render list view in src/app/admin/locations/page.tsx
-- [ ] T015 [US1] Verify T011 tests pass and manually check locations table rendering in the browser
+- [X] T012 [US1] Implement server-side fetching function with search and pagination filters in src/app/admin/locations/data.ts
+- [X] T013 [P] [US1] Create Table and Pagination UI elements using Tailwind CSS in src/components/ui/table.tsx
+- [X] T014 [US1] Build Admin Locations Page component using RSC to render list view in src/app/admin/locations/page.tsx
+- [X] T015 [US1] Verify T011 tests pass and manually check locations table rendering in the browser
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
 
@@ -79,14 +79,14 @@
 
 ### Tests for User Story 5 (MANDATORY) ⚠️
 
-- [ ] T016 [P] [US5] Write Vitest tests for active locations grouping and filtering utilities in tests/unit/groupLocations.test.ts
+- [X] T016 [P] [US5] Write Vitest tests for active locations grouping and filtering utilities in tests/unit/groupLocations.test.ts
 
 ### Implementation for User Story 5
 
-- [ ] T017 [US5] Create utility function to group active locations by type and sort alphabetically in src/lib/utils/groupLocations.ts
-- [ ] T018 [US5] Implement customer locations fetch function in src/lib/api/customerLocations.ts
-- [ ] T019 [US5] Create customer-facing Booking Wizard view with grouped active location dropdowns in src/components/booking-wizard.tsx
-- [ ] T020 [US5] Verify T016 tests pass and manually validate dropdown grouping in the browser
+- [X] T017 [US5] Create utility function to group active locations by type and sort alphabetically in src/lib/utils/groupLocations.ts
+- [X] T018 [US5] Implement customer locations fetch function in src/lib/api/customerLocations.ts
+- [X] T019 [US5] Create customer-facing Booking Wizard view with grouped active location dropdowns in src/components/booking-wizard.tsx
+- [X] T020 [US5] Verify T016 tests pass and manually validate dropdown grouping in the browser
 
 **Checkpoint**: Customer locations are retrieved and properly displayed in dropdowns.
 
@@ -100,14 +100,14 @@
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
 
-- [ ] T021 [P] [US2] Write Vitest integration tests for Create Location action in tests/integration/createLocation.test.ts
+- [X] T021 [P] [US2] Write Vitest integration tests for Create Location action in tests/integration/createLocation.test.ts
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Implement createLocationAction Server Action with Zod validation in src/app/admin/locations/actions.ts
-- [ ] T023 [P] [US2] Create Add Location form modal using Tailwind CSS in src/components/location-form.tsx
-- [ ] T024 [US2] Integrate Location Form modal with createLocationAction in src/app/admin/locations/page.tsx
-- [ ] T025 [US2] Verify T021 tests pass and manually test location creation
+- [X] T022 [US2] Implement createLocationAction Server Action with Zod validation in src/app/admin/locations/actions.ts
+- [X] T023 [P] [US2] Create Add Location form modal using Tailwind CSS in src/components/location-form.tsx
+- [X] T024 [US2] Integrate Location Form modal with createLocationAction in src/app/admin/locations/page.tsx
+- [X] T025 [US2] Verify T021 tests pass and manually test location creation
 
 **Checkpoint**: Admin can successfully add new locations with validations.
 
@@ -121,13 +121,13 @@
 
 ### Tests for User Story 3 (MANDATORY) ⚠️
 
-- [ ] T026 [P] [US3] Write Vitest integration tests for Update Location action in tests/integration/updateLocation.test.ts
+- [X] T026 [P] [US3] Write Vitest integration tests for Update Location action in tests/integration/updateLocation.test.ts
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Implement updateLocationAction Server Action in src/app/admin/locations/actions.ts
-- [ ] T028 [US3] Connect Edit modal form with updateLocationAction in src/app/admin/locations/page.tsx
-- [ ] T029 [US3] Verify T026 tests pass and manually test location updates
+- [X] T027 [US3] Implement updateLocationAction Server Action in src/app/admin/locations/actions.ts
+- [X] T028 [US3] Connect Edit modal form with updateLocationAction in src/app/admin/locations/page.tsx
+- [X] T029 [US3] Verify T026 tests pass and manually test location updates
 
 **Checkpoint**: Admin can successfully edit existing locations.
 
@@ -141,13 +141,13 @@
 
 ### Tests for User Story 4 (MANDATORY) ⚠️
 
-- [ ] T030 [P] [US4] Write Vitest integration tests for Delete Location action (handling blocks for referenced bookings) in tests/integration/deleteLocation.test.ts
+- [X] T030 [P] [US4] Write Vitest integration tests for Delete Location action (handling blocks for referenced bookings) in tests/integration/deleteLocation.test.ts
 
 ### Implementation for User Story 4
 
-- [ ] T031 [US4] Implement deleteLocationAction Server Action checking for booking references in src/app/admin/locations/actions.ts
-- [ ] T032 [US4] Add Delete button and confirmation modal to Admin table in src/app/admin/locations/page.tsx
-- [ ] T033 [US4] Verify T030 tests pass and manually test location deletion
+- [X] T031 [US4] Implement deleteLocationAction Server Action checking for booking references in src/app/admin/locations/actions.ts
+- [X] T032 [US4] Add Delete button and confirmation modal to Admin table in src/app/admin/locations/page.tsx
+- [X] T033 [US4] Verify T030 tests pass and manually test location deletion
 
 **Checkpoint**: Admin can delete locations safely with referential integrity blocks.
 
@@ -157,9 +157,9 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T034 [P] Document features and APIs in README.md
-- [ ] T035 Perform final code cleanup and CSS layout refinement using Tailwind
-- [ ] T036 Run quickstart.md validation scenario tests and log results in specs/002-locations-management/walkthrough.md
+- [X] T034 [P] Document features and APIs in README.md
+- [X] T035 Perform final code cleanup and CSS layout refinement using Tailwind
+- [X] T036 Run quickstart.md validation scenario tests and log results in specs/002-locations-management/walkthrough.md
 
 ---
 

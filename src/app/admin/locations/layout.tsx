@@ -1,3 +1,7 @@
+/**
+ * Layout for /admin/locations — reuses dashboard-style sidebar navigation.
+ * Protects all routes under /admin/locations behind auth.
+ */
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
@@ -9,7 +13,6 @@ import {
   FileText,
   LogOut,
   Plane,
-  Bell,
   MapPin,
 } from 'lucide-react';
 import { adminLogoutAction } from '@/app/admin/dashboard/actions';
@@ -23,7 +26,7 @@ const NAV_LINKS = [
   { href: '/admin/dashboard/content', label: 'Content', icon: FileText },
 ];
 
-export default async function DashboardLayout({
+export default async function LocationsLayout({
   children,
 }: {
   children: React.ReactNode;
