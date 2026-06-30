@@ -22,7 +22,7 @@ const NAV_LINKS = [
   { href: '/admin/locations', label: 'Locations', icon: MapPin },
   { href: '/admin/pricing', label: 'Pricing', icon: DollarSign },
   { href: '/admin/dashboard/settings', label: 'Settings', icon: Settings },
-  { href: '/admin/dashboard/content', label: 'Content', icon: FileText },
+  { href: '/admin/content', label: 'Content', icon: FileText },
 ];
 
 export default async function DashboardLayout({

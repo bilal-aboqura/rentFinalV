@@ -20,8 +20,8 @@
 
 **Purpose**: Database migration and bucket initialization.
 
-- [ ] T001 Create Supabase migration file `supabase/migrations/20260626000003_create_site_settings.sql` to define the `site_settings` table, single-row constraint, and default color scheme values.
-- [ ] T002 Configure the public Supabase Storage bucket `public_assets` and its RLS policies in `supabase/migrations/20260626000003_create_site_settings.sql`.
+- [X] T001 Create Supabase migration file `supabase/migrations/20260626000003_create_site_settings.sql` to define the `site_settings` table, single-row constraint, and default color scheme values.
+- [X] T002 Configure the public Supabase Storage bucket `public_assets` and its RLS policies in `supabase/migrations/20260626000003_create_site_settings.sql`.
 
 ---
 
@@ -31,7 +31,7 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 Define TypeScript interfaces for `SiteSettings` and `UpdateSiteSettingsInput` in `src/types/index.ts`.
+- [X] T003 Define TypeScript interfaces for `SiteSettings` and `UpdateSiteSettingsInput` in `src/types/index.ts`.
 - [ ] T004 Run the local database migration to create the settings table and storage bucket structures.
 
 ---
@@ -46,14 +46,14 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T005 [P] [US1] Write Vitest unit tests in `tests/unit/cms-actions.test.ts` for the `getSiteSettings` and `updateSiteSettings` Server Actions.
-- [ ] T006 [P] [US1] Write input validation unit tests in `tests/unit/cms-actions.test.ts` to ensure invalid emails and empty text fields are rejected.
+- [X] T005 [P] [US1] Write Vitest unit tests in `tests/unit/cms-actions.test.ts` for the `getSiteSettings` and `updateSiteSettings` Server Actions.
+- [X] T006 [P] [US1] Write input validation unit tests in `tests/unit/cms-actions.test.ts` to ensure invalid emails and empty text fields are rejected.
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implement the `getSiteSettings` and `updateSiteSettings` Server Actions in `src/app/actions/cms.ts`.
-- [ ] T008 [US1] Create the admin content page at `src/app/admin/content/page.tsx` featuring standard forms, color pickers, and status states (saving, success, error).
-- [ ] T009 [US1] Add a link to the `/admin/content` page in the admin navigation layout (e.g. in sidebar/navigation components).
+- [X] T007 [US1] Implement the `getSiteSettings` and `updateSiteSettings` Server Actions in `src/app/actions/cms.ts`.
+- [X] T008 [US1] Create the admin content page at `src/app/admin/content/page.tsx` featuring standard forms, color pickers, and status states (saving, success, error).
+- [X] T009 [US1] Add a link to the `/admin/content` page in the admin navigation layout (e.g. in sidebar/navigation components).
 
 ---
 
@@ -65,12 +65,12 @@
 
 ### Tests for User Story 2 (MANDATORY) ⚠️
 
-- [ ] T010 [P] [US2] Write Vitest unit tests in `tests/unit/cms-actions.test.ts` for the `uploadSiteAsset` Server Action.
+- [X] T010 [P] [US2] Write Vitest unit tests in `tests/unit/cms-actions.test.ts` for the `uploadSiteAsset` Server Action.
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Implement the `uploadSiteAsset` Server Action in `src/app/actions/cms.ts` to upload images to the storage bucket and save URLs to the table.
-- [ ] T012 [US2] Add file upload inputs and preview elements for Site Logo and Hero Background in `src/app/admin/content/page.tsx`.
+- [X] T011 [US2] Implement the `uploadSiteAsset` Server Action in `src/app/actions/cms.ts` to upload images to the storage bucket and save URLs to the table.
+- [X] T012 [US2] Add file upload inputs and preview elements for Site Logo and Hero Background in `src/app/admin/content/page.tsx`.
 
 ---
 
@@ -82,9 +82,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Integrate dynamic brand colors in `src/app/layout.tsx` to dynamically apply configured primary and secondary color styles.
-- [ ] T014 [US3] Update the homepage in `src/app/page.tsx` to fetch settings dynamically using `getSiteSettings` and render the hero title and background image.
-- [ ] T015 [US3] Update the footer component to dynamically display contact phone and email settings.
+- [X] T013 [US3] Integrate dynamic brand colors in `src/app/layout.tsx` to dynamically apply configured primary and secondary color styles.
+- [X] T014 [US3] Update the homepage in `src/app/page.tsx` to fetch settings dynamically using `getSiteSettings` and render the hero title and background image.
+- [X] T015 [US3] Update the footer component to dynamically display contact phone and email settings.
 
 ---
 
@@ -92,8 +92,8 @@
 
 **Purpose**: Verification and final cleanup.
 
-- [ ] T016 Run all tests using `npx vitest run tests/unit/cms-actions.test.ts` and verify they pass.
-- [ ] T017 Refactor any duplicated code, optimize image rendering, and handle edge cases (e.g., database offline fallbacks).
+- [X] T016 Run all tests using `npx vitest run tests/unit/cms-actions.test.ts` and verify they pass.
+- [X] T017 Refactor any duplicated code, optimize image rendering, and handle edge cases (e.g., database offline fallbacks).
 - [ ] T018 Run the `quickstart.md` validation scenario to ensure the feature is fully complete.
 
 ---

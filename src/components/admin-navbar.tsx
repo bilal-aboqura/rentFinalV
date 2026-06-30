@@ -15,7 +15,7 @@ import { getUnreadInquiriesCount } from '@/app/admin/inquiries/actions';
  *       specs/010-contact-inquiries/research.md#4
  */
 
-export type AdminTab = 'bookings' | 'inquiries' | 'locations' | 'pricing' | 'drivers';
+export type AdminTab = 'bookings' | 'inquiries' | 'locations' | 'pricing' | 'drivers' | 'content';
 
 const TABS: { key: AdminTab; label: string; href: string }[] = [
   { key: 'bookings', label: 'Bookings', href: '/admin/bookings' },
@@ -23,6 +23,7 @@ const TABS: { key: AdminTab; label: string; href: string }[] = [
   { key: 'locations', label: 'Locations', href: '/admin/locations' },
   { key: 'pricing', label: 'Pricing', href: '/admin/pricing' },
   { key: 'drivers', label: 'Drivers', href: '/admin/drivers' },
+  { key: 'content', label: 'Content', href: '/admin/content' },
 ];
 
 export default async function AdminNavbar({ activeTab }: { activeTab: AdminTab }) {

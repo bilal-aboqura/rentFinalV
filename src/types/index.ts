@@ -94,6 +94,34 @@ export interface Content {
 }
 
 // ----------------------------------------------------------------
+// Site Settings (CMS)
+// ----------------------------------------------------------------
+export interface SiteSettings {
+  id: 1;
+  hero_title: string;
+  about_text: string;
+  contact_phone: string;
+  contact_email: string;
+  brand_primary_color: string;
+  brand_secondary_color: string;
+  hero_image_url: string | null;
+  site_logo_url: string | null;
+  updated_at: string;
+}
+
+export type UpdateSiteSettingsInput = Pick<
+  SiteSettings,
+  | 'hero_title'
+  | 'about_text'
+  | 'contact_phone'
+  | 'contact_email'
+  | 'brand_primary_color'
+  | 'brand_secondary_color'
+>;
+
+export type SiteAssetType = 'logo' | 'hero';
+
+// ----------------------------------------------------------------
 // Notification
 // ----------------------------------------------------------------
 export interface Notification {
@@ -177,7 +205,7 @@ export interface CreatePricingRuleInput extends CreateRoutePriceInput {
 }
 
 /** @deprecated Use UpdateRoutePriceInput */
-export interface UpdatePricingRuleInput extends UpdateRoutePriceInput {}
+export type UpdatePricingRuleInput = UpdateRoutePriceInput;
 
 export interface UpdateContentInput {
   key: string;
