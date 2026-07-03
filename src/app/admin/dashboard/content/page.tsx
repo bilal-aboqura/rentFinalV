@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getContentAction } from '@/app/admin/dashboard/actions';
 import ContentManager from './content-manager';
 
-export const metadata: Metadata = { title: 'Content — Admin Dashboard' };
+export const metadata: Metadata = { title: 'المحتوى - لوحة التحكم' };
 
 export default async function ContentPage() {
   const contentRes = await getContentAction();
@@ -11,9 +11,9 @@ export default async function ContentPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Content Management</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Edit homepage content and FAQ items. Changes reflect immediately on the public site.
+        <h1 className="text-2xl font-bold text-slate-900">إدارة المحتوى</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          عدّل محتوى الصفحة الرئيسية والعناصر النصية، وستظهر التغييرات مباشرة على الموقع العام.
         </p>
       </div>
       <ContentManager content={content} />

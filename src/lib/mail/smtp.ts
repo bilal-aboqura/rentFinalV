@@ -77,7 +77,7 @@ export async function sendBookingConfirmationEmail(
 
   try {
     await transporter.sendMail({
-      from: `"AirTransfer" <${process.env.SMTP_FROM ?? 'noreply@airtransfer.com'}>`,
+      from: `"دقه الوقت" <${process.env.SMTP_FROM ?? 'noreply@airtransfer.com'}>`,
       to: customerEmail,
       subject: `Booking Request Received — ${bookingReference}`,
       html: `
@@ -197,7 +197,7 @@ export async function sendAdminNotificationEmail(
 
   try {
     await transporter.sendMail({
-      from: `"AirTransfer" <${process.env.SMTP_FROM ?? 'noreply@airtransfer.com'}>`,
+      from: `"دقه الوقت" <${process.env.SMTP_FROM ?? 'noreply@airtransfer.com'}>`,
       to: adminEmail,
       subject,
       text,
@@ -317,7 +317,7 @@ export async function sendBookingConfirmedEmail(
 
   try {
     await transporter.sendMail({
-      from: `"AirTransfer" <${process.env.SMTP_FROM ?? 'noreply@airtransfer.com'}>`,
+      from: `"دقه الوقت" <${process.env.SMTP_FROM ?? 'noreply@airtransfer.com'}>`,
       to: email,
       subject: `Booking Confirmed — ${reference}`,
       html: `
@@ -381,7 +381,7 @@ export async function sendBookingCancelledEmail(
 
   try {
     await transporter.sendMail({
-      from: `"AirTransfer" <${process.env.SMTP_FROM ?? 'noreply@airtransfer.com'}>`,
+      from: `"دقه الوقت" <${process.env.SMTP_FROM ?? 'noreply@airtransfer.com'}>`,
       to: email,
       subject: `Booking Cancelled — ${reference}`,
       html: `

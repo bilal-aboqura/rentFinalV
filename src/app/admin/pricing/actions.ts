@@ -46,6 +46,7 @@ function normaliseRow(row: Record<string, unknown>): RoutePriceRow {
     id: row.id as string,
     pickup_location_id: row.pickup_location_id as string,
     destination_location_id: row.destination_location_id as string,
+    vehicle_class: row.vehicle_class as RoutePriceRow['vehicle_class'],
     price: Number(row.price),
     created_at: row.created_at as string,
     pickup_location_name: pickup?.name,
@@ -80,16 +81,17 @@ export async function getRoutePricesAction(
   const supabase = await createClient();
 
   const { data, error, count } = await supabase
-    .from('route_prices')
+    .from('pricing_rules')
     .select(
       `
       id,
       pickup_location_id,
       destination_location_id,
+      vehicle_class,
       price,
       created_at,
-      pickup_location:locations!route_prices_pickup_location_id_fkey(name),
-      destination_location:locations!route_prices_destination_location_id_fkey(name)
+      pickup_location:locations!pricing_rules_pickup_location_id_fkey(name),
+      destination_location:locations!pricing_rules_destination_location_id_fkey(name)
     `,
       { count: 'exact' }
     )
@@ -132,14 +134,15 @@ export async function createRoutePriceAction(
     };
   }
 
-  const { pickupLocationId, destinationLocationId, price } = parsed.data;
+  const { pickupLocationId, destinationLocationId, vehicleClass, price } = parsed.data;
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from('route_prices')
+    .from('pricing_rules')
     .insert({
       pickup_location_id: pickupLocationId,
       destination_location_id: destinationLocationId,
+      vehicle_class: vehicleClass,
       price,
     })
     .select(
@@ -147,10 +150,11 @@ export async function createRoutePriceAction(
       id,
       pickup_location_id,
       destination_location_id,
+      vehicle_class,
       price,
       created_at,
-      pickup_location:locations!route_prices_pickup_location_id_fkey(name),
-      destination_location:locations!route_prices_destination_location_id_fkey(name)
+      pickup_location:locations!pricing_rules_pickup_location_id_fkey(name),
+      destination_location:locations!pricing_rules_destination_location_id_fkey(name)
     `
     )
     .single();
@@ -196,12 +200,13 @@ export async function updateRoutePriceAction(
     };
   }
 
-  const { id, pickupLocationId, destinationLocationId, price } = parsed.data;
+  const { id, pickupLocationId, destinationLocationId, vehicleClass, price } = parsed.data;
 
   const updatePayload: Record<string, unknown> = {};
   if (pickupLocationId !== undefined) updatePayload.pickup_location_id = pickupLocationId;
   if (destinationLocationId !== undefined)
     updatePayload.destination_location_id = destinationLocationId;
+  if (vehicleClass !== undefined) updatePayload.vehicle_class = vehicleClass;
   if (price !== undefined) updatePayload.price = price;
 
   if (Object.keys(updatePayload).length === 0) {
@@ -210,7 +215,7 @@ export async function updateRoutePriceAction(
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from('route_prices')
+    .from('pricing_rules')
     .update(updatePayload)
     .eq('id', id)
     .select(
@@ -218,10 +223,11 @@ export async function updateRoutePriceAction(
       id,
       pickup_location_id,
       destination_location_id,
+      vehicle_class,
       price,
       created_at,
-      pickup_location:locations!route_prices_pickup_location_id_fkey(name),
-      destination_location:locations!route_prices_destination_location_id_fkey(name)
+      pickup_location:locations!pricing_rules_pickup_location_id_fkey(name),
+      destination_location:locations!pricing_rules_destination_location_id_fkey(name)
     `
     )
     .single();
@@ -266,7 +272,7 @@ export async function deleteRoutePriceAction(
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from('route_prices')
+    .from('pricing_rules')
     .delete()
     .eq('id', id)
     .select('id')
@@ -302,7 +308,7 @@ export async function getRoutePriceAction(
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from('route_prices')
+    .from('pricing_rules')
     .select('price')
     .eq('pickup_location_id', pickupLocationId)
     .eq('destination_location_id', destinationLocationId)

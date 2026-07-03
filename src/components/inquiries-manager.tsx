@@ -1,15 +1,5 @@
 'use client';
 
-/**
- * Spec 010 (F-10) — InquiriesManager (US2 + US3)
- *
- * Interactive dashboard manager. Pagination is URL-driven (the server page
- * re-runs `fetchInquiriesAction` on each navigation). Row clicks open the
- * InquiryDetailsModal for full message viewing and status management.
- *
- * Spec: specs/010-contact-inquiries/spec.md (FR-007 .. FR-010)
- */
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, AlertCircle, Inbox } from 'lucide-react';
@@ -25,16 +15,22 @@ interface Props {
 }
 
 const STATUS_BADGE: Record<InquiryStatus, string> = {
-  Unread: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  Read: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  Resolved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  Unread: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  Read: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  Resolved: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+};
+
+const STATUS_LABELS: Record<InquiryStatus, string> = {
+  Unread: 'غير مقروءة',
+  Read: 'مقروءة',
+  Resolved: 'تمت المعالجة',
 };
 
 function formatDateTime(iso: string): string {
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleString(undefined, {
+    return d.toLocaleString('ar-EG', {
       year: 'numeric',
       month: 'short',
       day: '2-digit',
@@ -56,7 +52,6 @@ export default function InquiriesManager({
   const [selected, setSelected] = useState<ContactInquiry | null>(null);
   const [error, setError] = useState('');
 
-  /** Push a new page into the URL search params. */
   const navigate = (next: { page?: number }) => {
     const sp = new URLSearchParams();
     const nextPage = next.page ?? page;
@@ -82,34 +77,69 @@ export default function InquiriesManager({
   return (
     <div className="space-y-4">
       {error && (
-        <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-500">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
 
-      {/* Count summary */}
       <div className="text-sm text-slate-500">
-        Showing <span className="text-white font-medium">{inquiries.length}</span> of{' '}
-        <span className="text-white font-medium">{totalCount}</span> inquiries
+        عرض <span className="font-medium text-slate-900">{inquiries.length}</span> من أصل{' '}
+        <span className="font-medium text-slate-900">{totalCount}</span> رسالة
       </div>
 
-      {/* Table */}
-      <div className="glass rounded-2xl overflow-hidden">
+      <div className="glass overflow-hidden rounded-2xl">
         {inquiries.length === 0 ? (
-          <div className="py-16 flex flex-col items-center justify-center text-slate-500 gap-2">
-            <Inbox className="w-6 h-6" />
-            <span className="text-sm">No inquiries found.</span>
+          <div className="flex flex-col items-center justify-center gap-2 py-16 text-slate-500">
+            <Inbox className="h-6 w-6" />
+            <span className="text-sm">لا توجد رسائل حالياً.</span>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="mobile-card-list p-3 md:hidden">
+            {inquiries.map((inquiry) => (
+              <button
+                key={inquiry.id}
+                type="button"
+                onClick={() => setSelected(inquiry)}
+                className="mobile-data-card text-right"
+              >
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900">{inquiry.name}</p>
+                    <p className="mt-1 overflow-hidden text-ellipsis text-xs text-slate-500" dir="ltr">
+                      {inquiry.email}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
+                      STATUS_BADGE[inquiry.status]
+                    }`}
+                  >
+                    {STATUS_LABELS[inquiry.status]}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  <div className="mobile-data-row">
+                    <span className="mobile-data-label">الموضوع</span>
+                    <span className="mobile-data-value">{inquiry.subject}</span>
+                  </div>
+                  <div className="mobile-data-row">
+                    <span className="mobile-data-label">وقت الاستلام</span>
+                    <span className="mobile-data-value">{formatDateTime(inquiry.created_at)}</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
-              <thead className="border-b border-white/10">
-                <tr className="text-left text-slate-400">
-                  <th className="px-5 py-3 font-medium">Sender</th>
-                  <th className="px-5 py-3 font-medium">Subject</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 font-medium">Received</th>
+              <thead className="border-b border-black/10">
+                <tr className="text-right text-slate-500">
+                  <th className="px-5 py-3 font-medium">المرسل</th>
+                  <th className="px-5 py-3 font-medium">الموضوع</th>
+                  <th className="px-5 py-3 font-medium">الحالة</th>
+                  <th className="px-5 py-3 font-medium">وقت الاستلام</th>
                 </tr>
               </thead>
               <tbody>
@@ -117,25 +147,25 @@ export default function InquiriesManager({
                   <tr
                     key={inquiry.id}
                     onClick={() => setSelected(inquiry)}
-                    className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
+                    className="cursor-pointer border-b border-black/5 transition-colors hover:bg-black/5"
                   >
                     <td className="px-5 py-4">
-                      <p className="text-white font-medium">{inquiry.name}</p>
-                      <p className="text-slate-500 text-xs">{inquiry.email}</p>
+                      <p className="font-medium text-slate-900">{inquiry.name}</p>
+                      <p className="text-xs text-slate-500" dir="ltr">
+                        {inquiry.email}
+                      </p>
                     </td>
-                    <td className="px-5 py-4 text-slate-300 max-w-xs truncate">
-                      {inquiry.subject}
-                    </td>
+                    <td className="max-w-xs truncate px-5 py-4 text-slate-700">{inquiry.subject}</td>
                     <td className="px-5 py-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
                           STATUS_BADGE[inquiry.status]
                         }`}
                       >
-                        {inquiry.status}
+                        {STATUS_LABELS[inquiry.status]}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-slate-300 text-xs whitespace-nowrap">
+                    <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-700">
                       {formatDateTime(inquiry.created_at)}
                     </td>
                   </tr>
@@ -143,14 +173,14 @@ export default function InquiriesManager({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">
-            Page {page} of {totalPages}
+            الصفحة {page} من {totalPages}
           </p>
           <div className="flex gap-2">
             <button
@@ -158,26 +188,25 @@ export default function InquiriesManager({
               type="button"
               onClick={() => navigate({ page: Math.max(1, page - 1) })}
               disabled={page <= 1}
-              className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              aria-label="Previous page"
+              className="rounded-lg border border-slate-300 bg-white p-2 text-slate-500 transition-all hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="الصفحة السابقة"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronRight className="h-4 w-4" />
             </button>
             <button
               id="inquiries-next-page"
               type="button"
               onClick={() => navigate({ page: Math.min(totalPages, page + 1) })}
               disabled={page >= totalPages}
-              className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              aria-label="Next page"
+              className="rounded-lg border border-slate-300 bg-white p-2 text-slate-500 transition-all hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="الصفحة التالية"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
           </div>
         </div>
       )}
 
-      {/* Details modal — remounted per inquiry via key */}
       {selected && (
         <InquiryDetailsModal
           key={selected.id}

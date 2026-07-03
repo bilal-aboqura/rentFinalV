@@ -37,7 +37,6 @@ export default function ContentManager({ content }: Props) {
 
   const getValue = (item: Content) => editing[item.key] ?? item.value;
 
-  // Group content by type
   const heroItems = content.filter((c) => c.key.startsWith('hero_'));
   const faqItems = content.filter((c) => c.key.startsWith('faq_'));
   const otherItems = content.filter(
@@ -47,15 +46,15 @@ export default function ContentManager({ content }: Props) {
   const renderItem = (item: Content) => (
     <div key={item.key} className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm text-slate-400">
-          <span className="font-mono text-xs bg-slate-700 px-2 py-0.5 rounded text-slate-300 mr-2">
+        <label className="text-sm text-slate-500">
+          <span className="mr-2 rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700" dir="ltr">
             {item.key}
           </span>
           {item.description && <span className="text-slate-500">{item.description}</span>}
         </label>
         {savedKey === item.key && (
-          <span className="text-xs text-emerald-400 flex items-center gap-1">
-            <CheckCircle className="w-3 h-3" /> Saved
+          <span className="flex items-center gap-1 text-xs text-emerald-600">
+            <CheckCircle className="h-3 w-3" /> تم الحفظ
           </span>
         )}
       </div>
@@ -65,7 +64,7 @@ export default function ContentManager({ content }: Props) {
           rows={3}
           value={getValue(item)}
           onChange={(e) => handleChange(item.key, e.target.value)}
-          className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all resize-none"
+          className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
         />
       ) : (
         <input
@@ -73,17 +72,17 @@ export default function ContentManager({ content }: Props) {
           type="text"
           value={getValue(item)}
           onChange={(e) => handleChange(item.key, e.target.value)}
-          className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
         />
       )}
       <button
         id={`save-content-${item.key}`}
         onClick={() => handleSave(item.key)}
         disabled={isPending || getValue(item) === item.value}
-        className="flex items-center gap-2 text-xs bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white px-3 py-1.5 rounded-lg transition-all"
+        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white transition-all hover:bg-indigo-500 disabled:opacity-40"
       >
-        {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-        Save
+        {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+        حفظ
       </button>
     </div>
   );
@@ -91,41 +90,42 @@ export default function ContentManager({ content }: Props) {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
-          <AlertCircle className="w-4 h-4" />{error}
+        <div className="flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-500">
+          <AlertCircle className="h-4 w-4" />
+          {error}
         </div>
       )}
 
       {heroItems.length > 0 && (
-        <div className="glass rounded-2xl p-6 space-y-5">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-            <Edit2 className="w-4 h-4 text-indigo-400" />
-            Hero Section
+        <div className="glass space-y-5 rounded-2xl p-6">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <Edit2 className="h-4 w-4 text-indigo-500" />
+            محتوى الواجهة الرئيسية
           </h3>
           {heroItems.map(renderItem)}
         </div>
       )}
 
       {faqItems.length > 0 && (
-        <div className="glass rounded-2xl p-6 space-y-5">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-            <Edit2 className="w-4 h-4 text-indigo-400" />
-            FAQ Items
+        <div className="glass space-y-5 rounded-2xl p-6">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <Edit2 className="h-4 w-4 text-indigo-500" />
+            الأسئلة الشائعة
           </h3>
           {faqItems.map(renderItem)}
         </div>
       )}
 
       {otherItems.length > 0 && (
-        <div className="glass rounded-2xl p-6 space-y-5">
-          <h3 className="text-sm font-semibold text-white">Other Content</h3>
+        <div className="glass space-y-5 rounded-2xl p-6">
+          <h3 className="text-sm font-semibold text-slate-900">محتوى إضافي</h3>
           {otherItems.map(renderItem)}
         </div>
       )}
 
       {content.length === 0 && (
         <div className="glass rounded-2xl py-16 text-center text-slate-500">
-          No content entries found. Run the database migration to seed default content.
+          لا توجد عناصر محتوى حالياً. شغّل ترحيل قاعدة البيانات لإضافة القيم الافتراضية.
         </div>
       )}
     </div>

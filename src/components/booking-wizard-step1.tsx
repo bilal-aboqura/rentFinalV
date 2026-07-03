@@ -101,7 +101,7 @@ function GroupedLocationSelect({
 }: GroupedLocationSelectProps) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-400 mb-1.5">
+      <label htmlFor={id} className="block text-sm font-medium text-slate-500 mb-1.5">
         <span className="flex items-center gap-1.5">
           <MapPin className="w-3.5 h-3.5 text-indigo-400" />
           {label}
@@ -112,8 +112,8 @@ function GroupedLocationSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={`w-full px-4 py-3 rounded-xl bg-slate-800/80 border text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm appearance-none disabled:opacity-50 disabled:cursor-not-allowed ${
-          error ? 'border-red-500/60' : 'border-white/10 focus:border-indigo-500'
+        className={`w-full rounded-xl border bg-white/80 px-3 py-3 text-sm text-slate-900 transition-all appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 ${
+          error ? 'border-red-500/60' : 'border-black/10 focus:border-indigo-500'
         }`}
       >
         <option value="" disabled>
@@ -179,19 +179,18 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
 
   // ── Dynamic pricing lookup: trigger when both locations are selected & distinct (T010) ──
   useEffect(() => {
-    if (!pickup || !destination) {
-      setPriceState({ status: 'idle' });
-      return;
-    }
+    let cancelled = false;
 
-    // T008: Same-location guard
-    if (pickup === destination) {
-      setPriceState({ status: 'idle' });
-      return;
-    }
+    const lookupPrice = async () => {
+      if (!pickup || !destination || pickup === destination) {
+        setPriceState({ status: 'idle' });
+        return;
+      }
 
-    setPriceState({ status: 'loading' });
-    checkRoutePriceAction(pickup, destination).then((res) => {
+      setPriceState({ status: 'loading' });
+      const res = await checkRoutePriceAction(pickup, destination);
+      if (cancelled) return;
+
       if (!res.success) {
         setPriceState({ status: 'error', message: res.error ?? 'Failed to retrieve pricing.' });
         return;
@@ -201,7 +200,13 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
       } else {
         setPriceState({ status: 'not_found' });
       }
-    });
+    };
+
+    lookupPrice();
+
+    return () => {
+      cancelled = true;
+    };
   }, [pickup, destination]);
 
   // ── Same-location validation (T008) ──
@@ -289,8 +294,8 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-lg font-semibold text-white mb-1">Select your route &amp; travel time</h3>
-        <p className="text-sm text-slate-400">Choose your pickup and destination, then pick a date and time.</p>
+        <h3 className="text-lg font-semibold text-slate-900 mb-1">Select your route &amp; travel time</h3>
+        <p className="text-sm text-slate-500">Choose your pickup and destination, then pick a date and time.</p>
       </div>
 
       {/* ── Pickup Location (T006, T007) ── */}
@@ -335,7 +340,7 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
       {priceState.status === 'loading' && (
         <div
           id="price-loading"
-          className="flex items-center gap-2 text-slate-400 text-sm p-3 rounded-xl bg-slate-800/50 border border-white/10"
+          className="flex items-center gap-2 rounded-xl border border-black/10 bg-black/50 p-3 text-sm text-slate-500"
         >
           <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
           Looking up route price…
@@ -345,9 +350,9 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
       {priceState.status === 'found' && (
         <div
           id="price-found"
-          className="p-4 rounded-xl bg-green-500/10 border border-green-500/20"
+          className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 sm:p-4"
         >
-          <p className="text-slate-400 text-xs mb-1">Estimated flat-rate price</p>
+          <p className="text-slate-500 text-xs mb-1">Estimated flat-rate price</p>
           <p className="text-2xl font-bold text-green-400" id="route-price-display">
             {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
               priceState.price
@@ -382,7 +387,7 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
             <a
               href="/contact"
               id="contact-redirect-btn"
-              className="inline-flex items-center gap-2 text-xs bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 px-4 py-2 rounded-lg transition-all"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/20 px-4 py-2 text-xs text-amber-300 transition-all hover:bg-amber-500/30 sm:w-auto"
             >
               <Phone className="w-3.5 h-3.5" />
               Go to Contact Form
@@ -404,7 +409,7 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
 
       {/* ── Date Input (T015) ── */}
       <div>
-        <label htmlFor="booking-date" className="block text-sm font-medium text-slate-400 mb-1.5">
+        <label htmlFor="booking-date" className="block text-sm font-medium text-slate-500 mb-1.5">
           <span className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-indigo-400" />
             Travel Date
@@ -416,8 +421,8 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
           min={getTodayDateString()}
           value={date}
           onChange={(e) => handleDateChange(e.target.value)}
-          className={`w-full px-4 py-3 rounded-xl bg-slate-800/80 border text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm ${
-            errors.date ? 'border-red-500/60' : 'border-white/10 focus:border-indigo-500'
+          className={`w-full rounded-xl border bg-white/80 px-3 py-3 text-sm text-slate-900 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 sm:px-4 ${
+            errors.date ? 'border-red-500/60' : 'border-black/10 focus:border-indigo-500'
           }`}
         />
         {errors.date && (
@@ -430,7 +435,7 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
 
       {/* ── Time Input (T015) ── */}
       <div>
-        <label htmlFor="booking-time" className="block text-sm font-medium text-slate-400 mb-1.5">
+        <label htmlFor="booking-time" className="block text-sm font-medium text-slate-500 mb-1.5">
           <span className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-indigo-400" />
             Travel Time
@@ -441,10 +446,10 @@ export function BookingWizardStep1({ onNext }: BookingWizardStep1Props) {
           type="time"
           value={time}
           onChange={(e) => handleTimeChange(e.target.value)}
-          className={`w-full px-4 py-3 rounded-xl bg-slate-800/80 border text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm ${
+          className={`w-full rounded-xl border bg-white/80 px-3 py-3 text-sm text-slate-900 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 sm:px-4 ${
             errors.time || scheduleError
               ? 'border-red-500/60'
-              : 'border-white/10 focus:border-indigo-500'
+              : 'border-black/10 focus:border-indigo-500'
           }`}
         />
         {(errors.time || scheduleError) && (

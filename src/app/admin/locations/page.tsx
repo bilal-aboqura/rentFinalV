@@ -1,29 +1,23 @@
-/**
- * T014 [US1] - Admin Locations Page (React Server Component).
- * Renders the paginated, searchable locations management table.
- *
- * Route: /admin/locations
- */
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getLocationsData } from './data';
 import { LocationsManager } from '@/components/locations-manager';
-import AdminNavbar from '@/components/admin-navbar';
 
 interface LocationsPageProps {
   searchParams: Promise<{ search?: string; page?: string }>;
 }
 
 export const metadata = {
-  title: 'Locations Management | Admin',
-  description: 'Manage cities, airports, and pickup points for the transfer booking service.',
+  title: 'إدارة المواقع | لوحة التحكم',
+  description: 'إدارة المدن والمطارات ونقاط الانطلاق لخدمة الحجز.',
 };
 
 export default async function AdminLocationsPage({ searchParams }: LocationsPageProps) {
-  // Auth check
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect('/admin/login');
 
   const params = await searchParams;
@@ -36,9 +30,8 @@ export default async function AdminLocationsPage({ searchParams }: LocationsPage
   if (!result.success) {
     return (
       <div className="space-y-6">
-        <AdminNavbar activeTab="locations" />
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-          <p className="text-red-400 text-sm">Failed to load locations: {result.error}</p>
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
+          <p className="text-sm text-red-400">تعذر تحميل المواقع: {result.error}</p>
         </div>
       </div>
     );
@@ -48,8 +41,7 @@ export default async function AdminLocationsPage({ searchParams }: LocationsPage
 
   return (
     <div className="space-y-6">
-      <AdminNavbar activeTab="locations" />
-      <Suspense fallback={<div className="text-slate-500 text-sm">Loading...</div>}>
+      <Suspense fallback={<div className="text-sm text-slate-500">جارٍ التحميل...</div>}>
         <LocationsManager
           initialLocations={locations}
           initialTotal={total}

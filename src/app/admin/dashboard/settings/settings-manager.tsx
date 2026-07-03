@@ -7,7 +7,6 @@ import {
   createLocationAction,
   updateLocationAction,
   createPricingRuleAction,
-  updatePricingRuleAction,
   deletePricingRuleAction,
 } from '@/app/admin/dashboard/actions';
 import { Plus, Trash2, MapPin, DollarSign, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
@@ -48,7 +47,7 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
       const result = await createLocationAction(locForm);
       if (result.success) {
         setLocForm({ name: '', type: 'city' });
-        notify('Location added.');
+        notify('تمت إضافة الموقع.');
         router.refresh();
       } else {
         if (result.validationErrors) {
@@ -80,7 +79,7 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
       });
       if (result.success) {
         setPriceForm({ pickupLocationId: '', destinationLocationId: '', vehicleClass: 'standard', price: '' });
-        notify('Pricing rule added.');
+        notify('تمت إضافة قاعدة التسعير.');
         router.refresh();
       } else {
         if (result.validationErrors) {
@@ -93,7 +92,7 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
   };
 
   const handleDeleteRule = (id: string) => {
-    if (!confirm('Delete this pricing rule?')) return;
+    if (!confirm('هل أنت متأكد من حذف قاعدة التسعير؟')) return;
     startTransition(async () => {
       const result = await deletePricingRuleAction(id);
       if (!result.success) setError(result.error);
@@ -118,7 +117,7 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
       <div className="glass rounded-2xl p-6 space-y-5">
         <div className="flex items-center gap-2">
           <MapPin className="w-5 h-5 text-indigo-400" />
-          <h2 className="text-base font-semibold text-white">Locations</h2>
+          <h2 className="text-base font-semibold text-slate-900">المواقع</h2>
         </div>
 
         {/* Add location form */}
@@ -127,10 +126,10 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
             <input
               id="location-name-input"
               type="text"
-              placeholder="Location name (e.g. City Center)"
+              placeholder="اسم الموقع"
               value={locForm.name}
               onChange={(e) => setLocForm((p) => ({ ...p, name: e.target.value }))}
-              className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+              className="w-full bg-white/60 border border-slate-700 text-slate-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
             />
             {locErrors.name && <p className="text-red-400 text-xs mt-1">{locErrors.name}</p>}
           </div>
@@ -139,10 +138,10 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
               id="location-type-select"
               value={locForm.type}
               onChange={(e) => setLocForm((p) => ({ ...p, type: e.target.value as 'city' | 'airport' }))}
-              className="flex-1 bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+              className="flex-1 bg-white/60 border border-slate-700 text-slate-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
             >
-              <option value="city">City</option>
-              <option value="airport">Airport</option>
+              <option value="city">مدينة</option>
+              <option value="airport">مطار</option>
             </select>
             <button
               id="add-location-btn"
@@ -151,7 +150,7 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
               className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-1.5 transition-all"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Add
+              إضافة
             </button>
           </div>
         </div>
@@ -161,11 +160,13 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
           {locations.map((loc) => (
             <div
               key={loc.id}
-              className="flex items-center justify-between py-2.5 px-4 rounded-xl bg-slate-800/40 border border-slate-700/50"
+              className="flex items-center justify-between py-2.5 px-4 rounded-xl bg-white/40 border border-slate-700/50"
             >
               <div className="flex items-center gap-3">
-                <span className="text-sm text-white font-medium">{loc.name}</span>
-                <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full capitalize">{loc.type}</span>
+                <span className="text-sm text-slate-900 font-medium">{loc.name}</span>
+                <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
+                  {loc.type === 'city' ? 'مدينة' : 'مطار'}
+                </span>
               </div>
               <button
                 id={`toggle-location-${loc.id}`}
@@ -174,15 +175,15 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
                 className={`text-xs px-3 py-1 rounded-full border font-medium transition-all ${
                   loc.status === 'active'
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                    : 'bg-slate-700 text-slate-400 border-slate-600 hover:bg-slate-600'
+                    : 'bg-slate-100 text-slate-500 border-slate-600 hover:bg-slate-600'
                 }`}
               >
-                {loc.status}
+                {loc.status === 'active' ? 'نشط' : 'غير نشط'}
               </button>
             </div>
           ))}
           {locations.length === 0 && (
-            <p className="text-sm text-slate-500 text-center py-4">No locations yet.</p>
+            <p className="text-sm text-slate-500 text-center py-4">لا توجد مواقع بعد.</p>
           )}
         </div>
       </div>
@@ -191,7 +192,7 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
       <div className="glass rounded-2xl p-6 space-y-5">
         <div className="flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-emerald-400" />
-          <h2 className="text-base font-semibold text-white">Flat-Rate Pricing Rules</h2>
+          <h2 className="text-base font-semibold text-slate-900">قواعد التسعير الثابت</h2>
         </div>
 
         {/* Add pricing rule form */}
@@ -200,9 +201,9 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
             id="pricing-pickup-select"
             value={priceForm.pickupLocationId}
             onChange={(e) => setPriceForm((p) => ({ ...p, pickupLocationId: e.target.value }))}
-            className="bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+            className="bg-white/60 border border-slate-700 text-slate-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
           >
-            <option value="">Pickup...</option>
+            <option value="">نقطة الانطلاق...</option>
             {locations.filter((l) => l.status === 'active').map((l) => (
               <option key={l.id} value={l.id}>{l.name}</option>
             ))}
@@ -211,9 +212,9 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
             id="pricing-dest-select"
             value={priceForm.destinationLocationId}
             onChange={(e) => setPriceForm((p) => ({ ...p, destinationLocationId: e.target.value }))}
-            className="bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+            className="bg-white/60 border border-slate-700 text-slate-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
           >
-            <option value="">Destination...</option>
+            <option value="">الوجهة...</option>
             {locations
               .filter((l) => l.status === 'active' && l.id !== priceForm.pickupLocationId)
               .map((l) => (
@@ -224,11 +225,11 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
             id="pricing-vehicle-select"
             value={priceForm.vehicleClass}
             onChange={(e) => setPriceForm((p) => ({ ...p, vehicleClass: e.target.value as never }))}
-            className="bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+            className="bg-white/60 border border-slate-700 text-slate-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
           >
-            <option value="standard">Standard</option>
-            <option value="executive">Executive</option>
-            <option value="van">Van</option>
+            <option value="standard">عادية</option>
+            <option value="executive">تنفيذية</option>
+            <option value="van">فان</option>
           </select>
           <div>
             <input
@@ -236,10 +237,10 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
               type="number"
               min="0"
               step="0.01"
-              placeholder="Price ($)"
+              placeholder="السعر ($)"
               value={priceForm.price}
               onChange={(e) => setPriceForm((p) => ({ ...p, price: e.target.value }))}
-              className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+              className="w-full bg-white/60 border border-slate-700 text-slate-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
             />
             {priceErrors.price && <p className="text-red-400 text-xs mt-1">{priceErrors.price}</p>}
           </div>
@@ -247,45 +248,55 @@ export default function SettingsManager({ locations, pricingRules }: Props) {
             id="add-pricing-rule-btn"
             onClick={handleAddPricingRule}
             disabled={isPending}
-            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition-all"
+            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-slate-900 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition-all"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Add Rule
+            إضافة القاعدة
           </button>
         </div>
 
         {/* Pricing rules table */}
         <div className="overflow-x-auto">
           {pricingRules.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-6">No pricing rules yet.</p>
+            <p className="text-sm text-slate-500 text-center py-6">لا توجد قواعد تسعير بعد.</p>
           ) : (
             <table className="w-full text-sm">
-              <thead className="border-b border-white/10">
-                <tr className="text-left text-slate-400">
-                  <th className="pb-3 font-medium">Pickup</th>
-                  <th className="pb-3 font-medium">Destination</th>
-                  <th className="pb-3 font-medium">Vehicle</th>
-                  <th className="pb-3 font-medium">Price</th>
-                  <th className="pb-3 font-medium">Action</th>
+              <thead className="border-b border-black/10">
+                <tr className="text-right text-slate-500">
+                  <th className="pb-3 font-medium">الانطلاق</th>
+                  <th className="pb-3 font-medium">الوجهة</th>
+                  <th className="pb-3 font-medium">الفئة</th>
+                  <th className="pb-3 font-medium">السعر</th>
+                  <th className="pb-3 font-medium">الإجراء</th>
                 </tr>
               </thead>
               <tbody>
                 {pricingRules.map((rule) => (
-                  <tr key={rule.id} className="border-b border-white/5 hover:bg-white/2 transition-colors">
-                    <td className="py-3 text-slate-300">
-                      {(rule.pickup_location as any)?.name ?? rule.pickup_location_id}
+                  <tr key={rule.id} className="border-b border-black/5 hover:bg-white/2 transition-colors">
+                    <td className="py-3 text-slate-700">
+                      {(rule.pickup_location as { name?: string } | null)?.name ??
+                        rule.pickup_location_id}
                     </td>
-                    <td className="py-3 text-slate-300">
-                      {(rule.destination_location as any)?.name ?? rule.destination_location_id}
+                    <td className="py-3 text-slate-700">
+                      {(rule.destination_location as { name?: string } | null)?.name ??
+                        rule.destination_location_id}
                     </td>
-                    <td className="py-3 capitalize text-slate-300">{rule.vehicle_class}</td>
-                    <td className="py-3 text-emerald-400 font-semibold">${rule.price}</td>
+                    <td className="py-3 text-slate-700">
+                      {rule.vehicle_class === 'standard'
+                        ? 'عادية'
+                        : rule.vehicle_class === 'executive'
+                          ? 'تنفيذية'
+                          : 'فان'}
+                    </td>
+                    <td className="py-3 font-semibold text-emerald-400" dir="ltr">
+                      ${rule.price}
+                    </td>
                     <td className="py-3">
                       <button
                         id={`delete-rule-${rule.id}`}
                         onClick={() => handleDeleteRule(rule.id)}
                         disabled={isPending}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all disabled:opacity-40"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all disabled:opacity-40"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

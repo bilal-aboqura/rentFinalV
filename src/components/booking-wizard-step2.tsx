@@ -73,37 +73,37 @@ function OrderSummaryCard({
   }).format(price);
 
   return (
-    <div className="bg-slate-800/60 border border-white/10 rounded-xl p-5 space-y-3">
-      <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
+    <div className="space-y-3 rounded-xl border border-black/10 bg-white/60 p-4 sm:p-5">
+      <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
         Trip Summary
       </h4>
       <div className="space-y-2.5 text-sm">
         <div className="flex items-start gap-2.5">
           <MapPin className="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0" />
           <div>
-            <span className="text-slate-400">Pickup: </span>
-            <span className="text-white font-medium">{pickupLocationName}</span>
+            <span className="text-slate-500">Pickup: </span>
+            <span className="text-slate-900 font-medium">{pickupLocationName}</span>
           </div>
         </div>
         <div className="flex items-start gap-2.5">
           <MapPin className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
           <div>
-            <span className="text-slate-400">Destination: </span>
-            <span className="text-white font-medium">{destinationLocationName}</span>
+            <span className="text-slate-500">Destination: </span>
+            <span className="text-slate-900 font-medium">{destinationLocationName}</span>
           </div>
         </div>
         <div className="flex items-center gap-2.5">
           <Calendar className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-          <span className="text-slate-400">Date: </span>
-          <span className="text-white font-medium">{date}</span>
+          <span className="text-slate-500">Date: </span>
+          <span className="text-slate-900 font-medium">{date}</span>
         </div>
         <div className="flex items-center gap-2.5">
           <Clock className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-          <span className="text-slate-400">Time: </span>
-          <span className="text-white font-medium">{time}</span>
+          <span className="text-slate-500">Time: </span>
+          <span className="text-slate-900 font-medium">{time}</span>
         </div>
-        <div className="border-t border-white/10 pt-2.5 flex items-center justify-between">
-          <span className="text-slate-300 font-semibold">Total Price</span>
+        <div className="flex items-center justify-between gap-3 border-t border-black/10 pt-2.5">
+          <span className="text-slate-700 font-semibold">Total Price</span>
           <span
             className="text-xl font-bold text-emerald-400"
             id="order-summary-price"
@@ -141,17 +141,17 @@ function SuccessView({ bookingReference, customerName, onReset }: SuccessViewPro
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-2xl font-bold text-white">Booking Request Received!</h3>
-        <p className="text-slate-400">
-          Thank you, <span className="text-white font-medium">{customerName}</span>. Your
+        <h3 className="text-2xl font-bold text-slate-900">Booking Request Received!</h3>
+        <p className="text-sm leading-7 text-slate-500">
+          Thank you, <span className="text-slate-900 font-medium">{customerName}</span>. Your
           transfer request has been submitted and is pending confirmation.
         </p>
       </div>
 
-      <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-5 space-y-2">
-        <p className="text-slate-400 text-sm">Your booking reference</p>
+      <div className="space-y-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-4 sm:p-5">
+        <p className="text-slate-500 text-sm">Your booking reference</p>
         <p
-          className="text-white font-mono text-sm break-all font-semibold"
+          className="text-slate-900 font-mono text-sm break-all font-semibold"
           id="booking-reference-display"
         >
           {bookingReference}
@@ -161,7 +161,7 @@ function SuccessView({ bookingReference, customerName, onReset }: SuccessViewPro
         </p>
       </div>
 
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 text-sm text-slate-400">
+      <div className="bg-black/50 border border-slate-700/50 rounded-xl p-4 text-sm text-slate-500">
         <p>
           A confirmation email has been sent to your inbox. Our team will review your request
           and get in touch to confirm your transfer.
@@ -280,8 +280,8 @@ export function BookingWizardStep2({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-white mb-1">Passenger Details</h3>
-        <p className="text-sm text-slate-400">Review your trip and enter your contact information.</p>
+        <h3 className="text-lg font-semibold text-slate-900 mb-1">Passenger Details</h3>
+        <p className="text-sm text-slate-500">Review your trip and enter your contact information.</p>
       </div>
 
       {/* ── Order Summary (US1, read-only) ── */}
@@ -309,7 +309,7 @@ export function BookingWizardStep2({
       <div className="space-y-4">
         {/* Full Name */}
         <div>
-          <label htmlFor="customer-name" className="block text-sm font-medium text-slate-400 mb-1.5">
+          <label htmlFor="customer-name" className="block text-sm font-medium text-slate-500 mb-1.5">
             <span className="flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-indigo-400" />
               Full Name <span className="text-red-400">*</span>
@@ -321,8 +321,8 @@ export function BookingWizardStep2({
             placeholder="Jane Doe"
             value={form.customerName}
             onChange={(e) => updateField('customerName', e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl bg-slate-800/80 border text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm ${
-              errors.customerName ? 'border-red-500/60' : 'border-white/10 focus:border-indigo-500'
+            className={`w-full px-4 py-3 rounded-xl bg-white/80 border text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm ${
+              errors.customerName ? 'border-red-500/60' : 'border-black/10 focus:border-indigo-500'
             }`}
           />
           {errors.customerName && (
@@ -335,7 +335,7 @@ export function BookingWizardStep2({
 
         {/* Email */}
         <div>
-          <label htmlFor="customer-email" className="block text-sm font-medium text-slate-400 mb-1.5">
+          <label htmlFor="customer-email" className="block text-sm font-medium text-slate-500 mb-1.5">
             <span className="flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5 text-indigo-400" />
               Email Address <span className="text-red-400">*</span>
@@ -347,8 +347,8 @@ export function BookingWizardStep2({
             placeholder="jane@example.com"
             value={form.customerEmail}
             onChange={(e) => updateField('customerEmail', e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl bg-slate-800/80 border text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm ${
-              errors.customerEmail ? 'border-red-500/60' : 'border-white/10 focus:border-indigo-500'
+            className={`w-full px-4 py-3 rounded-xl bg-white/80 border text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm ${
+              errors.customerEmail ? 'border-red-500/60' : 'border-black/10 focus:border-indigo-500'
             }`}
           />
           {errors.customerEmail && (
@@ -361,7 +361,7 @@ export function BookingWizardStep2({
 
         {/* Phone */}
         <div>
-          <label htmlFor="customer-phone" className="block text-sm font-medium text-slate-400 mb-1.5">
+          <label htmlFor="customer-phone" className="block text-sm font-medium text-slate-500 mb-1.5">
             <span className="flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-indigo-400" />
               Phone Number <span className="text-red-400">*</span>
@@ -373,8 +373,8 @@ export function BookingWizardStep2({
             placeholder="+15551234567"
             value={form.customerPhone}
             onChange={(e) => updateField('customerPhone', e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl bg-slate-800/80 border text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm ${
-              errors.customerPhone ? 'border-red-500/60' : 'border-white/10 focus:border-indigo-500'
+            className={`w-full px-4 py-3 rounded-xl bg-white/80 border text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm ${
+              errors.customerPhone ? 'border-red-500/60' : 'border-black/10 focus:border-indigo-500'
             }`}
           />
           <p className="text-slate-500 text-xs mt-1">
@@ -390,7 +390,7 @@ export function BookingWizardStep2({
 
         {/* Flight Number (optional) */}
         <div>
-          <label htmlFor="flight-number" className="block text-sm font-medium text-slate-400 mb-1.5">
+          <label htmlFor="flight-number" className="block text-sm font-medium text-slate-500 mb-1.5">
             <span className="flex items-center gap-1.5">
               <Plane className="w-3.5 h-3.5 text-indigo-400" />
               Flight Number{' '}
@@ -404,13 +404,13 @@ export function BookingWizardStep2({
             maxLength={20}
             value={form.flightNumber ?? ''}
             onChange={(e) => updateField('flightNumber', e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
+            className="w-full px-4 py-3 rounded-xl bg-white/80 border border-black/10 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
           />
         </div>
 
         {/* Notes (optional) */}
         <div>
-          <label htmlFor="booking-notes" className="block text-sm font-medium text-slate-400 mb-1.5">
+          <label htmlFor="booking-notes" className="block text-sm font-medium text-slate-500 mb-1.5">
             <span className="flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-indigo-400" />
               Special Requests{' '}
@@ -424,18 +424,18 @@ export function BookingWizardStep2({
             placeholder="e.g. Child seat required, wheelchair access needed..."
             value={form.notes ?? ''}
             onChange={(e) => updateField('notes', e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm resize-none"
+            className="w-full px-4 py-3 rounded-xl bg-white/80 border border-black/10 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm resize-none"
           />
         </div>
       </div>
 
       {/* ── Action buttons ── */}
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <button
           id="step2-back-btn"
           onClick={onBack}
           disabled={isPending}
-          className="flex-none px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white font-semibold flex items-center gap-2 transition-all"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-3 font-semibold text-slate-900 transition-all hover:bg-slate-600 disabled:opacity-50 sm:w-auto sm:flex-none"
         >
           <ChevronLeft className="w-4 h-4" />
           Back

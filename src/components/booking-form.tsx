@@ -1,24 +1,28 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
+import Link from 'next/link';
 import {
-  MapPin,
+  AlertCircle,
+  ArrowLeft,
   Calendar,
   Car,
-  User,
-  Mail,
-  Phone,
-  ArrowRight,
   CheckCircle,
+  ChevronLeft,
+  Clock,
   Loader2,
-  AlertCircle,
-  ChevronRight,
+  Mail,
+  MapPin,
+  Phone,
+  Star,
+  User,
+  Users,
 } from 'lucide-react';
 import type { Location, PricingRule } from '@/types';
 import {
+  createBookingAction,
   getActiveLocationsAction,
   getRoutePricingAction,
-  createBookingAction,
 } from '@/app/(customer)/actions';
 
 type Step = 1 | 2 | 3 | 4;
@@ -36,419 +40,779 @@ interface BookingFormState {
 const VEHICLE_OPTIONS = [
   {
     id: 'standard' as const,
-    label: 'Standard',
-    desc: 'Comfortable sedan for up to 3 passengers',
-    icon: '🚗',
+    label: 'عادية',
+    desc: 'سيارة مريحة تناسب حتى 3 ركاب',
+    icon: Car,
   },
   {
     id: 'executive' as const,
-    label: 'Executive',
-    desc: 'Premium vehicle for business travel',
-    icon: '🚘',
+    label: 'تنفيذية',
+    desc: 'خيار راقٍ لرحلات الأعمال والاستقبال الرسمي',
+    icon: Star,
   },
   {
     id: 'van' as const,
-    label: 'Van',
-    desc: 'Spacious van for groups up to 7',
-    icon: '🚐',
+    label: 'فان',
+    desc: 'مساحة أكبر للمجموعات والحقائب الإضافية',
+    icon: Users,
   },
 ];
+
+const VEHICLE_CLASS_LABELS: Record<BookingFormState['vehicleClass'], string> = {
+  standard: 'عادية',
+  executive: 'تنفيذية',
+  van: 'فان',
+};
+
+const STEP_LABELS = [
+  { value: 1 as const, label: 'المسار' },
+  { value: 2 as const, label: 'الفئة' },
+  { value: 3 as const, label: 'البيانات' },
+];
+
+const STEP_NOTES: Record<Exclude<Step, 4>, { title: string; description: string }> = {
+  1: {
+    title: 'اختر تفاصيل الرحلة',
+    description: 'حدد نقطة الانطلاق والوجهة ووقت السفر المناسب حتى نعرض لك الخدمة بدقة.',
+  },
+  2: {
+    title: 'راجع الفئات المتاحة',
+    description: 'قارن السعر بوضوح واختر السيارة التي تناسب المسافر أو المجموعة.',
+  },
+  3: {
+    title: 'أدخل بيانات التواصل',
+    description: 'أرسل طلب الحجز وسيتابع فريق التشغيل التأكيد معك مباشرة.',
+  },
+};
+
+const EMPTY_FORM: BookingFormState = {
+  pickupLocationId: '',
+  destinationLocationId: '',
+  tripDateTime: '',
+  vehicleClass: 'standard',
+  customerName: '',
+  customerEmail: '',
+  customerPhone: '',
+};
+
+const currencyFormatter = new Intl.NumberFormat('ar-EG', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 2,
+});
+
+function formatPrice(price: number) {
+  return currencyFormatter.format(price);
+}
+
+function formatLocationType(type?: string) {
+  if (type === 'airport') return 'مطار';
+  if (type === 'city') return 'مدينة';
+  return type ?? '';
+}
+
+function getMinTripDateTime() {
+  const date = new Date(Date.now() + 60 * 60 * 1000);
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+}
 
 export default function BookingForm() {
   const [step, setStep] = useState<Step>(1);
   const [locations, setLocations] = useState<Location[]>([]);
   const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
-  const [form, setForm] = useState<BookingFormState>({
-    pickupLocationId: '',
-    destinationLocationId: '',
-    tripDateTime: '',
-    vehicleClass: 'standard',
-    customerName: '',
-    customerEmail: '',
-    customerPhone: '',
-  });
+  const [form, setForm] = useState<BookingFormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
   const [successBooking, setSuccessBooking] = useState<{ referenceId: string } | null>(null);
 
   useEffect(() => {
     getActiveLocationsAction().then((res) => {
-      if (res.success) setLocations(res.data);
+      if (res.success) {
+        setLocations(res.data);
+      }
     });
   }, []);
 
   useEffect(() => {
-    if (form.pickupLocationId && form.destinationLocationId) {
-      getRoutePricingAction(form.pickupLocationId, form.destinationLocationId).then((res) => {
-        if (res.success) setPricingRules(res.data);
-        else setPricingRules([]);
-      });
+    if (!form.pickupLocationId || !form.destinationLocationId) {
+      return;
     }
-  }, [form.pickupLocationId, form.destinationLocationId]);
 
-  const selectedPricing = pricingRules.find((r) => r.vehicle_class === form.vehicleClass);
+    getRoutePricingAction(form.pickupLocationId, form.destinationLocationId).then((res) => {
+      if (res.success) {
+        setPricingRules(res.data);
+      } else {
+        setPricingRules([]);
+      }
+    });
+  }, [form.destinationLocationId, form.pickupLocationId]);
+
+  const selectedPickup = locations.find((location) => location.id === form.pickupLocationId);
+  const selectedDestination = locations.find(
+    (location) => location.id === form.destinationLocationId
+  );
+  const resolvedVehicleClass =
+    pricingRules.some((rule) => rule.vehicle_class === form.vehicleClass)
+      ? form.vehicleClass
+      : pricingRules.find(
+          (rule): rule is PricingRule & {
+            vehicle_class: BookingFormState['vehicleClass'];
+          } =>
+            rule.vehicle_class === 'standard' ||
+            rule.vehicle_class === 'executive' ||
+            rule.vehicle_class === 'van'
+        )?.vehicle_class ?? form.vehicleClass;
+  const selectedPricing = pricingRules.find(
+    (rule) => rule.vehicle_class === resolvedVehicleClass
+  );
+  const activeStep = step === 4 ? 3 : step;
 
   const updateField = (field: keyof BookingFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: '' }));
+    setErrors((prev) => ({ ...prev, [field]: '', _general: '' }));
+  };
+
+  const handlePickupChange = (value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      pickupLocationId: value,
+      destinationLocationId:
+        prev.destinationLocationId === value ? '' : prev.destinationLocationId,
+    }));
+    setPricingRules([]);
+    setErrors((prev) => ({ ...prev, pickupLocationId: '', destinationLocationId: '' }));
+  };
+
+  const handleDestinationChange = (value: string) => {
+    setForm((prev) => ({ ...prev, destinationLocationId: value }));
+    setPricingRules([]);
+    setErrors((prev) => ({ ...prev, destinationLocationId: '' }));
+  };
+
+  const handleReset = () => {
+    setStep(1);
+    setSuccessBooking(null);
+    setPricingRules([]);
+    setForm(EMPTY_FORM);
+    setErrors({});
   };
 
   const handleSubmit = () => {
     startTransition(async () => {
       const result = await createBookingAction({
         ...form,
+        vehicleClass: resolvedVehicleClass,
         tripDateTime: new Date(form.tripDateTime).toISOString(),
       });
 
       if (result.success) {
         setSuccessBooking({ referenceId: result.data.reference_id });
         setStep(4);
-      } else {
-        const fieldErrors: Record<string, string> = {};
-        if (result.validationErrors) {
-          Object.entries(result.validationErrors).forEach(([key, msgs]) => {
-            fieldErrors[key] = msgs[0];
-          });
-        } else {
-          fieldErrors._general = result.error;
-        }
-        setErrors(fieldErrors);
+        return;
       }
+
+      const fieldErrors: Record<string, string> = {};
+      if (result.validationErrors) {
+        Object.entries(result.validationErrors).forEach(([key, messages]) => {
+          fieldErrors[key] = messages[0];
+        });
+      } else {
+        fieldErrors._general = result.error;
+      }
+      setErrors(fieldErrors);
     });
   };
 
-  // Step 4: Success screen
   if (step === 4 && successBooking) {
     return (
-      <div className="glass rounded-2xl p-10 text-center space-y-6 glow">
-        <div className="flex justify-center">
-          <CheckCircle className="w-16 h-16 text-emerald-400" />
+      <div className="glass overflow-hidden rounded-[32px] border border-white/40 glow">
+        <div className="p-8 sm:p-10">
+          <div className="mx-auto max-w-xl text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/14">
+              <CheckCircle className="h-10 w-10 text-emerald-500" />
+            </div>
+            <h2 className="mt-6 text-4xl font-semibold text-slate-950">تم استلام طلب الحجز</h2>
+            <p className="mt-3 text-base leading-7 text-slate-600">
+              وصلت تفاصيل الرحلة إلى فريق التشغيل، وسيتم تأكيد النقل معك في أقرب وقت.
+            </p>
+
+            <div className="panel-card mt-8 px-6 py-5">
+              <p className="text-xs font-semibold tracking-[0.22em] text-slate-500">
+                الرقم المرجعي للحجز
+              </p>
+              <p className="gradient-text mt-3 break-all text-3xl font-semibold" dir="ltr">
+                {successBooking.referenceId}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                احتفظ بهذا الرقم للمتابعة عند الحاجة أو عند التواصل مع الفريق.
+              </p>
+            </div>
+
+            <div className="soft-card mt-6 p-5 text-right">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+                ماذا يحدث بعد ذلك
+              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                يراجع الفريق تفاصيل الرحلة ويتأكد من التوفر ثم يتواصل مباشرة مع المسافر أو
+                جهة الحجز عبر البيانات المرسلة.
+              </p>
+            </div>
+
+            <button
+              id="book-another-btn"
+              onClick={handleReset}
+              className="btn-primary mt-8 inline-flex w-full px-6 py-4 text-sm font-semibold"
+            >
+              احجز رحلة أخرى
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-white">Booking Confirmed!</h2>
-        <p className="text-slate-400">Your booking reference is:</p>
-        <div className="inline-block bg-indigo-500/20 border border-indigo-500/30 rounded-xl px-8 py-4">
-          <span className="text-3xl font-mono font-bold gradient-text">
-            {successBooking.referenceId}
-          </span>
-        </div>
-        <p className="text-slate-400 text-sm">
-          We&apos;ll confirm your booking shortly. A driver will be assigned and you&apos;ll be notified.
-        </p>
-        <button
-          id="book-another-btn"
-          onClick={() => {
-            setStep(1);
-            setSuccessBooking(null);
-            setForm({
-              pickupLocationId: '',
-              destinationLocationId: '',
-              tripDateTime: '',
-              vehicleClass: 'standard',
-              customerName: '',
-              customerEmail: '',
-              customerPhone: '',
-            });
-          }}
-          className="mt-4 inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold transition-all"
-        >
-          Book Another Ride <ArrowRight className="w-4 h-4" />
-        </button>
       </div>
     );
   }
 
   return (
-    <div className="glass rounded-2xl overflow-hidden glow">
-      {/* Step indicator */}
-      <div className="flex border-b border-white/10">
-        {['Route', 'Vehicle', 'Details'].map((label, idx) => {
-          const s = (idx + 1) as Step;
-          return (
-            <button
-              key={label}
-              id={`step-${s}-tab`}
-              onClick={() => step > s && setStep(s)}
-              className={`flex-1 py-4 text-sm font-medium transition-all ${
-                step === s
-                  ? 'text-indigo-400 border-b-2 border-indigo-500'
-                  : step > s
-                  ? 'text-emerald-400 cursor-pointer hover:text-emerald-300'
-                  : 'text-slate-500 cursor-default'
-              }`}
-            >
-              <span className="mr-2">{step > s ? '✓' : s}</span>
-              {label}
-            </button>
-          );
-        })}
+    <div className="glass overflow-hidden rounded-[18px] border border-slate-200/80 shadow-none sm:rounded-[32px] sm:border-white/40 sm:shadow-[var(--cms-shadow)]">
+      <div className="border-b-0 border-slate-200 px-3 pb-3 pt-0 sm:border-b sm:px-8 sm:py-6">
+        <div className="flex flex-col gap-3 sm:gap-5">
+            <div className="flex flex-row-reverse items-center justify-between gap-3 sm:flex-row sm:items-start">
+            <div className="hidden sm:block">
+              <p className="text-sm font-medium text-slate-500">الحجز</p>
+              <h2 className="mt-1 text-3xl font-semibold text-slate-950">
+                احجز رحلتك في ثلاث خطوات واضحة
+              </h2>
+            </div>
+            <div className="w-fit rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+              الخطوة {activeStep} من 3
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {STEP_LABELS.map((item) => {
+              const isActive = activeStep === item.value;
+              const isComplete = activeStep > item.value;
+
+              return (
+                <button
+                  key={item.label}
+                  id={`step-${item.value}-tab`}
+                  onClick={() => activeStep > item.value && setStep(item.value)}
+                  className={`min-w-0 rounded-xl border px-2 py-2.5 text-center sm:px-4 sm:py-4 sm:text-right ${
+                    isActive
+                      ? 'border-[var(--cms-primary)]/30 bg-[var(--cms-primary)]/8'
+                      : isComplete
+                        ? 'border-slate-200 bg-white hover:border-[var(--cms-primary)]/20'
+                        : 'border-slate-200 bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2 sm:justify-start sm:gap-3">
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold sm:h-9 sm:w-9 sm:text-sm ${
+                        isActive
+                          ? 'bg-[var(--cms-primary)] text-white'
+                          : isComplete
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {isComplete ? <CheckCircle className="h-4 w-4" /> : item.value}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-slate-950 sm:text-base">{item.label}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {step !== 4 && (
+            <div className="hidden sm:block">
+              <p className="text-sm font-semibold text-slate-950">{STEP_NOTES[step].title}</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">{STEP_NOTES[step].description}</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="p-8 space-y-6">
-        {/* Step 1: Route & Date */}
+      <div className="p-3 sm:p-8">
         {step === 1 && (
-          <div className="space-y-5">
-            <h3 className="text-lg font-semibold text-white">Select your route & travel time</h3>
+          <div className="space-y-6">
+            {locations.length === 0 && (
+              <div className="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 sm:block">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-amber-100 p-2.5">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-slate-950">
+                      لم يتم إعداد المواقع بعد
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      أضف نقاط الانطلاق والأسعار من لوحة الإدارة، أو استخدم صفحة التواصل
+                      لاستقبال الطلبات يدويًا مؤقتًا.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Link href="/contact" className="btn-secondary inline-flex px-4 py-3 text-sm font-semibold">
+                        تواصل معنا
+                      </Link>
+                      <Link href="/admin/login" className="btn-primary inline-flex px-4 py-3 text-sm font-semibold">
+                        افتح الإدارة
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            <div>
-              <label className="block text-sm text-slate-400 mb-2" htmlFor="pickup-location">
-                <MapPin className="inline w-4 h-4 mr-1" />Pickup Location
-              </label>
-              <select
-                id="pickup-location"
-                value={form.pickupLocationId}
-                onChange={(e) => updateField('pickupLocationId', e.target.value)}
-                className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
-              >
-                <option value="">Select pickup...</option>
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} ({l.type})
-                  </option>
-                ))}
-              </select>
-              {errors.pickupLocationId && (
-                <p className="text-red-400 text-xs mt-1">{errors.pickupLocationId}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm text-slate-400 mb-2" htmlFor="destination-location">
-                <MapPin className="inline w-4 h-4 mr-1" />Destination
-              </label>
-              <select
-                id="destination-location"
-                value={form.destinationLocationId}
-                onChange={(e) => updateField('destinationLocationId', e.target.value)}
-                className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
-              >
-                <option value="">Select destination...</option>
-                {locations
-                  .filter((l) => l.id !== form.pickupLocationId)
-                  .map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name} ({l.type})
+            <div className="grid gap-5 lg:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="pickup-location">
+                  <span className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-[var(--cms-primary)]" />
+                    نقطة الانطلاق
+                  </span>
+                </label>
+                <select
+                  id="pickup-location"
+                  value={form.pickupLocationId}
+                  onChange={(event) => handlePickupChange(event.target.value)}
+                  className="input-shell text-sm"
+                >
+                  <option value="">اختر نقطة الانطلاق...</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} ({formatLocationType(location.type)})
                     </option>
                   ))}
-              </select>
-              {errors.destinationLocationId && (
-                <p className="text-red-400 text-xs mt-1">{errors.destinationLocationId}</p>
-              )}
+                </select>
+                {errors.pickupLocationId && (
+                  <p className="mt-2 text-xs text-red-500">{errors.pickupLocationId}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  className="mb-2 block text-sm font-semibold text-slate-700"
+                  htmlFor="destination-location"
+                >
+                  <span className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-[var(--cms-secondary)]" />
+                    الوجهة
+                  </span>
+                </label>
+                <select
+                  id="destination-location"
+                  value={form.destinationLocationId}
+                  onChange={(event) => handleDestinationChange(event.target.value)}
+                  className="input-shell text-sm"
+                >
+                  <option value="">اختر الوجهة...</option>
+                  {locations
+                    .filter((location) => location.id !== form.pickupLocationId)
+                    .map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.name} ({formatLocationType(location.type)})
+                      </option>
+                    ))}
+                </select>
+                {errors.destinationLocationId && (
+                  <p className="mt-2 text-xs text-red-500">{errors.destinationLocationId}</p>
+                )}
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm text-slate-400 mb-2" htmlFor="trip-datetime">
-                <Calendar className="inline w-4 h-4 mr-1" />Date &amp; Time
+              <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="trip-datetime">
+                <span className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-[var(--cms-primary)]" />
+                  تاريخ ووقت الرحلة
+                </span>
               </label>
               <input
                 id="trip-datetime"
                 type="datetime-local"
-                min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                min={getMinTripDateTime()}
                 value={form.tripDateTime}
-                onChange={(e) => updateField('tripDateTime', e.target.value)}
-                className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                onChange={(event) => updateField('tripDateTime', event.target.value)}
+                className="input-shell text-sm"
               />
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                اختر وقتًا بعد ساعة واحدة على الأقل حتى يتمكن الفريق من تأكيد الرحلة.
+              </p>
               {errors.tripDateTime && (
-                <p className="text-red-400 text-xs mt-1">{errors.tripDateTime}</p>
+                <p className="mt-2 text-xs text-red-500">{errors.tripDateTime}</p>
               )}
             </div>
 
-            <button
-              id="step1-next-btn"
-              onClick={() => {
-                if (!form.pickupLocationId) return setErrors({ pickupLocationId: 'Please select a pickup location.' });
-                if (!form.destinationLocationId) return setErrors({ destinationLocationId: 'Please select a destination.' });
-                if (!form.tripDateTime) return setErrors({ tripDateTime: 'Please select a date and time.' });
-                setStep(2);
-              }}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl py-3 font-semibold flex items-center justify-center gap-2 transition-all"
-            >
-              Continue <ChevronRight className="w-4 h-4" />
-            </button>
+            {(selectedPickup || selectedDestination || form.tripDateTime) && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+                  معاينة الرحلة
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs tracking-[0.18em] text-slate-400">الانطلاق</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-950">
+                      {selectedPickup?.name ?? 'لم يتم الاختيار بعد'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs tracking-[0.18em] text-slate-400">الوجهة</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-950">
+                      {selectedDestination?.name ?? 'لم يتم الاختيار بعد'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs tracking-[0.18em] text-slate-400">موعد الانطلاق</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-950">
+                      {form.tripDateTime
+                        ? new Date(form.tripDateTime).toLocaleString('ar-EG', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })
+                        : 'لم يتم الاختيار بعد'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm leading-6 text-slate-600">
+                هل تحتاج مسارًا خاصًا أو عرض سعر يدوي؟
+                <Link href="/contact" className="mr-1 font-semibold text-slate-950 underline">
+                  استخدم نموذج التواصل
+                </Link>
+                .
+              </p>
+              <button
+                id="step1-next-btn"
+                onClick={() => {
+                  if (!form.pickupLocationId) {
+                    setErrors({ pickupLocationId: 'يرجى اختيار نقطة الانطلاق.' });
+                    return;
+                  }
+                  if (!form.destinationLocationId) {
+                    setErrors({ destinationLocationId: 'يرجى اختيار الوجهة.' });
+                    return;
+                  }
+                  if (!form.tripDateTime) {
+                    setErrors({ tripDateTime: 'يرجى اختيار التاريخ والوقت.' });
+                    return;
+                  }
+                  setErrors({});
+                  setStep(2);
+                }}
+                disabled={locations.length === 0}
+                className="btn-primary inline-flex w-full px-6 py-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-55 sm:w-auto"
+              >
+                متابعة إلى الفئات
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Step 2: Vehicle Selection */}
         {step === 2 && (
-          <div className="space-y-5">
-            <h3 className="text-lg font-semibold text-white">Select your vehicle class</h3>
+          <div className="space-y-6">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div>
+                  <p className="text-xs tracking-[0.18em] text-slate-400">المسار</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-950">
+                    {selectedPickup?.name ?? 'الانطلاق'} إلى {selectedDestination?.name ?? 'الوجهة'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs tracking-[0.18em] text-slate-400">الوقت</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-950">
+                    {form.tripDateTime
+                      ? new Date(form.tripDateTime).toLocaleString('ar-EG', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })
+                      : 'قيد التحديد'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs tracking-[0.18em] text-slate-400">الحالة</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-950">
+                    {pricingRules.length > 0 ? 'الأسعار متاحة' : 'قد تحتاج إلى تسعير يدوي'}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-            <div className="space-y-3">
-              {VEHICLE_OPTIONS.map((option) => {
-                const pricing = pricingRules.find((r) => r.vehicle_class === option.id);
+            <div className="grid gap-4">
+              {VEHICLE_OPTIONS.map(({ id, label, desc, icon: Icon }) => {
+                const pricing = pricingRules.find((rule) => rule.vehicle_class === id);
+                const isSelected = resolvedVehicleClass === id;
+
                 return (
                   <button
-                    key={option.id}
-                    id={`vehicle-${option.id}`}
-                    onClick={() => updateField('vehicleClass', option.id)}
-                    className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${
-                      form.vehicleClass === option.id
-                        ? 'border-indigo-500 bg-indigo-500/10'
-                        : 'border-slate-700 bg-slate-800/40 hover:border-slate-600'
+                    key={id}
+                    id={`vehicle-${id}`}
+                    onClick={() => pricing && updateField('vehicleClass', id)}
+                    className={`rounded-xl border p-5 text-right sm:flex sm:items-center sm:justify-between ${
+                      pricing
+                        ? isSelected
+                          ? 'border-[var(--cms-primary)]/40 bg-[var(--cms-primary)]/6'
+                          : 'border-slate-200 hover:border-slate-300'
+                        : 'cursor-not-allowed opacity-60'
                     }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <span className="text-3xl">{option.icon}</span>
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80">
+                        <Icon className="h-5 w-5 text-[var(--cms-primary)]" />
+                      </div>
                       <div>
-                        <p className="font-semibold text-white">{option.label}</p>
-                        <p className="text-sm text-slate-400">{option.desc}</p>
+                        <p className="text-xl font-semibold text-slate-950">{label}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{desc}</p>
                       </div>
                     </div>
-                    {pricing ? (
-                      <span className="text-lg font-bold text-emerald-400">${pricing.price}</span>
-                    ) : (
-                      <span className="text-sm text-slate-500">N/A</span>
-                    )}
+
+                    <div className="text-right">
+                      <p className="text-xs font-semibold tracking-[0.18em] text-slate-400">
+                        {pricing ? 'سعر المسار' : 'التوفر'}
+                      </p>
+                      <p className="mt-1 text-xl font-semibold text-slate-950" dir="ltr">
+                        {pricing ? formatPrice(Number(pricing.price)) : 'تواصل معنا'}
+                      </p>
+                    </div>
                   </button>
                 );
               })}
             </div>
 
-            {selectedPricing && (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-5 py-3 flex items-center justify-between">
-                <span className="text-slate-300">Estimated Total</span>
-                <span className="text-2xl font-bold text-emerald-400">${selectedPricing.price}</span>
+            {selectedPricing ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+                      السعر التقديري
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      سعر واضح وثابت يساعد العميل على فهم الحجز مباشرة.
+                    </p>
+                  </div>
+                  <p className="text-3xl font-semibold text-emerald-600" dir="ltr">
+                    {formatPrice(Number(selectedPricing.price))}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-amber-100 p-2.5">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-slate-950">
+                      لا يوجد سعر منشور لهذا المسار بعد
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      يمكنك إرسال الطلب عبر صفحة التواصل ريثما يجهز فريق التشغيل إعداد المسار.
+                    </p>
+                    <Link href="/contact" className="btn-secondary mt-4 inline-flex px-4 py-3 text-sm font-semibold">
+                      افتح نموذج التواصل
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
 
-            {pricingRules.length === 0 && form.pickupLocationId && form.destinationLocationId && (
-              <div className="flex items-center gap-2 text-amber-400 text-sm bg-amber-400/10 border border-amber-400/20 rounded-xl px-4 py-3">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                No pricing rules found for this route. Please contact us.
-              </div>
-            )}
-
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 id="step2-back-btn"
                 onClick={() => setStep(1)}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-3 font-semibold transition-all"
+                className="btn-secondary inline-flex w-full px-6 py-4 text-sm font-semibold sm:w-auto"
               >
-                Back
+                رجوع
               </button>
               <button
                 id="step2-next-btn"
                 onClick={() => {
-                  if (!selectedPricing) return setErrors({ vehicleClass: 'No pricing for this vehicle on this route.' });
+                  if (!selectedPricing) {
+                    setErrors({ vehicleClass: 'لا يوجد سعر متاح لهذا المسار حاليًا.' });
+                    return;
+                  }
+                  setErrors({});
                   setStep(3);
                 }}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl py-3 font-semibold flex items-center justify-center gap-2 transition-all"
+                className="btn-primary inline-flex w-full px-6 py-4 text-sm font-semibold sm:mr-auto sm:w-auto"
               >
-                Continue <ChevronRight className="w-4 h-4" />
+                متابعة إلى البيانات
+                <ChevronLeft className="h-4 w-4" />
               </button>
             </div>
+
+            {errors.vehicleClass && <p className="text-sm text-red-500">{errors.vehicleClass}</p>}
           </div>
         )}
 
-        {/* Step 3: Customer Details */}
         {step === 3 && (
-          <div className="space-y-5">
-            <h3 className="text-lg font-semibold text-white">Your details</h3>
-
+          <div className="space-y-6">
             {errors._general && (
-              <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                {errors._general}
-              </div>
+              <div className="panel-card px-5 py-4 text-sm text-red-500">{errors._general}</div>
             )}
 
-            <div>
-              <label className="block text-sm text-slate-400 mb-2" htmlFor="customer-name">
-                <User className="inline w-4 h-4 mr-1" />Full Name
-              </label>
-              <input
-                id="customer-name"
-                type="text"
-                placeholder="John Doe"
-                value={form.customerName}
-                onChange={(e) => updateField('customerName', e.target.value)}
-                className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
-              />
-              {errors.customerName && (
-                <p className="text-red-400 text-xs mt-1">{errors.customerName}</p>
-              )}
-            </div>
+            <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="customer-name">
+                      <span className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-[var(--cms-primary)]" />
+                        الاسم الكامل
+                      </span>
+                    </label>
+                    <input
+                      id="customer-name"
+                      type="text"
+                      placeholder="الاسم الكامل"
+                      value={form.customerName}
+                      onChange={(event) => updateField('customerName', event.target.value)}
+                      className="input-shell text-sm"
+                    />
+                    {errors.customerName && (
+                      <p className="mt-2 text-xs text-red-500">{errors.customerName}</p>
+                    )}
+                  </div>
 
-            <div>
-              <label className="block text-sm text-slate-400 mb-2" htmlFor="customer-email">
-                <Mail className="inline w-4 h-4 mr-1" />Email Address
-              </label>
-              <input
-                id="customer-email"
-                type="email"
-                placeholder="john@example.com"
-                value={form.customerEmail}
-                onChange={(e) => updateField('customerEmail', e.target.value)}
-                className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
-              />
-              {errors.customerEmail && (
-                <p className="text-red-400 text-xs mt-1">{errors.customerEmail}</p>
-              )}
-            </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="customer-email">
+                      <span className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-[var(--cms-primary)]" />
+                        البريد الإلكتروني
+                      </span>
+                    </label>
+                    <input
+                      id="customer-email"
+                      type="email"
+                      dir="ltr"
+                      placeholder="name@example.com"
+                      value={form.customerEmail}
+                      onChange={(event) => updateField('customerEmail', event.target.value)}
+                      className="input-shell text-sm"
+                    />
+                    {errors.customerEmail && (
+                      <p className="mt-2 text-xs text-red-500">{errors.customerEmail}</p>
+                    )}
+                  </div>
 
-            <div>
-              <label className="block text-sm text-slate-400 mb-2" htmlFor="customer-phone">
-                <Phone className="inline w-4 h-4 mr-1" />Phone Number
-              </label>
-              <input
-                id="customer-phone"
-                type="tel"
-                placeholder="+1 234 567 8901"
-                value={form.customerPhone}
-                onChange={(e) => updateField('customerPhone', e.target.value)}
-                className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
-              />
-              {errors.customerPhone && (
-                <p className="text-red-400 text-xs mt-1">{errors.customerPhone}</p>
-              )}
-            </div>
-
-            {/* Booking summary */}
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 space-y-2 text-sm">
-              <p className="text-slate-400 font-medium mb-3">Booking Summary</p>
-              {selectedPricing && (
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Vehicle</span>
-                  <span className="text-white capitalize">{form.vehicleClass}</span>
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="customer-phone">
+                      <span className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-[var(--cms-primary)]" />
+                        رقم الهاتف
+                      </span>
+                    </label>
+                    <input
+                      id="customer-phone"
+                      type="tel"
+                      dir="ltr"
+                      placeholder="+20 100 000 0000"
+                      value={form.customerPhone}
+                      onChange={(event) => updateField('customerPhone', event.target.value)}
+                      className="input-shell text-sm"
+                    />
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      استخدم رقمًا واضحًا مع المقدمة الدولية ليتمكن الفريق من التواصل بسرعة.
+                    </p>
+                    {errors.customerPhone && (
+                      <p className="mt-2 text-xs text-red-500">{errors.customerPhone}</p>
+                    )}
+                  </div>
                 </div>
-              )}
-              {form.tripDateTime && (
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Date & Time</span>
-                  <span className="text-white">
-                    {new Date(form.tripDateTime).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
-                  </span>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+                    ملخص الحجز
+                  </p>
+                  <div className="mt-4 space-y-4 text-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="mt-0.5 h-4 w-4 text-[var(--cms-primary)]" />
+                        <span className="text-slate-600">المسار</span>
+                      </div>
+                      <span className="text-left font-semibold text-slate-950">
+                        {selectedPickup?.name ?? 'الانطلاق'} إلى {selectedDestination?.name ?? 'الوجهة'}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-2">
+                        <Clock className="mt-0.5 h-4 w-4 text-[var(--cms-primary)]" />
+                        <span className="text-slate-600">موعد الانطلاق</span>
+                      </div>
+                      <span className="text-left font-semibold text-slate-950">
+                        {form.tripDateTime
+                          ? new Date(form.tripDateTime).toLocaleString('ar-EG', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            })
+                          : 'قيد التحديد'}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-2">
+                        <Car className="mt-0.5 h-4 w-4 text-[var(--cms-primary)]" />
+                        <span className="text-slate-600">فئة السيارة</span>
+                      </div>
+                      <span className="font-semibold text-slate-950">
+                        {VEHICLE_CLASS_LABELS[resolvedVehicleClass]}
+                      </span>
+                    </div>
+                    <div className="border-t border-black/6 pt-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-base font-semibold text-slate-950">السعر التقديري</span>
+                        <span className="text-2xl font-semibold text-emerald-600" dir="ltr">
+                          {selectedPricing ? formatPrice(Number(selectedPricing.price)) : 'قيد التحديد'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
-              {selectedPricing && (
-                <div className="flex justify-between border-t border-slate-700 pt-2 mt-2">
-                  <span className="text-white font-semibold">Total</span>
-                  <span className="text-emerald-400 font-bold">${selectedPricing.price}</span>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+                    ملاحظة التأكيد
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    لا يتم تحصيل الدفع في هذه الخطوة. نحن نستقبل بيانات الحجز فقط ثم يتابع
+                    الفريق معك لتأكيد الرحلة.
+                  </p>
                 </div>
-              )}
+              </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 id="step3-back-btn"
                 onClick={() => setStep(2)}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-3 font-semibold transition-all"
+                className="btn-secondary inline-flex w-full px-6 py-4 text-sm font-semibold sm:w-auto"
               >
-                Back
+                رجوع
               </button>
               <button
                 id="submit-booking-btn"
                 onClick={handleSubmit}
                 disabled={isPending}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl py-3 font-semibold flex items-center justify-center gap-2 transition-all"
+                className="btn-primary inline-flex w-full px-6 py-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:mr-auto sm:w-auto"
               >
                 {isPending ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Submitting...
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    جارٍ الإرسال...
                   </>
                 ) : (
                   <>
-                    Confirm Booking <CheckCircle className="w-4 h-4" />
+                    تأكيد طلب الحجز
+                    <CheckCircle className="h-4 w-4" />
                   </>
                 )}
               </button>

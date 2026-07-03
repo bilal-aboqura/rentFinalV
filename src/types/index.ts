@@ -121,6 +121,30 @@ export type UpdateSiteSettingsInput = Pick<
 
 export type SiteAssetType = 'logo' | 'hero';
 
+export interface HomepagePriceCard {
+  id: string;
+  name: string;
+  price: number;
+  passenger_capacity: number;
+  image_url: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateHomepagePriceCardInput {
+  name: string;
+  price: number;
+  passenger_capacity: number;
+}
+
+export interface UpdateHomepagePriceCardInput {
+  id: string;
+  name: string;
+  price: number;
+  passenger_capacity: number;
+}
+
 // ----------------------------------------------------------------
 // Notification
 // ----------------------------------------------------------------

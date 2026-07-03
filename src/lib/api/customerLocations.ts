@@ -28,8 +28,8 @@ export async function getCustomerLocations(): Promise<CustomerLocationsResponse>
 
   const { data, error } = await supabase
     .from('locations')
-    .select('id, name, type, is_active, created_at')
-    .eq('is_active', true)
+    .select('id, name, type, status, created_at')
+    .eq('status', 'active')
     .order('name', { ascending: true });
 
   if (error) {

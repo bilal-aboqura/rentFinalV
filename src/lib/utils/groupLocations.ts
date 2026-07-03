@@ -1,8 +1,4 @@
-/**
- * T017 [US5] - Utility to group active locations by type and sort alphabetically.
- * Used by the customer-facing booking wizard dropdowns.
- */
-import type { LocationRow, LocationType } from '@/lib/validation/location';
+import type { LocationRow } from '@/lib/validation/location';
 
 export interface GroupedLocations {
   City: LocationRow[];
@@ -10,11 +6,8 @@ export interface GroupedLocations {
   'Pickup Point': LocationRow[];
 }
 
-/**
- * Filters inactive locations, groups them by type, and sorts each group alphabetically.
- */
 export function groupLocationsByType(locations: LocationRow[]): GroupedLocations {
-  const active = locations.filter((l) => l.is_active);
+  const active = locations.filter((location) => location.status === 'active');
 
   const grouped: GroupedLocations = {
     City: [],
@@ -22,22 +15,22 @@ export function groupLocationsByType(locations: LocationRow[]): GroupedLocations
     'Pickup Point': [],
   };
 
-  for (const loc of active) {
-    if (loc.type in grouped) {
-      grouped[loc.type as LocationType].push(loc);
+  for (const location of active) {
+    if (location.type === 'city') {
+      grouped.City.push(location);
+      continue;
+    }
+
+    if (location.type === 'airport') {
+      grouped.Airport.push(location);
     }
   }
 
   grouped.City = sortAlphabetically(grouped.City);
   grouped.Airport = sortAlphabetically(grouped.Airport);
-  grouped['Pickup Point'] = sortAlphabetically(grouped['Pickup Point']);
-
   return grouped;
 }
 
-/**
- * Returns a new array of locations sorted alphabetically by name (case-insensitive).
- */
 export function sortAlphabetically(locations: LocationRow[]): LocationRow[] {
   return [...locations].sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })

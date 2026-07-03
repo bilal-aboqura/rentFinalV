@@ -58,7 +58,7 @@ function DetailField({
       <Icon className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
       <div className="min-w-0">
         <p className="text-xs text-slate-500 mb-0.5">{label}</p>
-        <p className="text-sm text-slate-200 break-words">{value || '—'}</p>
+        <p className="text-sm text-slate-800 break-words">{value || '—'}</p>
       </div>
     </div>
   );
@@ -101,20 +101,20 @@ export default function BookingDetailsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-4"
       onClick={onClose}
     >
       <div
-        className="glass border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="glass max-h-[calc(100vh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-black/10 sm:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-          <div>
-            <h2 className="text-lg font-semibold text-white">Booking Details</h2>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">{booking.booking_reference}</p>
+        <div className="flex flex-col gap-3 border-b border-black/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-slate-900">Booking Details</h2>
+            <p className="mt-0.5 break-all text-xs font-mono text-slate-500">{booking.booking_reference}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-start">
             <span
               className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
                 STATUS_COLORS[booking.status]
@@ -126,7 +126,7 @@ export default function BookingDetailsModal({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-slate-500 hover:text-slate-900 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -134,7 +134,7 @@ export default function BookingDetailsModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-6">
+        <div className="space-y-6 px-4 py-5 sm:px-6">
           {/* Passenger contact */}
           <section className="space-y-3">
             <h3 className="text-xs uppercase tracking-wide text-slate-500">Passenger</h3>
@@ -185,7 +185,7 @@ export default function BookingDetailsModal({
                 value={status}
                 onChange={(e) => setStatus(e.target.value as BookingStatus)}
                 disabled={isPending || isTerminal}
-                className="flex-1 bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-white/60 border border-slate-700 text-slate-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {BOOKING_STATUSES.map((s) => (
                   <option key={s} value={s}>
@@ -215,7 +215,7 @@ export default function BookingDetailsModal({
                 value={driverId}
                 onChange={(e) => setDriverId(e.target.value)}
                 disabled={isPending || isTerminal}
-                className="flex-1 bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-white/60 border border-slate-700 text-slate-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Unassigned</option>
                 {activeDrivers.map((d) => (

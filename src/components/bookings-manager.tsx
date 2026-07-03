@@ -103,7 +103,7 @@ export default function BookingsManager({
             className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
               statusFilter === filter
                 ? 'bg-indigo-600 border-indigo-500 text-white'
-                : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600'
+                : 'bg-white/60 border-slate-700 text-slate-500 hover:text-slate-900 hover:border-slate-600'
             }`}
           >
             {filter}
@@ -120,8 +120,8 @@ export default function BookingsManager({
 
       {/* Count summary */}
       <div className="text-sm text-slate-500">
-        Showing <span className="text-white font-medium">{bookings.length}</span> of{' '}
-        <span className="text-white font-medium">{totalCount}</span> bookings
+        Showing <span className="text-slate-900 font-medium">{bookings.length}</span> of{' '}
+        <span className="text-slate-900 font-medium">{totalCount}</span> bookings
       </div>
 
       {/* Table */}
@@ -132,10 +132,63 @@ export default function BookingsManager({
             <span className="text-sm">No bookings found.</span>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="mobile-card-list p-3 md:hidden">
+            {bookings.map((booking) => (
+              <button
+                key={booking.id}
+                type="button"
+                onClick={() => setSelected(booking)}
+                className="mobile-data-card text-right"
+              >
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900">{booking.customer_name}</p>
+                    <p className="mt-1 overflow-hidden text-ellipsis text-xs text-slate-500" dir="ltr">
+                      {booking.customer_email}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
+                      STATUS_BADGE[booking.status]
+                    }`}
+                  >
+                    {booking.status}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  <div className="mobile-data-row">
+                    <span className="mobile-data-label">Reference</span>
+                    <span className="mobile-data-value font-mono" dir="ltr">
+                      {booking.booking_reference.slice(0, 8)}
+                    </span>
+                  </div>
+                  <div className="mobile-data-row">
+                    <span className="mobile-data-label">Route</span>
+                    <span className="mobile-data-value">
+                      {booking.pickup.name} → {booking.destination.name}
+                    </span>
+                  </div>
+                  <div className="mobile-data-row">
+                    <span className="mobile-data-label">Date</span>
+                    <span className="mobile-data-value" dir="ltr">
+                      {booking.booking_date} · {formatTime(booking.booking_time)}
+                    </span>
+                  </div>
+                  <div className="mobile-data-row">
+                    <span className="mobile-data-label">Price</span>
+                    <span className="mobile-data-value font-semibold text-emerald-500" dir="ltr">
+                      ${Number(booking.price).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
-              <thead className="border-b border-white/10">
-                <tr className="text-left text-slate-400">
+              <thead className="border-b border-black/10">
+                <tr className="text-left text-slate-500">
                   <th className="px-5 py-3 font-medium">Reference</th>
                   <th className="px-5 py-3 font-medium">Customer</th>
                   <th className="px-5 py-3 font-medium">Route</th>
@@ -149,19 +202,19 @@ export default function BookingsManager({
                   <tr
                     key={booking.id}
                     onClick={() => setSelected(booking)}
-                    className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
+                    className="border-b border-black/5 hover:bg-black/5 transition-colors cursor-pointer"
                   >
                     <td className="px-5 py-4 font-mono text-indigo-300 text-xs">
                       {booking.booking_reference.slice(0, 8)}
                     </td>
                     <td className="px-5 py-4">
-                      <p className="text-white font-medium">{booking.customer_name}</p>
+                      <p className="text-slate-900 font-medium">{booking.customer_name}</p>
                       <p className="text-slate-500 text-xs">{booking.customer_email}</p>
                     </td>
-                    <td className="px-5 py-4 text-slate-300 text-xs">
+                    <td className="px-5 py-4 text-slate-700 text-xs">
                       {booking.pickup.name} → {booking.destination.name}
                     </td>
-                    <td className="px-5 py-4 text-slate-300 text-xs whitespace-nowrap">
+                    <td className="px-5 py-4 text-slate-700 text-xs whitespace-nowrap">
                       {booking.booking_date} · {formatTime(booking.booking_time)}
                     </td>
                     <td className="px-5 py-4 text-emerald-400 font-semibold">
@@ -181,12 +234,13 @@ export default function BookingsManager({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">
             Page {page} of {totalPages}
           </p>
@@ -196,7 +250,7 @@ export default function BookingsManager({
               type="button"
               onClick={() => navigate({ page: Math.max(1, page - 1) })}
               disabled={page <= 1}
-              className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg bg-white border border-slate-700 text-slate-500 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               aria-label="Previous page"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -206,7 +260,7 @@ export default function BookingsManager({
               type="button"
               onClick={() => navigate({ page: Math.min(totalPages, page + 1) })}
               disabled={page >= totalPages}
-              className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg bg-white border border-slate-700 text-slate-500 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               aria-label="Next page"
             >
               <ChevronRight className="w-4 h-4" />

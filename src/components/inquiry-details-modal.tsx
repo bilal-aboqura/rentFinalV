@@ -1,16 +1,5 @@
 'use client';
 
-/**
- * Spec 010 (F-10) — InquiryDetailsModal (US3)
- *
- * Modal showing the full inquiry details (name, email, subject, message)
- * plus a status dropdown (Unread / Read / Resolved). The parent remounts
- * this component with `key={inquiry.id}` so local form state initializes
- * cleanly per inquiry.
- *
- * Spec: specs/010-contact-inquiries/spec.md (FR-009, FR-010)
- */
-
 import { useState, useTransition } from 'react';
 import { X, Mail, User, MessageSquare, Tag, Loader2, AlertCircle } from 'lucide-react';
 import { type ContactInquiry, type InquiryStatus, INQUIRY_STATUSES } from '@/lib/validation/contact';
@@ -22,9 +11,15 @@ interface Props {
 }
 
 const STATUS_COLORS: Record<InquiryStatus, string> = {
-  Unread: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  Read: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  Resolved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  Unread: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  Read: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  Resolved: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+};
+
+const STATUS_LABELS: Record<InquiryStatus, string> = {
+  Unread: 'غير مقروءة',
+  Read: 'مقروءة',
+  Resolved: 'تمت المعالجة',
 };
 
 type FieldIcon = React.ComponentType<{ className?: string }>;
@@ -33,17 +28,21 @@ function DetailField({
   icon: Icon,
   label,
   value,
+  dir,
 }: {
   icon: FieldIcon;
   label: string;
   value: React.ReactNode;
+  dir?: 'ltr' | 'rtl';
 }) {
   return (
     <div className="flex items-start gap-3">
-      <Icon className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
       <div className="min-w-0">
-        <p className="text-xs text-slate-500 mb-0.5">{label}</p>
-        <p className="text-sm text-slate-200 break-words">{value || '—'}</p>
+        <p className="mb-0.5 text-xs text-slate-500">{label}</p>
+        <p className="break-words text-sm text-slate-800" dir={dir}>
+          {value || '—'}
+        </p>
       </div>
     </div>
   );
@@ -65,84 +64,79 @@ export default function InquiryDetailsModal({
     startTransition(async () => {
       const ok = await onStatusChange(inquiry.id, status);
       if (!ok) {
-        setError('Failed to update inquiry status. It may no longer exist.');
+        setError('تعذر تحديث حالة الرسالة. قد تكون غير متاحة الآن.');
       } else {
-        setSuccess('Status updated successfully.');
+        setSuccess('تم تحديث الحالة بنجاح.');
       }
     });
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-4"
       onClick={onClose}
     >
       <div
-        className="glass border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="glass max-h-[calc(100vh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-black/10 sm:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="flex flex-col gap-3 border-b border-black/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-white truncate">Inquiry Details</h2>
-            <p className="text-xs text-slate-500 mt-0.5">{inquiry.subject}</p>
+            <h2 className="truncate text-lg font-semibold text-slate-900">تفاصيل الرسالة</h2>
+            <p className="mt-0.5 text-xs text-slate-500">{inquiry.subject}</p>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-start">
             <span
-              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
                 STATUS_COLORS[inquiry.status]
               }`}
             >
-              {inquiry.status}
+              {STATUS_LABELS[inquiry.status]}
             </span>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close"
-              className="text-slate-400 hover:text-white transition-colors"
+              aria-label="إغلاق"
+              className="text-slate-500 transition-colors hover:text-slate-900"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 space-y-6">
-          {/* Sender details */}
+        <div className="space-y-6 px-4 py-5 sm:px-6">
           <section className="space-y-3">
-            <h3 className="text-xs uppercase tracking-wide text-slate-500">Sender</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DetailField icon={User} label="Name" value={inquiry.name} />
-              <DetailField icon={Mail} label="Email" value={inquiry.email} />
+            <h3 className="text-xs tracking-wide text-slate-500">بيانات المرسل</h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <DetailField icon={User} label="الاسم" value={inquiry.name} />
+              <DetailField icon={Mail} label="البريد الإلكتروني" value={inquiry.email} dir="ltr" />
             </div>
           </section>
 
-          {/* Message */}
           <section className="space-y-3">
-            <h3 className="text-xs uppercase tracking-wide text-slate-500 flex items-center gap-2">
-              <MessageSquare className="w-3.5 h-3.5" /> Message
+            <h3 className="flex items-center gap-2 text-xs tracking-wide text-slate-500">
+              <MessageSquare className="h-3.5 w-3.5" /> الرسالة
             </h3>
-            <p className="text-sm text-slate-200 whitespace-pre-wrap bg-slate-900/40 rounded-xl p-4 border border-white/5">
+            <p className="whitespace-pre-wrap rounded-xl border border-black/5 bg-[#E8F4F8]/40 p-4 text-sm text-slate-800">
               {inquiry.message}
             </p>
           </section>
 
-          {/* Status update */}
           <section className="space-y-2">
-            <h3 className="text-xs uppercase tracking-wide text-slate-500 flex items-center gap-2">
-              <Tag className="w-3.5 h-3.5" /> Update Status
+            <h3 className="flex items-center gap-2 text-xs tracking-wide text-slate-500">
+              <Tag className="h-3.5 w-3.5" /> تحديث الحالة
             </h3>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <select
                 id="inquiry-status-select"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as InquiryStatus)}
                 disabled={isPending}
-                className="flex-1 bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 rounded-xl border border-slate-300 bg-white/60 px-4 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {INQUIRY_STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {STATUS_LABELS[s]}
                   </option>
                 ))}
               </select>
@@ -151,23 +145,22 @@ export default function InquiryDetailsModal({
                 type="button"
                 onClick={handleSaveStatus}
                 disabled={isPending || status === inquiry.status}
-                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
+                className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                Save Status
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                حفظ الحالة
               </button>
             </div>
           </section>
 
-          {/* Feedback */}
           {error && (
-            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-500">
+              <AlertCircle className="h-4 w-4 shrink-0" />
               {error}
             </div>
           )}
           {success && !error && (
-            <div className="text-emerald-400 text-sm bg-emerald-400/10 border border-emerald-400/20 rounded-xl px-4 py-3">
+            <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-600">
               {success}
             </div>
           )}

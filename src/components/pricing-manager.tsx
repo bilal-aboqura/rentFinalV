@@ -1,12 +1,5 @@
 'use client';
 
-/**
- * T009 [US1] / T013 [US2] / T017 [US3] / T020 [US4]
- * PricingManager — full CRUD client component for admin pricing page.
- *
- * Spec: specs/003-pricing-management/spec.md
- */
-
 import React, { useState, useTransition, useCallback } from 'react';
 import {
   Plus,
@@ -16,16 +9,13 @@ import {
   ArrowRight,
   DollarSign,
   Route,
-  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import { deleteRoutePriceAction, getRoutePricesAction } from '@/app/admin/pricing/actions';
 import { PricingFormModal, DeletePricingConfirmModal } from '@/components/pricing-form';
 import type { RoutePriceRow } from '@/lib/validation/pricing';
 import type { LocationRow } from '@/lib/validation/location';
 
-// ----------------------------------------------------------------
-// Props
-// ----------------------------------------------------------------
 interface PricingManagerProps {
   initialPrices: RoutePriceRow[];
   initialTotal: number;
@@ -35,16 +25,16 @@ interface PricingManagerProps {
   locations: LocationRow[];
 }
 
-// ----------------------------------------------------------------
-// Helpers
-// ----------------------------------------------------------------
 function formatPrice(price: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+  return new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'USD' }).format(price);
 }
 
-// ----------------------------------------------------------------
-// Main Component
-// ----------------------------------------------------------------
+function formatVehicleClass(vehicleClass: RoutePriceRow['vehicle_class']): string {
+  if (vehicleClass === 'standard') return 'عادية';
+  if (vehicleClass === 'executive') return 'تنفيذية';
+  return 'فان';
+}
+
 export function PricingManager({
   initialPrices,
   initialTotal,
@@ -53,7 +43,6 @@ export function PricingManager({
   initialTotalPages,
   locations,
 }: PricingManagerProps) {
-  // State
   const [prices, setPrices] = useState<RoutePriceRow[]>(initialPrices);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
@@ -67,17 +56,11 @@ export function PricingManager({
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // ----------------------------------------------------------------
-  // Toast helper
-  // ----------------------------------------------------------------
   const showToast = useCallback((message: string, type: 'success' | 'error') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // ----------------------------------------------------------------
-  // Refresh data after mutations
-  // ----------------------------------------------------------------
   const refreshPage = useCallback(
     (targetPage: number) => {
       startTransition(async () => {
@@ -93,20 +76,17 @@ export function PricingManager({
     [pageSize]
   );
 
-  // ----------------------------------------------------------------
-  // CRUD handlers
-  // ----------------------------------------------------------------
-  const handleCreateSuccess = (created: RoutePriceRow) => {
+  const handleCreateSuccess = () => {
     setFormMode(null);
     refreshPage(1);
-    showToast('Pricing rule added successfully.', 'success');
+    showToast('تمت إضافة قاعدة التسعير بنجاح.', 'success');
   };
 
-  const handleEditSuccess = (updated: RoutePriceRow) => {
+  const handleEditSuccess = () => {
     setFormMode(null);
     setEditingRow(undefined);
     refreshPage(page);
-    showToast('Pricing rule updated successfully.', 'success');
+    showToast('تم تحديث قاعدة التسعير بنجاح.', 'success');
   };
 
   const handleDeleteConfirm = (id: string) => {
@@ -114,12 +94,11 @@ export function PricingManager({
       const result = await deleteRoutePriceAction(id);
       setDeletingRow(null);
       if (result.success) {
-        // If we deleted the last item on this page, go to previous page
         const newPage = prices.length === 1 && page > 1 ? page - 1 : page;
         refreshPage(newPage);
-        showToast('Pricing rule deleted.', 'success');
+        showToast('تم حذف قاعدة التسعير.', 'success');
       } else {
-        showToast(result.error ?? 'Failed to delete.', 'error');
+        showToast(result.error ?? 'تعذر الحذف.', 'error');
       }
     });
   };
@@ -129,29 +108,20 @@ export function PricingManager({
     setFormMode('edit');
   };
 
-  // ----------------------------------------------------------------
-  // Pagination
-  // ----------------------------------------------------------------
   const goToPage = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     refreshPage(newPage);
   };
 
-  // ----------------------------------------------------------------
-  // Render
-  // ----------------------------------------------------------------
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-5 h-5 text-indigo-400" />
-            <h1 className="text-xl font-bold text-white">Pricing Management</h1>
+          <div className="mb-1 flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-indigo-500" />
+            <h1 className="text-xl font-bold text-slate-900">إدارة الأسعار</h1>
           </div>
-          <p className="text-slate-400 text-sm">
-            Manage flat-rate prices for airport transfer routes.
-          </p>
+          <p className="text-sm text-slate-500">إدارة الأسعار الثابتة لمسارات النقل المختلفة.</p>
         </div>
 
         <button
@@ -160,47 +130,103 @@ export function PricingManager({
             setEditingRow(undefined);
             setFormMode('create');
           }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all text-sm font-medium shadow-lg shadow-indigo-900/30"
+          className="flex w-fit items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500"
         >
-          <Plus className="w-4 h-4" />
-          Add Route Price
+          <Plus className="h-4 w-4" />
+          إضافة سعر مسار
         </button>
       </div>
 
-      {/* Stats Bar */}
-      <div className="flex items-center gap-2 text-sm text-slate-400">
+      <div className="flex items-center gap-2 text-sm text-slate-500">
         <span>
-          {total === 0
-            ? 'No pricing rules defined yet.'
-            : `${total} pricing rule${total !== 1 ? 's' : ''} total`}
+          {total === 0 ? 'لا توجد قواعد تسعير بعد.' : `إجمالي قواعد التسعير: ${total}`}
         </span>
       </div>
 
-      {/* Table */}
-      <div className="glass rounded-2xl border border-white/10 overflow-hidden">
+      <div className="glass rounded-2xl border border-black/10">
         {prices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Route className="w-12 h-12 text-slate-700 mb-3" />
-            <p className="text-slate-400 text-sm">No pricing rules have been configured yet.</p>
-            <p className="text-slate-600 text-xs mt-1">
-              Click &ldquo;Add Route Price&rdquo; to get started.
-            </p>
+            <Route className="mb-3 h-12 w-12 text-slate-400" />
+            <p className="text-sm text-slate-500">لم يتم إعداد أي أسعار للمسارات بعد.</p>
+            <p className="mt-1 text-xs text-slate-600">اضغط على &quot;إضافة سعر مسار&quot; للبدء.</p>
           </div>
         ) : (
+          <>
+          <div className="mobile-card-list p-3 md:hidden">
+            {prices.map((row) => (
+              <article key={row.id} className="mobile-data-card" id={`pricing-card-${row.id}`}>
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-semibold text-slate-900">
+                      {row.pickup_location_name ?? `${row.pickup_location_id.slice(0, 8)}...`}
+                    </p>
+                    <p className="mt-1 break-words text-xs text-slate-500">
+                      {row.destination_location_name ?? `${row.destination_location_id.slice(0, 8)}...`}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    {formatVehicleClass(row.vehicle_class)}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  <div className="mobile-data-row">
+                    <span className="mobile-data-label">السعر</span>
+                    <span className="mobile-data-value font-semibold text-green-600" dir="ltr">
+                      {formatPrice(row.price)}
+                    </span>
+                  </div>
+                  <div className="mobile-data-row">
+                    <span className="mobile-data-label">تاريخ الإنشاء</span>
+                    <span className="mobile-data-value">
+                      {new Date(row.created_at).toLocaleDateString('ar-EG', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    id={`edit-pricing-mobile-btn-${row.id}`}
+                    onClick={() => openEdit(row)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                    aria-label="تعديل قاعدة التسعير"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    تعديل
+                  </button>
+                  <button
+                    id={`delete-pricing-mobile-btn-${row.id}`}
+                    onClick={() => setDeletingRow(row)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50"
+                    aria-label="حذف قاعدة التسعير"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    حذف
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm" id="pricing-table">
             <thead>
-              <tr className="border-b border-white/10">
-                <th className="px-5 py-3.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Route
+              <tr className="border-b border-black/10 text-right">
+                <th className="px-5 py-3.5 text-xs font-medium tracking-wider text-slate-500">
+                  المسار
                 </th>
-                <th className="px-5 py-3.5 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Price
+                <th className="px-5 py-3.5 text-xs font-medium tracking-wider text-slate-500">
+                  السعر
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Created
+                <th className="px-5 py-3.5 text-xs font-medium tracking-wider text-slate-500">
+                  الفئة
                 </th>
-                <th className="px-5 py-3.5 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Actions
+                <th className="px-5 py-3.5 text-xs font-medium tracking-wider text-slate-500">
+                  تاريخ الإنشاء
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-medium tracking-wider text-slate-500">
+                  الإجراءات
                 </th>
               </tr>
             </thead>
@@ -208,59 +234,58 @@ export function PricingManager({
               {prices.map((row) => (
                 <tr
                   key={row.id}
-                  className="hover:bg-white/[0.02] transition-colors group"
+                  className="group transition-colors hover:bg-black/[0.02]"
                   id={`pricing-row-${row.id}`}
                 >
-                  {/* Route */}
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-2 text-white">
-                      <span className="text-slate-300">
-                        {row.pickup_location_name ?? row.pickup_location_id.slice(0, 8) + '…'}
+                    <div className="flex items-center gap-2 text-slate-900">
+                      <span className="text-slate-700">
+                        {row.pickup_location_name ?? `${row.pickup_location_id.slice(0, 8)}...`}
                       </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                      <span className="text-slate-300">
-                        {row.destination_location_name ??
-                          row.destination_location_id.slice(0, 8) + '…'}
+                      <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-slate-600" />
+                      <span className="text-slate-700">
+                        {row.destination_location_name ?? `${row.destination_location_id.slice(0, 8)}...`}
                       </span>
                     </div>
                   </td>
 
-                  {/* Price */}
-                  <td className="px-5 py-4 text-right">
-                    <span className="text-green-400 font-semibold tabular-nums">
+                  <td className="px-5 py-4">
+                    <span className="font-semibold tabular-nums text-green-600" dir="ltr">
                       {formatPrice(row.price)}
                     </span>
                   </td>
 
-                  {/* Created At */}
-                  <td className="px-5 py-4 text-slate-500 text-xs">
-                    {new Date(row.created_at).toLocaleDateString('en-US', {
+                  <td className="px-5 py-4 text-xs text-slate-700">
+                    {formatVehicleClass(row.vehicle_class)}
+                  </td>
+
+                  <td className="px-5 py-4 text-xs text-slate-500">
+                    {new Date(row.created_at).toLocaleDateString('ar-EG', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric',
                     })}
                   </td>
 
-                  {/* Actions */}
                   <td className="px-5 py-4">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
                       <button
                         id={`edit-pricing-btn-${row.id}`}
                         onClick={() => openEdit(row)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all text-xs font-medium"
-                        aria-label="Edit pricing rule"
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-all hover:bg-black/5 hover:text-slate-900"
+                        aria-label="تعديل قاعدة التسعير"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
-                        Edit
+                        <Pencil className="h-3.5 w-3.5" />
+                        تعديل
                       </button>
                       <button
                         id={`delete-pricing-btn-${row.id}`}
                         onClick={() => setDeletingRow(row)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/5 transition-all text-xs font-medium"
-                        aria-label="Delete pricing rule"
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-all hover:bg-red-400/5 hover:text-red-500"
+                        aria-label="حذف قاعدة التسعير"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete
+                        <Trash2 className="h-3.5 w-3.5" />
+                        حذف
                       </button>
                     </div>
                   </td>
@@ -268,41 +293,42 @@ export function PricingManager({
               ))}
             </tbody>
           </table>
+          </div>
+          </>
         )}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-slate-500">
-            Page {page} of {totalPages} &middot; {total} rules
+            الصفحة {page} من {totalPages} · إجمالي القواعد {total}
           </p>
           <div className="flex items-center gap-2">
             <button
               id="pricing-prev-page-btn"
               onClick={() => goToPage(page - 1)}
               disabled={page <= 1 || isPending}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs font-medium"
+              className="flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-2 text-xs font-medium text-slate-500 transition-all hover:bg-black/5 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Previous
+              <ArrowRight className="h-3.5 w-3.5" />
+              السابق
             </button>
             <button
               id="pricing-next-page-btn"
               onClick={() => goToPage(page + 1)}
               disabled={page >= totalPages || isPending}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs font-medium"
+              className="flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-2 text-xs font-medium text-slate-500 transition-all hover:bg-black/5 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Next
-              <ArrowRight className="w-3.5 h-3.5" />
+              التالي
+              <ArrowLeft className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       )}
 
-      {/* Modals */}
       {formMode && (
         <PricingFormModal
+          key={`${formMode}-${editingRow?.id ?? 'new'}`}
           mode={formMode}
           initialData={editingRow}
           locations={locations as LocationRow[]}
@@ -323,14 +349,13 @@ export function PricingManager({
         />
       )}
 
-      {/* Toast Notification */}
       {toast && (
         <div
           id="pricing-toast"
-          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl text-sm font-medium transition-all animate-fade-in ${
+          className={`fixed inset-x-3 bottom-4 z-50 rounded-xl px-4 py-3 text-sm font-medium shadow-2xl sm:inset-x-auto sm:left-6 sm:bottom-6 ${
             toast.type === 'success'
-              ? 'bg-green-500/20 border border-green-500/30 text-green-300'
-              : 'bg-red-500/20 border border-red-500/30 text-red-300'
+              ? 'border border-green-500/30 bg-green-500/20 text-green-700'
+              : 'border border-red-500/30 bg-red-500/20 text-red-600'
           }`}
         >
           {toast.message}

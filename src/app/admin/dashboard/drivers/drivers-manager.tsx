@@ -14,6 +14,11 @@ interface Props {
   drivers: Driver[];
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  active: 'نشط',
+  inactive: 'غير نشط',
+};
+
 export default function DriversManager({ drivers }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -37,28 +42,26 @@ export default function DriversManager({ drivers }: Props) {
     setValidationErrors({});
     startTransition(async () => {
       const input = editingId ? { id: editingId, ...form } : form;
-      const result = editingId
-        ? await updateDriverAction(input)
-        : await createDriverAction(input);
+      const result = editingId ? await updateDriverAction(input) : await createDriverAction(input);
 
       if (result.success) {
-        setSuccess(editingId ? 'Driver updated.' : 'Driver created.');
+        setSuccess(editingId ? 'تم تحديث بيانات السائق.' : 'تمت إضافة السائق.');
         resetForm();
         router.refresh();
+      } else if (result.validationErrors) {
+        const errs: Record<string, string> = {};
+        Object.entries(result.validationErrors).forEach(([k, msgs]) => {
+          errs[k] = msgs[0];
+        });
+        setValidationErrors(errs);
       } else {
-        if (result.validationErrors) {
-          const errs: Record<string, string> = {};
-          Object.entries(result.validationErrors).forEach(([k, msgs]) => { errs[k] = msgs[0]; });
-          setValidationErrors(errs);
-        } else {
-          setError(result.error);
-        }
+        setError(result.error);
       }
     });
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('Delete this driver? This cannot be undone.')) return;
+    if (!confirm('هل أنت متأكد من حذف هذا السائق؟ لا يمكن التراجع عن ذلك.')) return;
     setError('');
     startTransition(async () => {
       const result = await deleteDriverAction(id);
@@ -76,122 +79,179 @@ export default function DriversManager({ drivers }: Props) {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
-          <AlertCircle className="w-4 h-4" />{error}
+        <div className="flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-500">
+          <AlertCircle className="h-4 w-4" />
+          {error}
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-2 text-emerald-400 text-sm bg-emerald-400/10 border border-emerald-400/20 rounded-xl px-4 py-3">
-          <CheckCircle className="w-4 h-4" />{success}
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-600">
+          <CheckCircle className="h-4 w-4" />
+          {success}
         </div>
       )}
 
-      {/* Add button */}
       {!showForm && (
         <button
           id="add-driver-btn"
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500"
         >
-          <Plus className="w-4 h-4" /> Add Driver
+          <Plus className="h-4 w-4" /> إضافة سائق
         </button>
       )}
 
-      {/* Form */}
       {showForm && (
-        <div className="glass rounded-2xl p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-white">
-            {editingId ? 'Edit Driver' : 'New Driver'}
+        <div className="glass space-y-4 rounded-2xl p-6">
+          <h3 className="text-sm font-semibold text-slate-900">
+            {editingId ? 'تعديل السائق' : 'سائق جديد'}
           </h3>
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="block text-xs text-slate-400 mb-1" htmlFor="driver-name">Full Name</label>
+              <label className="mb-1 block text-xs text-slate-500" htmlFor="driver-name">
+                الاسم الكامل
+              </label>
               <input
                 id="driver-name"
                 type="text"
-                placeholder="Ahmed Al-Rashid"
+                placeholder="اسم السائق"
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
               />
-              {validationErrors.name && <p className="text-red-400 text-xs mt-1">{validationErrors.name}</p>}
+              {validationErrors.name && <p className="mt-1 text-xs text-red-500">{validationErrors.name}</p>}
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1" htmlFor="driver-phone">Phone</label>
+              <label className="mb-1 block text-xs text-slate-500" htmlFor="driver-phone">
+                الهاتف
+              </label>
               <input
                 id="driver-phone"
                 type="tel"
-                placeholder="+1234567890"
+                dir="ltr"
+                placeholder="+201000000000"
                 value={form.phone}
                 onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
               />
-              {validationErrors.phone && <p className="text-red-400 text-xs mt-1">{validationErrors.phone}</p>}
+              {validationErrors.phone && <p className="mt-1 text-xs text-red-500">{validationErrors.phone}</p>}
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1" htmlFor="driver-plate">License Plate</label>
+              <label className="mb-1 block text-xs text-slate-500" htmlFor="driver-plate">
+                لوحة السيارة
+              </label>
               <input
                 id="driver-plate"
                 type="text"
+                dir="ltr"
                 placeholder="ABC123"
                 value={form.licensePlate}
                 onChange={(e) => setForm((p) => ({ ...p, licensePlate: e.target.value }))}
-                className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
               />
-              {validationErrors.licensePlate && <p className="text-red-400 text-xs mt-1">{validationErrors.licensePlate}</p>}
+              {validationErrors.licensePlate && (
+                <p className="mt-1 text-xs text-red-500">{validationErrors.licensePlate}</p>
+              )}
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
               id="driver-form-save-btn"
               onClick={handleSubmit}
               disabled={isPending}
-              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500 disabled:opacity-60 sm:w-auto"
             >
-              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {editingId ? 'Save Changes' : 'Create Driver'}
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {editingId ? 'حفظ التعديلات' : 'إضافة السائق'}
             </button>
             <button
               onClick={resetForm}
-              className="bg-slate-700 hover:bg-slate-600 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all"
+              className="w-full rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-medium text-slate-900 transition-all hover:bg-slate-200 sm:w-auto"
             >
-              Cancel
+              إلغاء
             </button>
           </div>
         </div>
       )}
 
-      {/* Drivers table */}
-      <div className="glass rounded-2xl overflow-hidden">
+      <div className="glass rounded-2xl">
         {drivers.length === 0 ? (
           <div className="py-12 text-center text-slate-500">
-            <Car className="w-8 h-8 mx-auto mb-3 opacity-30" />
-            No drivers yet. Add your first driver above.
+            <Car className="mx-auto mb-3 h-8 w-8 opacity-30" />
+            لا يوجد سائقون بعد. أضف أول سائق للبدء.
           </div>
         ) : (
+          <>
+          <div className="mobile-card-list p-3 md:hidden">
+            {drivers.map((driver) => (
+              <article key={driver.id} className="mobile-data-card">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900">{driver.name}</p>
+                    <p className="mt-1 text-xs text-slate-500" dir="ltr">{driver.phone}</p>
+                  </div>
+                  <span
+                    className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
+                      driver.status === 'active'
+                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
+                        : 'border-slate-300 bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {STATUS_LABELS[driver.status] ?? driver.status}
+                  </span>
+                </div>
+                <div className="mobile-data-row">
+                  <span className="mobile-data-label">لوحة السيارة</span>
+                  <span className="mobile-data-value font-mono" dir="ltr">{driver.license_plate}</span>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    id={`edit-driver-mobile-${driver.id}`}
+                    onClick={() => startEdit(driver)}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                    تعديل
+                  </button>
+                  <button
+                    id={`delete-driver-mobile-${driver.id}`}
+                    onClick={() => handleDelete(driver.id)}
+                    disabled={isPending}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 disabled:opacity-40"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    حذف
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
-            <thead className="border-b border-white/10">
-              <tr className="text-left text-slate-400">
-                <th className="px-5 py-3 font-medium">Name</th>
-                <th className="px-5 py-3 font-medium">Phone</th>
-                <th className="px-5 py-3 font-medium">License Plate</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Actions</th>
+            <thead className="border-b border-black/10">
+              <tr className="text-right text-slate-500">
+                <th className="px-5 py-3 font-medium">الاسم</th>
+                <th className="px-5 py-3 font-medium">الهاتف</th>
+                <th className="px-5 py-3 font-medium">لوحة السيارة</th>
+                <th className="px-5 py-3 font-medium">الحالة</th>
+                <th className="px-5 py-3 font-medium">الإجراءات</th>
               </tr>
             </thead>
             <tbody>
               {drivers.map((driver) => (
-                <tr key={driver.id} className="border-b border-white/5 hover:bg-white/2 transition-colors">
-                  <td className="px-5 py-4 text-white font-medium">{driver.name}</td>
-                  <td className="px-5 py-4 text-slate-300">{driver.phone}</td>
-                  <td className="px-5 py-4 font-mono text-slate-300">{driver.license_plate}</td>
+                <tr key={driver.id} className="border-b border-black/5 transition-colors hover:bg-white/40">
+                  <td className="px-5 py-4 font-medium text-slate-900">{driver.name}</td>
+                  <td className="px-5 py-4 text-slate-700" dir="ltr">{driver.phone}</td>
+                  <td className="px-5 py-4 font-mono text-slate-700" dir="ltr">{driver.license_plate}</td>
                   <td className="px-5 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                      driver.status === 'active'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        : 'bg-slate-700 text-slate-400 border-slate-600'
-                    }`}>
-                      {driver.status}
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
+                        driver.status === 'active'
+                          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
+                          : 'border-slate-300 bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {STATUS_LABELS[driver.status] ?? driver.status}
                     </span>
                   </td>
                   <td className="px-5 py-4">
@@ -199,17 +259,17 @@ export default function DriversManager({ drivers }: Props) {
                       <button
                         id={`edit-driver-${driver.id}`}
                         onClick={() => startEdit(driver)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-400/10 transition-all"
+                        className="rounded-lg p-1.5 text-slate-500 transition-all hover:bg-indigo-400/10 hover:text-indigo-500"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         id={`delete-driver-${driver.id}`}
                         onClick={() => handleDelete(driver.id)}
                         disabled={isPending}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all disabled:opacity-40"
+                        className="rounded-lg p-1.5 text-slate-500 transition-all hover:bg-red-400/10 hover:text-red-500 disabled:opacity-40"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </td>
@@ -217,6 +277,8 @@ export default function DriversManager({ drivers }: Props) {
               ))}
             </tbody>
           </table>
+          </div>
+          </>
         )}
       </div>
     </div>

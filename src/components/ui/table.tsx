@@ -21,18 +21,18 @@ interface DataTableProps<T extends Record<string, unknown>> {
 export function DataTable<T extends Record<string, unknown>>({
   columns,
   data,
-  emptyMessage = 'No data found.',
+  emptyMessage = 'لا توجد بيانات.',
   id = 'data-table',
 }: DataTableProps<T>) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/10" id={id}>
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-xl border border-black/10" id={id}>
+      <table className="min-w-[42rem] w-full text-sm md:min-w-0">
         <thead>
-          <tr className="border-b border-white/10 bg-white/5">
+          <tr className="border-b border-black/10 bg-black/5">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
+                className="px-4 py-3 text-right text-xs font-semibold tracking-wider text-slate-500"
               >
                 {col.header}
               </th>
@@ -53,13 +53,15 @@ export function DataTable<T extends Record<string, unknown>>({
             data.map((row, i) => (
               <tr
                 key={String(row.id ?? i)}
-                className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                className="border-b border-black/5 hover:bg-black/5 transition-colors"
               >
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3 text-slate-300">
+                  <td key={col.key} className="px-4 py-3 text-slate-700">
+                    <div className="min-w-0 [overflow-wrap:anywhere]">
                     {col.render
                       ? col.render(row)
                       : String(row[col.key] ?? '')}
+                    </div>
                   </td>
                 ))}
               </tr>

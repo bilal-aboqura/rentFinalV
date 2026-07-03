@@ -34,7 +34,7 @@ export async function getLocationsData(
 
   let query = supabase
     .from('locations')
-    .select('id, name, type, is_active, created_at', { count: 'exact' })
+    .select('id, name, type, status, created_at', { count: 'exact' })
     .order('name', { ascending: true });
 
   if (search.trim()) {

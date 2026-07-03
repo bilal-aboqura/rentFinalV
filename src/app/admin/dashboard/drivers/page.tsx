@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getDriversAction } from '@/app/admin/dashboard/actions';
 import DriversManager from './drivers-manager';
 
-export const metadata: Metadata = { title: 'Drivers — Admin Dashboard' };
+export const metadata: Metadata = { title: 'السائقون - لوحة التحكم' };
 
 export default async function DriversPage() {
   const driversRes = await getDriversAction();
@@ -11,8 +11,8 @@ export default async function DriversPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Drivers</h1>
-        <p className="text-slate-400 text-sm mt-1">Manage driver profiles and availability</p>
+        <h1 className="text-2xl font-bold text-slate-900">السائقون</h1>
+        <p className="mt-1 text-sm text-slate-500">إدارة ملفات السائقين وحالة توفرهم</p>
       </div>
       <DriversManager drivers={drivers} />
     </div>

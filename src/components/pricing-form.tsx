@@ -1,13 +1,6 @@
 'use client';
 
-/**
- * T012 [US2] / T016 [US3]
- * Add / Edit Route Price modal form component.
- *
- * Spec: specs/003-pricing-management/spec.md
- */
-
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition } from 'react';
 import { X, DollarSign, Loader2, Route } from 'lucide-react';
 import {
   createRoutePriceAction,
@@ -16,9 +9,6 @@ import {
 import type { RoutePriceRow } from '@/lib/validation/pricing';
 import type { LocationRow } from '@/lib/validation/location';
 
-// ----------------------------------------------------------------
-// Props
-// ----------------------------------------------------------------
 interface PricingFormModalProps {
   mode: 'create' | 'edit';
   initialData?: RoutePriceRow;
@@ -27,9 +17,18 @@ interface PricingFormModalProps {
   onSuccess: (routePrice: RoutePriceRow) => void;
 }
 
-// ----------------------------------------------------------------
-// Component
-// ----------------------------------------------------------------
+const VEHICLE_CLASS_OPTIONS = [
+  { value: 'standard', label: 'عادية' },
+  { value: 'executive', label: 'تنفيذية' },
+  { value: 'van', label: 'فان' },
+] as const;
+
+function formatVehicleClass(vehicleClass: RoutePriceRow['vehicle_class']): string {
+  if (vehicleClass === 'standard') return 'عادية';
+  if (vehicleClass === 'executive') return 'تنفيذية';
+  return 'فان';
+}
+
 export function PricingFormModal({
   mode,
   initialData,
@@ -37,27 +36,15 @@ export function PricingFormModal({
   onClose,
   onSuccess,
 }: PricingFormModalProps) {
-  const [pickupLocationId, setPickupLocationId] = useState(
-    initialData?.pickup_location_id ?? ''
-  );
+  const [pickupLocationId, setPickupLocationId] = useState(initialData?.pickup_location_id ?? '');
   const [destinationLocationId, setDestinationLocationId] = useState(
     initialData?.destination_location_id ?? ''
   );
-  const [priceStr, setPriceStr] = useState(
-    initialData?.price ? String(initialData.price) : ''
-  );
+  const [vehicleClass, setVehicleClass] = useState(initialData?.vehicle_class ?? 'standard');
+  const [priceStr, setPriceStr] = useState(initialData?.price ? String(initialData.price) : '');
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
   const [isPending, startTransition] = useTransition();
-
-  // Reset form when mode/initialData changes
-  useEffect(() => {
-    setPickupLocationId(initialData?.pickup_location_id ?? '');
-    setDestinationLocationId(initialData?.destination_location_id ?? '');
-    setPriceStr(initialData?.price ? String(initialData.price) : '');
-    setError(null);
-    setValidationErrors({});
-  }, [initialData, mode]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,21 +54,21 @@ export function PricingFormModal({
     const price = parseFloat(priceStr);
 
     startTransition(async () => {
-      let result;
-      if (mode === 'create') {
-        result = await createRoutePriceAction({
-          pickupLocationId,
-          destinationLocationId,
-          price,
-        });
-      } else {
-        result = await updateRoutePriceAction({
-          id: initialData!.id,
-          pickupLocationId,
-          destinationLocationId,
-          price,
-        });
-      }
+      const result =
+        mode === 'create'
+          ? await createRoutePriceAction({
+              pickupLocationId,
+              destinationLocationId,
+              vehicleClass,
+              price,
+            })
+          : await updateRoutePriceAction({
+              id: initialData!.id,
+              pickupLocationId,
+              destinationLocationId,
+              vehicleClass,
+              price,
+            });
 
       if (result.success && result.data) {
         onSuccess(result.data);
@@ -89,163 +76,180 @@ export function PricingFormModal({
         if (result.validationErrors) {
           setValidationErrors(result.validationErrors as Record<string, string[]>);
         }
-        setError(result.error ?? 'An unexpected error occurred.');
+        setError(result.error ?? 'حدث خطأ غير متوقع.');
       }
     });
   };
 
-  // Active locations only
-  const activeLocations = locations.filter((l) => l.is_active);
+  const activeLocations = locations.filter((l) => l.status === 'active');
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm"
       id="pricing-form-modal"
     >
-      <div className="relative w-full max-w-md glass rounded-2xl border border-white/10 shadow-2xl p-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+      <div className="relative max-h-[calc(100vh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-black/10 bg-white p-4 shadow-2xl sm:p-6">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-lg font-semibold text-white">
-              {mode === 'create' ? 'Add Route Price' : 'Edit Route Price'}
+            <DollarSign className="h-5 w-5 text-indigo-500" />
+            <h2 className="text-lg font-semibold text-slate-900">
+              {mode === 'create' ? 'إضافة سعر مسار' : 'تعديل سعر المسار'}
             </h2>
           </div>
           <button
             id="pricing-form-close-btn"
             onClick={onClose}
-            className="text-slate-500 hover:text-white transition-colors"
-            aria-label="Close"
+            className="text-slate-500 transition-colors hover:text-slate-900"
+            aria-label="إغلاق"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} id="pricing-form" className="space-y-4">
-          {/* Pickup Location */}
           <div>
-            <label htmlFor="pricing-pickup" className="block text-sm text-slate-400 mb-1">
-              Pickup Location
+            <label htmlFor="pricing-pickup" className="mb-1 block text-sm text-slate-500">
+              نقطة الانطلاق
             </label>
             <select
               id="pricing-pickup"
               value={pickupLocationId}
               onChange={(e) => setPickupLocationId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm appearance-none"
+              className="w-full appearance-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
               required
             >
               <option value="" disabled>
-                Select pickup location…
+                اختر نقطة الانطلاق...
               </option>
               {activeLocations
                 .filter((l) => l.id !== destinationLocationId)
                 .map((loc) => (
                   <option key={loc.id} value={loc.id}>
-                    {loc.name} ({loc.type})
+                    {loc.name} ({loc.type === 'airport' ? 'مطار' : 'مدينة'})
                   </option>
                 ))}
             </select>
             {validationErrors.pickupLocationId?.map((msg, i) => (
-              <p key={i} className="mt-1 text-xs text-red-400">
+              <p key={i} className="mt-1 text-xs text-red-500">
                 {msg}
               </p>
             ))}
           </div>
 
-          {/* Destination Location */}
           <div>
-            <label htmlFor="pricing-destination" className="block text-sm text-slate-400 mb-1">
-              Destination Location
+            <label htmlFor="pricing-destination" className="mb-1 block text-sm text-slate-500">
+              الوجهة
             </label>
             <select
               id="pricing-destination"
               value={destinationLocationId}
               onChange={(e) => setDestinationLocationId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm appearance-none"
+              className="w-full appearance-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
               required
             >
               <option value="" disabled>
-                Select destination location…
+                اختر الوجهة...
               </option>
               {activeLocations
                 .filter((l) => l.id !== pickupLocationId)
                 .map((loc) => (
                   <option key={loc.id} value={loc.id}>
-                    {loc.name} ({loc.type})
+                    {loc.name} ({loc.type === 'airport' ? 'مطار' : 'مدينة'})
                   </option>
                 ))}
             </select>
             {validationErrors.destinationLocationId?.map((msg, i) => (
-              <p key={i} className="mt-1 text-xs text-red-400">
+              <p key={i} className="mt-1 text-xs text-red-500">
                 {msg}
               </p>
             ))}
           </div>
 
-          {/* Price */}
           <div>
-            <label htmlFor="pricing-price" className="block text-sm text-slate-400 mb-1">
-              Price (flat rate)
+            <label htmlFor="pricing-vehicle-class" className="mb-1 block text-sm text-slate-500">
+              فئة السيارة
+            </label>
+            <select
+              id="pricing-vehicle-class"
+              value={vehicleClass}
+              onChange={(e) => setVehicleClass(e.target.value as typeof vehicleClass)}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
+              required
+            >
+              {VEHICLE_CLASS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {validationErrors.vehicleClass?.map((msg, i) => (
+              <p key={i} className="mt-1 text-xs text-red-500">
+                {msg}
+              </p>
+            ))}
+          </div>
+
+          <div>
+            <label htmlFor="pricing-price" className="mb-1 block text-sm text-slate-500">
+              السعر الثابت
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
                 $
               </span>
               <input
                 id="pricing-price"
                 type="number"
+                dir="ltr"
                 value={priceStr}
                 onChange={(e) => setPriceStr(e.target.value)}
                 placeholder="0.00"
                 min="0.01"
                 step="0.01"
-                className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-slate-800 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors text-sm"
+                className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-7 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
                 required
               />
             </div>
             {validationErrors.price?.map((msg, i) => (
-              <p key={i} className="mt-1 text-xs text-red-400">
+              <p key={i} className="mt-1 text-xs text-red-500">
                 {msg}
               </p>
             ))}
           </div>
 
-          {/* Global error */}
           {error && (
             <div
               id="pricing-form-error"
-              className="p-3 rounded-xl bg-red-500/10 border border-red-500/20"
+              className="rounded-xl border border-red-500/20 bg-red-500/10 p-3"
             >
-              <p className="text-red-400 text-sm">{error}</p>
+              <p className="text-sm text-red-500">{error}</p>
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
             <button
               id="pricing-form-cancel-btn"
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium"
+              className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900"
             >
-              Cancel
+              إلغاء
             </button>
             <button
               id="pricing-form-submit-btn"
               type="submit"
               disabled={isPending}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white transition-all text-sm font-medium"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500 disabled:opacity-50"
             >
               {isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving…
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  جارٍ الحفظ...
                 </>
               ) : mode === 'create' ? (
-                'Add Route Price'
+                'إضافة السعر'
               ) : (
-                'Save Changes'
+                'حفظ التعديلات'
               )}
             </button>
           </div>
@@ -255,9 +259,6 @@ export function PricingFormModal({
   );
 }
 
-// ----------------------------------------------------------------
-// Delete Confirmation Modal
-// ----------------------------------------------------------------
 interface DeletePricingConfirmModalProps {
   routePrice: RoutePriceRow;
   onClose: () => void;
@@ -273,45 +274,48 @@ export function DeletePricingConfirmModal({
 }: DeletePricingConfirmModalProps) {
   const label =
     routePrice.pickup_location_name && routePrice.destination_location_name
-      ? `${routePrice.pickup_location_name} → ${routePrice.destination_location_name}`
-      : `Route #${routePrice.id.slice(0, 8)}`;
+      ? `${routePrice.pickup_location_name} ← ${routePrice.destination_location_name}`
+      : `المسار #${routePrice.id.slice(0, 8)}`;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm"
       id="pricing-delete-modal"
     >
-      <div className="relative w-full max-w-sm glass rounded-2xl border border-red-500/20 shadow-2xl p-6 animate-fade-in">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
-            <Route className="w-5 h-5 text-red-400" />
+      <div className="relative max-h-[calc(100vh-1.5rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-red-500/20 bg-white p-4 shadow-2xl sm:p-6">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 shrink-0">
+            <Route className="h-5 w-5 text-red-500" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Delete Pricing Rule?</h2>
-            <p className="text-sm text-slate-400 mt-0.5">This action cannot be undone.</p>
+            <h2 className="text-base font-semibold text-slate-900">حذف قاعدة التسعير؟</h2>
+            <p className="mt-0.5 text-sm text-slate-500">لا يمكن التراجع عن هذا الإجراء.</p>
           </div>
         </div>
 
-        <p className="text-sm text-slate-300 mb-6">
-          You are about to permanently delete the pricing rule for{' '}
-          <span className="text-white font-medium">{label}</span>.
+        <p className="mb-6 text-sm text-slate-700">
+          أنت على وشك حذف قاعدة التسعير الخاصة بـ{' '}
+          <span className="font-medium text-slate-900">
+            {label} ({formatVehicleClass(routePrice.vehicle_class)})
+          </span>
+          .
         </p>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <button
             id="pricing-delete-cancel-btn"
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium"
+            className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900"
           >
-            Cancel
+            إلغاء
           </button>
           <button
             id="pricing-delete-confirm-btn"
             onClick={() => onConfirm(routePrice.id)}
             disabled={isPending}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white transition-all text-sm font-medium"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-red-500 disabled:opacity-50"
           >
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete'}
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حذف'}
           </button>
         </div>
       </div>

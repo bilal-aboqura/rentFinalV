@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Plane, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { AlertCircle, Lock, Loader2, Mail, Plane, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { adminLoginAction } from '@/app/admin/dashboard/actions';
 
@@ -12,91 +13,149 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
+
     startTransition(async () => {
       const result = await adminLoginAction(email, password);
       if (result.success) {
         router.push(result.data.redirect);
         router.refresh();
-      } else {
-        setError(result.error);
+        return;
       }
+      setError(result.error);
     });
   };
 
   return (
-    <main className="min-h-screen animated-bg flex items-center justify-center px-6">
-      {/* Background orb */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-md relative">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600/20 rounded-2xl border border-indigo-500/20 mb-4">
-            <Plane className="w-8 h-8 text-indigo-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-white">Admin Login</h1>
-          <p className="text-slate-400 mt-2">Sign in to the AirTransfer dashboard</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="glass rounded-2xl p-8 space-y-5 glow">
-          {error && (
-            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {error}
+    <main className="animated-bg relative min-h-screen overflow-x-clip px-3 py-6 sm:px-8 sm:py-10 lg:px-10">
+      <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+        <section className="panel-card px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--cms-primary)]/12">
+              <Plane className="h-5 w-5 text-[var(--cms-primary)]" />
             </div>
-          )}
-
-          <div>
-            <label htmlFor="admin-email" className="block text-sm text-slate-400 mb-2">
-              <Mail className="inline w-4 h-4 mr-1" />Email Address
-            </label>
-            <input
-              id="admin-email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="admin@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
-            />
+            <div>
+              <h1 className="text-3xl font-semibold text-slate-950">دخول الإدارة</h1>
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="admin-password" className="block text-sm text-slate-400 mb-2">
-              <Lock className="inline w-4 h-4 mr-1" />Password
-            </label>
-            <input
-              id="admin-password"
-              type="password"
-              autoComplete="current-password"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-4 py-3 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
-            />
+          <p className="section-copy mt-5 max-w-xl">
+            ادخل إلى لوحة التحكم لإدارة الحجوزات والأسعار والسائقين والمواقع والمحتوى من مكان
+            واحد منظم وواضح.
+          </p>
+
+          <div className="mt-8 grid gap-6">
+            <div className="border-b border-black/8 pb-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-[var(--cms-primary)]/10 p-2.5">
+                  <Shield className="h-4 w-4 text-[var(--cms-primary)]" />
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-slate-950">وصول آمن</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    استخدم بيانات الإدارة للوصول إلى النظام من دون تعريض بيانات الحجز العامة
+                    للخطر.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+                داخل لوحة التحكم
+              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                إدارة الحجوزات، ورسائل العملاء، وإعداد المسارات، والتحكم بالأسعار، وتحديث
+                المحتوى كلها ضمن نفس الواجهة.
+              </p>
+            </div>
           </div>
 
-          <button
-            id="admin-login-btn"
-            type="submit"
-            disabled={isPending}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white rounded-xl py-3 font-semibold flex items-center justify-center gap-2 transition-all"
-          >
-            {isPending ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
-            ) : (
-              <><Lock className="w-4 h-4" /> Sign In</>
+          <Link href="/" className="btn-secondary mt-8 inline-flex w-full px-4 py-3 text-sm font-semibold sm:w-fit">
+            العودة إلى موقع الحجز
+          </Link>
+        </section>
+
+        <section className="glass overflow-hidden rounded-[20px] glow">
+          <div className="border-b border-slate-200 px-4 py-5 sm:px-8 sm:py-6">
+            <p className="text-sm font-medium text-slate-500">تسجيل الدخول</p>
+            <h2 className="mt-1 text-2xl font-semibold text-slate-950 sm:text-3xl">
+              المتابعة إلى لوحة التحكم
+            </h2>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5 p-4 sm:p-8">
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-500">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {error}
+                </div>
+              </div>
             )}
-          </button>
-        </form>
 
-        <p className="text-center text-slate-600 text-sm mt-6">
-          <a href="/" className="hover:text-slate-400 transition-colors">← Back to booking site</a>
-        </p>
+            <div>
+              <label htmlFor="admin-email" className="mb-2 block text-sm font-semibold text-slate-700">
+                <span className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-[var(--cms-primary)]" />
+                  البريد الإلكتروني
+                </span>
+              </label>
+              <input
+                id="admin-email"
+                type="email"
+                dir="ltr"
+                autoComplete="email"
+                required
+                placeholder="admin@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="input-shell text-sm"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="admin-password" className="mb-2 block text-sm font-semibold text-slate-700">
+                <span className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-[var(--cms-primary)]" />
+                  كلمة المرور
+                </span>
+              </label>
+              <input
+                id="admin-password"
+                type="password"
+                dir="ltr"
+                autoComplete="current-password"
+                required
+                placeholder="أدخل كلمة المرور"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="input-shell text-sm"
+              />
+            </div>
+
+            <button
+              id="admin-login-btn"
+              type="submit"
+              disabled={isPending}
+              className="btn-primary inline-flex w-full px-6 py-4 text-sm font-semibold disabled:opacity-60"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  جارٍ تسجيل الدخول...
+                </>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4" />
+                  دخول
+                </>
+              )}
+            </button>
+          </form>
+        </section>
       </div>
     </main>
   );

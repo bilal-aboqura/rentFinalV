@@ -56,7 +56,7 @@ export function GroupedLocationSelect({
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-400 mb-1">
+      <label htmlFor={id} className="block text-sm font-medium text-slate-500 mb-1">
         <span className="flex items-center gap-1.5">
           <MapPin className="w-3.5 h-3.5" />
           {label}
@@ -66,7 +66,7 @@ export function GroupedLocationSelect({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm appearance-none"
+        className="w-full px-3 py-2.5 rounded-xl bg-white border border-black/10 text-slate-900 focus:outline-none focus:border-indigo-500 transition-colors text-sm appearance-none"
       >
         <option value="" disabled>
           {placeholder}
@@ -140,9 +140,9 @@ export function BookingWizard() {
   };
 
   return (
-    <div className="glass rounded-2xl overflow-hidden glow" id="booking-wizard">
+    <div className="glass overflow-hidden rounded-xl glow sm:rounded-2xl" id="booking-wizard">
       {/* Step indicator */}
-      <div className="flex border-b border-white/10">
+      <div className="grid grid-cols-2 border-b border-black/10">
         {(['Route & Time', 'Trip Details'] as const).map((label, idx) => {
           const stepNum = (idx + 1) as WizardStep;
           const isDone = currentStep > stepNum;
@@ -152,7 +152,7 @@ export function BookingWizard() {
               key={label}
               id={`wizard-step-${stepNum}-tab`}
               onClick={() => isDone && setCurrentStep(stepNum)}
-              className={`flex-1 py-4 text-sm font-medium transition-all ${
+              className={`min-w-0 px-2 py-3 text-xs font-medium transition-all sm:py-4 sm:text-sm ${
                 isCurrent
                   ? 'text-indigo-400 border-b-2 border-indigo-500'
                   : isDone
@@ -160,7 +160,7 @@ export function BookingWizard() {
                   : 'text-slate-500 cursor-default'
               }`}
             >
-              <span className="mr-2">
+              <span className="mr-1.5 sm:mr-2">
                 {isDone ? <CheckCircle className="inline w-4 h-4 mb-0.5" /> : stepNum}
               </span>
               {label}
@@ -169,7 +169,7 @@ export function BookingWizard() {
         })}
       </div>
 
-      <div className="p-6 md:p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {/* Step 1: Route & Time */}
         {currentStep === 1 && <BookingWizardStep1 onNext={handleStep1Next} />}
 

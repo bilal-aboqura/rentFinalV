@@ -60,12 +60,12 @@ export async function fetchDriversAction(
 
   let query = supabase
     .from('drivers')
-    .select('id, name, phone, availability_status, created_at', { count: 'exact' })
+    .select('id, name, phone, license_plate, status, created_at', { count: 'exact' })
     .order('name', { ascending: true });
 
   if (search) {
     query = query.or(
-      `name.ilike.%${search}%,phone.ilike.%${search}%`
+      `name.ilike.%${search}%,phone.ilike.%${search}%,license_plate.ilike.%${search}%`
     ) as typeof query;
   }
 
@@ -110,9 +110,10 @@ export async function createDriverAction(
     .insert({
       name: parsed.data.name,
       phone: parsed.data.phone,
-      availability_status: parsed.data.availability_status,
+      license_plate: parsed.data.licensePlate,
+      status: parsed.data.status,
     })
-    .select('id, name, phone, availability_status, created_at')
+    .select('id, name, phone, license_plate, status, created_at')
     .single();
 
   if (error) {
@@ -151,14 +152,15 @@ export async function updateDriverAction(
   const updatePayload: Record<string, unknown> = {};
   if (rest.name !== undefined) updatePayload.name = rest.name;
   if (rest.phone !== undefined) updatePayload.phone = rest.phone;
-  if (rest.availability_status !== undefined) updatePayload.availability_status = rest.availability_status;
+  if (rest.licensePlate !== undefined) updatePayload.license_plate = rest.licensePlate;
+  if (rest.status !== undefined) updatePayload.status = rest.status;
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('drivers')
     .update(updatePayload)
     .eq('id', id)
-    .select('id, name, phone, availability_status, created_at')
+    .select('id, name, phone, license_plate, status, created_at')
     .single();
 
   if (error) {

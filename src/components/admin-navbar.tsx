@@ -2,28 +2,15 @@ import Link from 'next/link';
 import { getPendingBookingsCount } from '@/app/admin/bookings/actions';
 import { getUnreadInquiriesCount } from '@/app/admin/inquiries/actions';
 
-/**
- * Spec 008 (F-08) — AdminNavbar (T008 / US2)
- * Spec 010 (F-10) — Inquiries tab + unread badge (US4)
- *
- * Reusable React Server Component rendered across every admin page.
- * Fetches the current counts of pending bookings and unread inquiries and
- * renders a badge next to the respective links so administrators can see
- * new requests at a glance.
- *
- * Spec: specs/008-new-request-alert/research.md#3
- *       specs/010-contact-inquiries/research.md#4
- */
-
 export type AdminTab = 'bookings' | 'inquiries' | 'locations' | 'pricing' | 'drivers' | 'content';
 
 const TABS: { key: AdminTab; label: string; href: string }[] = [
-  { key: 'bookings', label: 'Bookings', href: '/admin/bookings' },
-  { key: 'inquiries', label: 'Inquiries', href: '/admin/inquiries' },
-  { key: 'locations', label: 'Locations', href: '/admin/locations' },
-  { key: 'pricing', label: 'Pricing', href: '/admin/pricing' },
-  { key: 'drivers', label: 'Drivers', href: '/admin/drivers' },
-  { key: 'content', label: 'Content', href: '/admin/content' },
+  { key: 'bookings', label: 'الحجوزات', href: '/admin/bookings' },
+  { key: 'inquiries', label: 'الاستفسارات', href: '/admin/inquiries' },
+  { key: 'locations', label: 'المواقع', href: '/admin/locations' },
+  { key: 'pricing', label: 'الأسعار', href: '/admin/pricing' },
+  { key: 'drivers', label: 'السائقون', href: '/admin/drivers' },
+  { key: 'content', label: 'المحتوى', href: '/admin/content' },
 ];
 
 export default async function AdminNavbar({ activeTab }: { activeTab: AdminTab }) {
@@ -36,8 +23,8 @@ export default async function AdminNavbar({ activeTab }: { activeTab: AdminTab }
 
   return (
     <nav
-      aria-label="Admin navigation"
-      className="flex items-center gap-1 sm:gap-2 flex-wrap p-1.5 rounded-2xl bg-slate-900/60 border border-white/10"
+      aria-label="التنقل داخل لوحة الإدارة"
+      className="-mx-1 flex items-center gap-1 overflow-x-auto rounded-xl border border-black/10 bg-[#E8F4F8]/60 p-1.5 sm:mx-0 sm:gap-2 sm:rounded-2xl"
     >
       {TABS.map((tab) => {
         const isActive = tab.key === activeTab;
@@ -46,20 +33,18 @@ export default async function AdminNavbar({ activeTab }: { activeTab: AdminTab }
             key={tab.key}
             href={tab.href}
             aria-current={isActive ? 'page' : undefined}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all sm:rounded-xl sm:px-4 ${
               isActive
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                : 'text-slate-500 hover:bg-black/5 hover:text-slate-900'
             }`}
           >
             {tab.label}
             {tab.key === 'bookings' && (
               <span
-                title={`${pendingCount} pending booking${pendingCount === 1 ? '' : 's'}`}
-                className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold ${
-                  pendingCount > 0
-                    ? 'bg-red-500 text-white'
-                    : 'bg-slate-700 text-slate-400'
+                title={`${pendingCount} حجوزات قيد الانتظار`}
+                className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-xs font-bold ${
+                  pendingCount > 0 ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-500'
                 }`}
               >
                 {pendingCount}
@@ -67,11 +52,9 @@ export default async function AdminNavbar({ activeTab }: { activeTab: AdminTab }
             )}
             {tab.key === 'inquiries' && (
               <span
-                title={`${unreadCount} unread inquir${unreadCount === 1 ? 'y' : 'ies'}`}
-                className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold ${
-                  unreadCount > 0
-                    ? 'bg-red-500 text-white'
-                    : 'bg-slate-700 text-slate-400'
+                title={`${unreadCount} رسائل غير مقروءة`}
+                className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-xs font-bold ${
+                  unreadCount > 0 ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-500'
                 }`}
               >
                 {unreadCount}

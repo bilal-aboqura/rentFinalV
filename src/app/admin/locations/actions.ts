@@ -57,7 +57,7 @@ export async function createLocationAction(
     .insert({
       name: parsed.data.name,
       type: parsed.data.type,
-      is_active: parsed.data.isActive,
+      status: parsed.data.isActive ? 'active' : 'inactive',
     })
     .select()
     .single();
@@ -95,7 +95,7 @@ export async function updateLocationAction(
   const updatePayload: Record<string, unknown> = {};
   if (name !== undefined) updatePayload.name = name;
   if (type !== undefined) updatePayload.type = type;
-  if (isActive !== undefined) updatePayload.is_active = isActive;
+  if (isActive !== undefined) updatePayload.status = isActive ? 'active' : 'inactive';
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -137,7 +137,7 @@ export async function deleteLocationAction(
   const { data: bookingRef } = await supabase
     .from('bookings')
     .select('id')
-    .eq('pickup_location_id', id)
+    .or(`pickup_location_id.eq.${id},destination_location_id.eq.${id}`)
     .maybeSingle();
 
   if (bookingRef) {
@@ -152,7 +152,7 @@ export async function deleteLocationAction(
   const { data: pricingRef } = await supabase
     .from('pricing_rules')
     .select('id')
-    .eq('pickup_location_id', id)
+    .or(`pickup_location_id.eq.${id},destination_location_id.eq.${id}`)
     .maybeSingle();
 
   if (pricingRef) {
@@ -186,8 +186,8 @@ export async function getActiveLocationsAction(): Promise<ServerActionResponse<L
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('locations')
-    .select('id, name, type, is_active, created_at')
-    .eq('is_active', true)
+    .select('id, name, type, status, created_at')
+    .eq('status', 'active')
     .order('name', { ascending: true });
 
   if (error) return { success: false, error: error.message };

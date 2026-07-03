@@ -11,6 +11,7 @@ export const CreateRoutePriceSchema = z
   .object({
     pickupLocationId: z.string().uuid({ message: 'Invalid pickup location ID format' }),
     destinationLocationId: z.string().uuid({ message: 'Invalid destination location ID format' }),
+    vehicleClass: z.enum(['standard', 'executive', 'van']),
     price: z
       .number({ invalid_type_error: 'Price must be a valid number' })
       .positive({ message: 'Price must be a positive number greater than zero' }),
@@ -36,6 +37,7 @@ export const UpdateRoutePriceSchema = z
       .string()
       .uuid({ message: 'Invalid destination location ID format' })
       .optional(),
+    vehicleClass: z.enum(['standard', 'executive', 'van']).optional(),
     price: z
       .number({ invalid_type_error: 'Price must be a valid number' })
       .positive({ message: 'Price must be a positive number greater than zero' })
@@ -63,6 +65,7 @@ export interface RoutePriceRow {
   id: string;
   pickup_location_id: string;
   destination_location_id: string;
+  vehicle_class: 'standard' | 'executive' | 'van';
   price: number;
   created_at: string;
   // Joined fields for display

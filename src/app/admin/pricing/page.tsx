@@ -1,19 +1,12 @@
-/**
- * T009 [US1] / T013 [US2] / T017 [US3] / T020 [US4]
- * Admin Pricing Management Page (React Server Component wrapper).
- *
- * Route: /admin/pricing
- */
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getRoutePricesAction } from './actions';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { PricingManager } from '@/components/pricing-manager';
-import AdminNavbar from '@/components/admin-navbar';
 
 export const metadata = {
-  title: 'Pricing Management | Admin',
-  description: 'Manage route pricing rules for the airport transfer booking service.',
+  title: 'إدارة الأسعار | لوحة التحكم',
+  description: 'إدارة أسعار المسارات لخدمة النقل من وإلى المطار.',
 };
 
 export default async function AdminPricingPage({
@@ -21,7 +14,6 @@ export default async function AdminPricingPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  // Auth check
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,23 +24,20 @@ export default async function AdminPricingPage({
   const page = parseInt(params.page ?? '1', 10);
   const pageSize = 10;
 
-  // Fetch pricing rules (paginated)
   const result = await getRoutePricesAction({ page, pageSize });
 
-  // Fetch active locations for the form dropdowns
   const supabase2 = await createServerClient();
   const { data: locationsData } = await supabase2
     .from('locations')
-    .select('id, name, type, is_active, created_at')
-    .eq('is_active', true)
+    .select('id, name, type, status, created_at')
+    .eq('status', 'active')
     .order('name', { ascending: true });
 
   if (!result.success) {
     return (
       <div className="space-y-6">
-        <AdminNavbar activeTab="pricing" />
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-          <p className="text-red-400 text-sm">Failed to load pricing rules: {result.error}</p>
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
+          <p className="text-sm text-red-400">تعذر تحميل قواعد التسعير: {result.error}</p>
         </div>
       </div>
     );
@@ -59,7 +48,6 @@ export default async function AdminPricingPage({
 
   return (
     <div className="space-y-6">
-      <AdminNavbar activeTab="pricing" />
       <PricingManager
         initialPrices={prices}
         initialTotal={total}

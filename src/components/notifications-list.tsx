@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { Bell, CheckCheck, X } from 'lucide-react';
 import type { Notification } from '@/types';
 import {
   getNotificationsAction,
-  markNotificationReadAction,
   markAllNotificationsReadAction,
+  markNotificationReadAction,
 } from '@/app/admin/dashboard/actions';
 
 export default function NotificationsList() {
@@ -14,11 +14,13 @@ export default function NotificationsList() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isPending, startTransition] = useTransition();
 
-  const unreadCount = notifications.filter((n) => !n.read_status).length;
+  const unreadCount = notifications.filter((notification) => !notification.read_status).length;
 
   const loadNotifications = () => {
     getNotificationsAction().then((res) => {
-      if (res.success) setNotifications(res.data);
+      if (res.success) {
+        setNotifications(res.data);
+      }
     });
   };
 
@@ -30,7 +32,9 @@ export default function NotificationsList() {
     startTransition(async () => {
       await markNotificationReadAction(id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read_status: true } : n))
+        prev.map((notification) =>
+          notification.id === id ? { ...notification, read_status: true } : notification
+        )
       );
     });
   };
@@ -38,101 +42,128 @@ export default function NotificationsList() {
   const handleMarkAllRead = () => {
     startTransition(async () => {
       await markAllNotificationsReadAction();
-      setNotifications((prev) => prev.map((n) => ({ ...n, read_status: true })));
+      setNotifications((prev) =>
+        prev.map((notification) => ({ ...notification, read_status: true }))
+      );
     });
   };
 
   const typeLabel: Record<string, string> = {
-    admin_new_booking: 'New Booking',
-    customer_status_change: 'Status Change',
+    admin_new_booking: 'حجز جديد',
+    customer_status_change: 'تغيير حالة',
   };
 
   return (
     <div className="relative">
-      {/* Bell button */}
       <button
         id="notifications-btn"
-        onClick={() => { setOpen(!open); if (!open) loadNotifications(); }}
-        className="relative p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all"
-        aria-label="Notifications"
+        onClick={() => {
+          setOpen((prev) => !prev);
+          if (!open) {
+            loadNotifications();
+          }
+        }}
+        className="btn-secondary relative inline-flex p-3 text-slate-700"
+        aria-label="الإشعارات"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--cms-primary)] px-1 text-[0.68rem] font-bold text-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Dropdown */}
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-12 z-50 w-96 glass rounded-2xl shadow-2xl border border-white/10 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <h3 className="text-sm font-semibold text-white">Notifications</h3>
-              <div className="flex items-center gap-2">
+          <div className="fixed inset-x-3 top-28 z-50 max-h-[calc(100vh-8rem)] overflow-hidden rounded-2xl border border-white/60 bg-white/92 shadow-[0_30px_80px_rgba(15,23,42,0.18)] backdrop-blur-xl sm:absolute sm:inset-auto sm:left-0 sm:top-14 sm:w-[min(26rem,calc(100vw-2rem))] sm:rounded-[28px]">
+            <div className="flex flex-col gap-3 border-b border-black/6 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div className="min-w-0">
+                <p className="text-[0.68rem] font-bold tracking-[0.22em] text-slate-500">
+                  الإشعارات
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-950">
+                  {unreadCount > 0
+                    ? `${unreadCount} تحديثات غير مقروءة`
+                    : 'كل شيء محدّث'}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
                 {unreadCount > 0 && (
                   <button
                     id="mark-all-read-btn"
                     onClick={handleMarkAllRead}
                     disabled={isPending}
-                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                    className="btn-secondary inline-flex px-3 py-2 text-xs font-semibold"
                   >
-                    <CheckCheck className="w-3 h-3" /> Mark all read
+                    <CheckCheck className="h-3.5 w-3.5" />
+                    تعيين الكل كمقروء
                   </button>
                 )}
-                <button onClick={() => setOpen(false)} className="text-slate-500 hover:text-white transition-colors">
-                  <X className="w-4 h-4" />
+                <button
+                  onClick={() => setOpen(false)}
+                  className="rounded-full p-2 text-slate-500 hover:bg-black/5 hover:text-slate-950"
+                  aria-label="إغلاق الإشعارات"
+                >
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            {/* Notification list */}
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-[calc(100vh-14rem)] overflow-y-auto p-3 sm:max-h-[28rem]">
               {notifications.length === 0 ? (
-                <div className="px-5 py-8 text-center text-slate-500 text-sm">
-                  No notifications yet
+                <div className="soft-card p-5 text-center">
+                  <p className="text-sm font-semibold text-slate-950">لا توجد إشعارات بعد</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    ستظهر هنا الحجوزات الجديدة وتحديثات الحالة للمتابعة السريعة.
+                  </p>
                 </div>
               ) : (
-                notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className={`px-5 py-4 border-b border-white/5 flex items-start gap-3 transition-colors ${
-                      !n.read_status ? 'bg-indigo-500/5' : ''
-                    }`}
-                  >
+                <div className="space-y-3">
+                  {notifications.map((notification) => (
                     <div
-                      className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-                        !n.read_status ? 'bg-indigo-400' : 'bg-slate-600'
+                      key={notification.id}
+                      className={`soft-card p-4 ${
+                        !notification.read_status ? 'ring-1 ring-[var(--cms-primary)]/12' : ''
                       }`}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">
-                          {typeLabel[n.type] ?? n.type}
-                        </span>
-                        <span className="text-xs text-slate-500">
-                          {new Date(n.created_at).toLocaleString('en-GB', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })}
-                        </span>
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
+                            notification.read_status ? 'bg-slate-300' : 'bg-[var(--cms-primary)]'
+                          }`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[0.68rem] font-semibold tracking-[0.18em] text-slate-600">
+                              {typeLabel[notification.type] ?? notification.type}
+                            </span>
+                            <span className="text-xs text-slate-500">
+                              {new Date(notification.created_at).toLocaleString('ar-EG', {
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                              })}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-sm leading-6 text-slate-700">
+                            {notification.message}
+                          </p>
+                        </div>
+
+                        {!notification.read_status && (
+                          <button
+                            onClick={() => handleMarkRead(notification.id)}
+                            className="shrink-0 text-xs font-semibold text-slate-500 hover:text-slate-950"
+                            aria-label="تعيين كمقروء"
+                          >
+                            تمّت القراءة
+                          </button>
+                        )}
                       </div>
-                      <p className="text-sm text-slate-300 leading-relaxed truncate">{n.message}</p>
                     </div>
-                    {!n.read_status && (
-                      <button
-                        onClick={() => handleMarkRead(n.id)}
-                        className="text-xs text-slate-500 hover:text-indigo-400 flex-shrink-0 transition-colors"
-                        aria-label="Mark as read"
-                      >
-                        ✓
-                      </button>
-                    )}
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
           </div>

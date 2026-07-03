@@ -317,7 +317,7 @@ export async function getPendingBookingsCount(): Promise<
   const { count, error } = await supabase
     .from('bookings')
     .select('*', { count: 'exact', head: true })
-    .eq('status', 'Pending');
+    .eq('status', 'pending');
 
   if (error) {
     return {

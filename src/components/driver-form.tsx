@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { DriverRecord } from '@/lib/validation/driver';
 
 interface DriverFormProps {
-  /** Existing driver data when in edit mode */
   driver?: DriverRecord;
   onSuccess: () => void;
   onCancel: () => void;
@@ -23,8 +22,8 @@ interface DriverFormProps {
   }>;
 }
 
-const STATUS_OPTIONS = ['Available', 'Busy', 'Inactive'] as const;
-type AvailabilityStatus = (typeof STATUS_OPTIONS)[number];
+const STATUS_OPTIONS = ['active', 'inactive'] as const;
+type DriverStatus = (typeof STATUS_OPTIONS)[number];
 
 export default function DriverForm({
   driver,
@@ -38,20 +37,12 @@ export default function DriverForm({
 
   const [name, setName] = useState(driver?.name ?? '');
   const [phone, setPhone] = useState(driver?.phone ?? '');
-  const [status, setStatus] = useState<AvailabilityStatus>(
-    (driver?.availability_status as AvailabilityStatus) ?? 'Available'
+  const [licensePlate, setLicensePlate] = useState(driver?.license_plate ?? '');
+  const [status, setStatus] = useState<DriverStatus>(
+    (driver?.status as DriverStatus) ?? 'active'
   );
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
   const [serverError, setServerError] = useState('');
-
-  // Sync form when driver prop changes (e.g., switching from one edit to another)
-  useEffect(() => {
-    if (driver) {
-      setName(driver.name);
-      setPhone(driver.phone);
-      setStatus(driver.availability_status as AvailabilityStatus);
-    }
-  }, [driver]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,128 +51,139 @@ export default function DriverForm({
 
     startTransition(async () => {
       const input = isEditMode
-        ? { id: driver.id, name, phone, availability_status: status }
-        : { name, phone, availability_status: status };
+        ? { id: driver.id, name, phone, licensePlate, status }
+        : { name, phone, licensePlate, status };
 
       const action = isEditMode ? updateAction : createAction;
       const result = await action(input);
 
       if (result.success) {
         onSuccess();
-      } else {
-        if (result.validationErrors) {
-          setValidationErrors(result.validationErrors);
-        } else if (result.error) {
-          setServerError(result.error);
-        }
+      } else if (result.validationErrors) {
+        setValidationErrors(result.validationErrors);
+      } else if (result.error) {
+        setServerError(result.error);
       }
     });
   };
 
-  const statusColors: Record<AvailabilityStatus, string> = {
-    Available: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    Busy: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    Inactive: 'bg-slate-700 text-slate-400 border-slate-600',
+  const statusColors: Record<DriverStatus, string> = {
+    active: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+    inactive: 'bg-slate-100 text-slate-600 border-slate-300',
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       {serverError && (
-        <div className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
+        <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-500">
           {serverError}
         </div>
       )}
 
-      <div className="grid sm:grid-cols-3 gap-4">
-        {/* Name */}
+      <div className="grid gap-4 sm:grid-cols-4">
         <div>
-          <label className="block text-xs text-slate-400 mb-1" htmlFor="driver-form-name">
-            Full Name <span className="text-red-400">*</span>
+          <label className="mb-1 block text-xs text-slate-500" htmlFor="driver-form-name">
+            الاسم الكامل <span className="text-red-400">*</span>
           </label>
           <input
             id="driver-form-name"
             type="text"
-            placeholder="Ahmed Al-Rashid"
+            placeholder="الاسم الكامل"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={isPending}
-            className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-600 disabled:opacity-60"
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none disabled:opacity-60"
           />
           {validationErrors.name?.[0] && (
-            <p className="text-red-400 text-xs mt-1">{validationErrors.name[0]}</p>
+            <p className="mt-1 text-xs text-red-500">{validationErrors.name[0]}</p>
           )}
         </div>
 
-        {/* Phone */}
         <div>
-          <label className="block text-xs text-slate-400 mb-1" htmlFor="driver-form-phone">
-            Phone <span className="text-red-400">*</span>
+          <label className="mb-1 block text-xs text-slate-500" htmlFor="driver-form-phone">
+            الهاتف <span className="text-red-400">*</span>
           </label>
           <input
             id="driver-form-phone"
             type="tel"
-            placeholder="+1234567890"
+            dir="ltr"
+            placeholder="+201000000000"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             disabled={isPending}
-            className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-600 disabled:opacity-60"
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none disabled:opacity-60"
           />
           {validationErrors.phone?.[0] && (
-            <p className="text-red-400 text-xs mt-1">{validationErrors.phone[0]}</p>
+            <p className="mt-1 text-xs text-red-500">{validationErrors.phone[0]}</p>
           )}
         </div>
 
-        {/* Status */}
         <div>
-          <label className="block text-xs text-slate-400 mb-1" htmlFor="driver-form-status">
-            Availability Status
+          <label className="mb-1 block text-xs text-slate-500" htmlFor="driver-form-license-plate">
+            لوحة السيارة <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="driver-form-license-plate"
+            type="text"
+            dir="ltr"
+            placeholder="ABC-123"
+            value={licensePlate}
+            onChange={(e) => setLicensePlate(e.target.value)}
+            disabled={isPending}
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none disabled:opacity-60"
+          />
+          {validationErrors.licensePlate?.[0] && (
+            <p className="mt-1 text-xs text-red-500">{validationErrors.licensePlate[0]}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-slate-500" htmlFor="driver-form-status">
+            الحالة
           </label>
           <select
             id="driver-form-status"
             value={status}
-            onChange={(e) => setStatus(e.target.value as AvailabilityStatus)}
+            onChange={(e) => setStatus(e.target.value as DriverStatus)}
             disabled={isPending}
-            className="w-full bg-slate-800/60 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 transition-all disabled:opacity-60"
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none disabled:opacity-60"
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {s === 'active' ? 'نشط' : 'غير نشط'}
               </option>
             ))}
           </select>
-          {validationErrors.availability_status?.[0] && (
-            <p className="text-red-400 text-xs mt-1">
-              {validationErrors.availability_status[0]}
-            </p>
+          {validationErrors.status?.[0] && (
+            <p className="mt-1 text-xs text-red-500">{validationErrors.status[0]}</p>
           )}
-          {/* Preview badge */}
           <div className="mt-2">
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}
+              className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[status]}`}
             >
-              {status}
+              {status === 'active' ? 'نشط' : 'غير نشط'}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-3 pt-1">
+      <div className="flex flex-col gap-3 pt-1 sm:flex-row">
         <button
           id="driver-form-save-btn"
           type="submit"
           disabled={isPending}
-          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500 disabled:opacity-60 sm:w-auto"
         >
-          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {isEditMode ? 'Save Changes' : 'Add Driver'}
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {isEditMode ? 'حفظ التعديلات' : 'إضافة سائق'}
         </button>
         <button
           type="button"
           onClick={onCancel}
           disabled={isPending}
-          className="bg-slate-700 hover:bg-slate-600 disabled:opacity-60 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all"
+          className="w-full rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-medium text-slate-900 transition-all hover:bg-slate-200 disabled:opacity-60 sm:w-auto"
         >
-          Cancel
+          إلغاء
         </button>
       </div>
     </form>

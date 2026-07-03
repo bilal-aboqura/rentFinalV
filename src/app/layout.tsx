@@ -1,18 +1,20 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Cairo } from "next/font/google";
 import { getSiteSettings } from "@/app/actions/cms";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+export const dynamic = "force-dynamic";
+
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["arabic", "latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Airport Transfer & Driver Booking",
+  title: "حجز النقل من وإلى المطار",
   description:
-    "Premium flat-rate airport transfers - book your ride in minutes. Reliable, professional drivers for city-to-airport routes.",
+    "احجز خدمة نقل احترافية من وإلى المطار بأسعار واضحة وتجربة عربية أنيقة وسريعة.",
 };
 
 type RootStyle = CSSProperties & {
@@ -32,8 +34,11 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100" style={rootStyle}>
+    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`}>
+      <body
+        className="flex min-h-full flex-col overflow-x-hidden bg-[var(--cms-bg)] text-slate-950"
+        style={rootStyle}
+      >
         {children}
       </body>
     </html>

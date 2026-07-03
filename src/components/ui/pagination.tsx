@@ -19,18 +19,18 @@ export function Pagination({ page, totalPages, onPageChange, id = 'pagination' }
   return (
     <div className="flex items-center justify-between mt-4" id={id}>
       <p className="text-sm text-slate-500">
-        Page <span className="text-slate-300 font-medium">{page}</span> of{' '}
-        <span className="text-slate-300 font-medium">{totalPages}</span>
+        الصفحة <span className="text-slate-700 font-medium">{page}</span> من{' '}
+        <span className="text-slate-700 font-medium">{totalPages}</span>
       </p>
       <div className="flex items-center gap-2">
         <button
           id="pagination-prev"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="p-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          aria-label="Previous page"
+          className="p-1.5 rounded-lg border border-black/10 text-slate-500 hover:text-slate-900 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          aria-label="الصفحة السابقة"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4" />
         </button>
 
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
@@ -41,7 +41,7 @@ export function Pagination({ page, totalPages, onPageChange, id = 'pagination' }
             className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
               p === page
                 ? 'bg-indigo-600 text-white'
-                : 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5'
+                : 'border border-black/10 text-slate-500 hover:text-slate-900 hover:bg-black/5'
             }`}
           >
             {p}
@@ -52,10 +52,10 @@ export function Pagination({ page, totalPages, onPageChange, id = 'pagination' }
           id="pagination-next"
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="p-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          aria-label="Next page"
+          className="p-1.5 rounded-lg border border-black/10 text-slate-500 hover:text-slate-900 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          aria-label="الصفحة التالية"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
       </div>
     </div>
