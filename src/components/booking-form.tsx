@@ -274,8 +274,9 @@ export default function BookingForm() {
   }
 
   return (
-    <div className="glass overflow-hidden rounded-[18px] border border-slate-200/80 shadow-none sm:rounded-[32px] sm:border-white/40 sm:shadow-[var(--cms-shadow)]">
-      <div className="border-b-0 border-slate-200 px-3 pb-3 pt-0 sm:border-b sm:px-8 sm:py-6">
+    <div className="relative overflow-hidden rounded-[18px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),color-mix(in_srgb,var(--cms-primary)_4%,white))] shadow-[0_18px_50px_rgba(15,23,42,0.07)] sm:rounded-[32px]">
+      <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--cms-secondary)_68%,white),transparent)]" />
+      <div className="border-b border-black/6 px-3 pb-3 pt-3 sm:px-8 sm:py-6">
         <div className="flex flex-col gap-3 sm:gap-5">
             <div className="flex flex-row-reverse items-center justify-between gap-3 sm:flex-row sm:items-start">
             <div className="hidden sm:block">
@@ -284,7 +285,7 @@ export default function BookingForm() {
                 احجز رحلتك في ثلاث خطوات واضحة
               </h2>
             </div>
-            <div className="w-fit rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+            <div className="w-fit rounded-full border border-[var(--cms-primary)]/14 bg-[var(--cms-primary)]/8 px-3 py-2 text-xs font-semibold text-[var(--cms-primary)] shadow-[0_8px_18px_color-mix(in_srgb,var(--cms-primary)_12%,transparent)]">
               الخطوة {activeStep} من 3
             </div>
           </div>
@@ -299,21 +300,21 @@ export default function BookingForm() {
                   key={item.label}
                   id={`step-${item.value}-tab`}
                   onClick={() => activeStep > item.value && setStep(item.value)}
-                  className={`min-w-0 rounded-xl border px-2 py-2.5 text-center sm:px-4 sm:py-4 sm:text-right ${
+                  className={`min-w-0 rounded-xl border px-2 py-2.5 text-center transition-all sm:px-4 sm:py-4 sm:text-right ${
                     isActive
-                      ? 'border-[var(--cms-primary)]/30 bg-[var(--cms-primary)]/8'
+                      ? 'border-[var(--cms-primary)]/24 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-primary)_9%,white),color-mix(in_srgb,var(--cms-secondary)_12%,white))] shadow-[0_14px_28px_color-mix(in_srgb,var(--cms-primary)_12%,transparent)]'
                       : isComplete
-                        ? 'border-slate-200 bg-white hover:border-[var(--cms-primary)]/20'
-                        : 'border-slate-200 bg-slate-50'
+                        ? 'border-black/6 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.04)] hover:border-[var(--cms-primary)]/16'
+                        : 'border-black/6 bg-white/72'
                   }`}
                 >
                   <div className="flex items-center justify-center gap-2 sm:justify-start sm:gap-3">
                     <span
                       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold sm:h-9 sm:w-9 sm:text-sm ${
                         isActive
-                          ? 'bg-[var(--cms-primary)] text-white'
+                          ? 'bg-[linear-gradient(135deg,var(--cms-primary),color-mix(in_srgb,var(--cms-secondary)_44%,var(--cms-primary)))] text-white shadow-[0_10px_18px_color-mix(in_srgb,var(--cms-primary)_22%,transparent)]'
                           : isComplete
-                            ? 'bg-emerald-500 text-white'
+                            ? 'bg-[var(--cms-secondary)] text-slate-950'
                             : 'bg-slate-100 text-slate-600'
                       }`}
                     >
@@ -329,7 +330,7 @@ export default function BookingForm() {
           </div>
 
           {step !== 4 && (
-            <div className="hidden sm:block">
+            <div className="hidden rounded-2xl border border-[var(--cms-secondary)]/16 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-secondary)_10%,white),rgba(255,255,255,0.96))] p-4 sm:block">
               <p className="text-sm font-semibold text-slate-950">{STEP_NOTES[step].title}</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">{STEP_NOTES[step].description}</p>
             </div>
@@ -448,7 +449,7 @@ export default function BookingForm() {
             </div>
 
             {(selectedPickup || selectedDestination || form.tripDateTime) && (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <div className="rounded-2xl border border-[var(--cms-secondary)]/18 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-secondary)_14%,white),rgba(255,255,255,0.96))] p-5">
                 <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
                   معاينة الرحلة
                 </p>
@@ -518,7 +519,7 @@ export default function BookingForm() {
 
         {step === 2 && (
           <div className="space-y-6">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+            <div className="rounded-2xl border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),color-mix(in_srgb,var(--cms-primary)_4%,white))] p-5">
               <div className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <p className="text-xs tracking-[0.18em] text-slate-400">المسار</p>
@@ -556,16 +557,16 @@ export default function BookingForm() {
                     key={id}
                     id={`vehicle-${id}`}
                     onClick={() => pricing && updateField('vehicleClass', id)}
-                    className={`rounded-xl border p-5 text-right sm:flex sm:items-center sm:justify-between ${
+                    className={`rounded-2xl border p-5 text-right transition-all sm:flex sm:items-center sm:justify-between ${
                       pricing
                         ? isSelected
-                          ? 'border-[var(--cms-primary)]/40 bg-[var(--cms-primary)]/6'
-                          : 'border-slate-200 hover:border-slate-300'
-                        : 'cursor-not-allowed opacity-60'
+                          ? 'border-[var(--cms-primary)]/24 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-primary)_8%,white),color-mix(in_srgb,var(--cms-secondary)_12%,white))] shadow-[0_16px_34px_color-mix(in_srgb,var(--cms-primary)_12%,transparent)]'
+                          : 'border-black/6 bg-white/92 shadow-[0_10px_22px_rgba(15,23,42,0.04)] hover:border-[var(--cms-primary)]/16 hover:bg-white'
+                        : 'cursor-not-allowed border-black/6 bg-slate-50/85 opacity-60'
                     }`}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--cms-primary)]/10 bg-[var(--cms-primary)]/8">
                         <Icon className="h-5 w-5 text-[var(--cms-primary)]" />
                       </div>
                       <div>
@@ -575,7 +576,7 @@ export default function BookingForm() {
                     </div>
 
                     <div className="text-right">
-                      <p className="text-xs font-semibold tracking-[0.18em] text-slate-400">
+                      <p className="text-xs font-semibold tracking-[0.18em] text-[var(--cms-secondary)]">
                         {pricing ? 'سعر المسار' : 'التوفر'}
                       </p>
                       <p className="mt-1 text-xl font-semibold text-slate-950" dir="ltr">
@@ -588,7 +589,7 @@ export default function BookingForm() {
             </div>
 
             {selectedPricing ? (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <div className="rounded-2xl border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),color-mix(in_srgb,var(--cms-primary)_4%,white))] p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
@@ -598,7 +599,7 @@ export default function BookingForm() {
                       سعر واضح وثابت يساعد العميل على فهم الحجز مباشرة.
                     </p>
                   </div>
-                  <p className="text-3xl font-semibold text-emerald-600" dir="ltr">
+                  <p className="text-3xl font-semibold text-[var(--cms-primary)]" dir="ltr">
                     {formatPrice(Number(selectedPricing.price))}
                   </p>
                 </div>
@@ -730,7 +731,7 @@ export default function BookingForm() {
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <div className="rounded-2xl border border-[var(--cms-secondary)]/16 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-secondary)_10%,white),rgba(255,255,255,0.96))] p-5">
                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
                     ملخص الحجز
                   </p>
@@ -770,7 +771,7 @@ export default function BookingForm() {
                     <div className="border-t border-black/6 pt-4">
                       <div className="flex items-center justify-between gap-4">
                         <span className="text-base font-semibold text-slate-950">السعر التقديري</span>
-                        <span className="text-2xl font-semibold text-emerald-600" dir="ltr">
+                        <span className="text-2xl font-semibold text-[var(--cms-primary)]" dir="ltr">
                           {selectedPricing ? formatPrice(Number(selectedPricing.price)) : 'قيد التحديد'}
                         </span>
                       </div>
@@ -778,7 +779,7 @@ export default function BookingForm() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <div className="rounded-2xl border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),color-mix(in_srgb,var(--cms-primary)_4%,white))] p-5">
                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
                     ملاحظة التأكيد
                   </p>

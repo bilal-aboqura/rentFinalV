@@ -171,8 +171,10 @@ export default async function CustomerPage() {
 
           <div id="booking" className="relative min-w-0 lg:pt-8 xl:pt-10">
             <div className="absolute inset-x-8 top-4 h-28 rounded-full bg-[var(--brand-primary)]/10 blur-3xl" />
-            <div className="relative rounded-[22px] border border-slate-200 bg-white/94 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-xl sm:rounded-[34px]">
-              <div className="mb-3 rounded-xl px-2 py-2 text-slate-950 sm:rounded-[26px] sm:border sm:border-slate-200 sm:bg-slate-50 sm:px-5 sm:py-4">
+            <div className="absolute -right-4 top-20 h-24 w-24 rounded-full bg-[var(--brand-secondary)]/14 blur-3xl" />
+            <div className="relative overflow-hidden rounded-[22px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,255,255,0.98))] p-3 shadow-[0_28px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl sm:rounded-[34px]">
+              <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--brand-secondary)_62%,white),transparent)]" />
+              <div className="mb-3 rounded-[18px] border border-black/6 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_5%,white),color-mix(in_srgb,var(--brand-secondary)_10%,white))] px-3 py-3 text-slate-950 sm:rounded-[26px] sm:px-5 sm:py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold tracking-[0.2em] text-slate-500">ابدأ الحجز</p>
@@ -181,7 +183,7 @@ export default async function CustomerPage() {
                   <a
                     href={`tel:${settings.contact_phone}`}
                     dir="ltr"
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 sm:rounded-full sm:px-4"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[var(--brand-primary)]/12 bg-white/90 px-3 py-2 text-xs font-semibold text-[var(--brand-primary)] shadow-sm hover:border-[var(--brand-primary)]/24 hover:bg-white sm:rounded-full sm:px-4"
                   >
                     دعم مباشر
                   </a>
