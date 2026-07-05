@@ -1,188 +1,54 @@
 'use server';
 
 /**
- * T004 / T014 — Booking Wizard Server Actions (Spec 005)
- * T010        — submitBookingAction (Spec 006)
+ * Transfer booking server actions.
  *
- * Spec: specs/005-booking-wizard-step1/contracts/actions.md
- *       specs/006-booking-wizard-step2/contracts/submit-booking.md
+ * - submitBookingRequestAction(): validates, verifies price server-side,
+ *   persists the booking (admin dashboard), creates an admin
+ *   notification, dispatches the admin email (non-fatal), and returns
+ *   a prefilled WhatsApp URL so the customer can send the details to
+ *   the business owner instantly.
  *
- * Exports:
- * - validateBookingSchedule(): Pure helper for 2-hour lead time check (testable, sync)
- * - checkRoutePriceAction(): Server Action — fetches route price from Supabase
- * - validateBookingScheduleAction(): Server Action — validates date+time buffer server-side
- * - submitBookingAction(): Server Action — validates, verifies price, persists booking, sends email
+ * Pricing is read from `pricing_rules` keyed on
+ * (pickup_location_id, destination_location_id, vehicle_class) — the
+ * `route_prices` table referenced by earlier code never existed.
  */
 
 import { createClient } from '@/lib/supabase/server';
-import { z } from 'zod';
-import { SubmitBookingSchema } from '@/lib/validation/booking';
-import { sendBookingConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail/smtp';
+import { getSiteSettings } from '@/app/actions/cms';
+import { verifyRoutePriceAction } from '@/app/actions/pricing';
+import { TransferBookingSchema } from '@/lib/validation/transfer';
+import { buildWhatsappMessage, buildWhatsappUrl } from '@/lib/whatsapp/buildMessage';
+import { sendWhatsAppAdminNotification } from '@/lib/whatsapp/notify';
+import { sendAdminNotificationEmail } from '@/lib/mail/smtp';
+import type { ServerActionResponse, VehicleClass } from '@/types';
 
-// ─────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────
-
-export interface ServerActionResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  validationErrors?: Record<string, string[]>;
+function generateReferenceId(): string {
+  const stamp = Date.now().toString(36).toUpperCase().slice(-5);
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `AT-${stamp}${rand}`;
 }
 
-export interface ScheduleValidationResult {
-  isValid: boolean;
-  error?: string;
+function combineDateTime(date: string, time: string): string {
+  // Build an ISO timestamp in the server's local timezone interpretation.
+  return new Date(`${date}T${time}:00`).toISOString();
 }
 
-// ─────────────────────────────────────────────────────────────
-// T004 / T014 — Pure helper: timezone-safe 2-hour lead time check
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Validates whether the given date/time pair satisfies the 2-hour lead time requirement.
- *
- * The booking date/time is parsed without a timezone suffix so Node.js resolves
- * it using the server's local operational timezone — the single source of truth
- * per the spec (Decision 3 in research.md).
- *
- * @param dateStr - YYYY-MM-DD
- * @param timeStr - HH:mm
- * @param referenceDate - Current time to compare against (defaults to now; injectable for testing)
- */
-export function validateBookingSchedule(
-  dateStr: string,
-  timeStr: string,
-  referenceDate: Date = new Date()
-): ScheduleValidationResult {
-  // Parse without timezone suffix → uses server local timezone
-  const bookingDate = new Date(`${dateStr}T${timeStr}:00`);
-
-  if (isNaN(bookingDate.getTime())) {
-    return { isValid: false, error: 'Invalid date or time provided.' };
-  }
-
-  const twoHoursFromNow = new Date(referenceDate.getTime() + 2 * 60 * 60 * 1000);
-
-  if (bookingDate < twoHoursFromNow) {
-    return {
-      isValid: false,
-      error: 'Bookings must be made at least 2 hours in advance.',
-    };
-  }
-
-  return { isValid: true };
+interface LocationNameRow {
+  id: string;
+  name: string;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Server Action: Check Route Price
-// Contract: specs/005-booking-wizard-step1/contracts/actions.md#1
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Retrieves the flat-rate price for a given pickup/destination pair.
- * Returns { price: null } when no pricing is configured for the route.
- */
-export async function checkRoutePriceAction(
-  pickupLocationId: string,
-  destinationLocationId: string
-): Promise<ServerActionResponse<{ price: number | null }>> {
-  const pickupParsed = z.string().uuid().safeParse(pickupLocationId);
-  const destParsed = z.string().uuid().safeParse(destinationLocationId);
-
-  if (!pickupParsed.success || !destParsed.success) {
-    return { success: false, error: 'Invalid location IDs.' };
-  }
-
-  if (pickupLocationId === destinationLocationId) {
-    return { success: false, error: 'Pickup and destination locations must be different.' };
-  }
-
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('route_prices')
-      .select('price')
-      .eq('pickup_location_id', pickupLocationId)
-      .eq('destination_location_id', destinationLocationId)
-      .maybeSingle();
-
-    if (error) {
-      return { success: false, error: 'Failed to retrieve route pricing information.' };
-    }
-
-    return {
-      success: true,
-      data: { price: data ? Number(data.price) : null },
-    };
-  } catch {
-    return { success: false, error: 'Failed to retrieve route pricing information.' };
-  }
+export interface SubmitBookingSuccess {
+  bookingReference: string;
+  whatsappUrl: string;
+  whatsappDelivered: boolean;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Server Action: Validate Booking Schedule
-// Contract: specs/005-booking-wizard-step1/contracts/actions.md#2
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Server-side validation for the booking date and time.
- * Enforces the 2-hour lead time buffer using the server's local operational timezone.
- */
-export async function validateBookingScheduleAction(
-  date: string,
-  time: string
-): Promise<ServerActionResponse<{ isValid: boolean }>> {
-  const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(date);
-  const timeValid = /^\d{2}:\d{2}$/.test(time);
-
-  if (!dateValid || !timeValid) {
-    return {
-      success: false,
-      validationErrors: {
-        time: ['Please provide a valid date (YYYY-MM-DD) and time (HH:mm).'],
-      },
-    };
-  }
-
-  const result = validateBookingSchedule(date, time);
-
-  if (!result.isValid) {
-    return {
-      success: false,
-      validationErrors: {
-        time: [result.error ?? 'Bookings must be made at least 2 hours in advance of the current server time.'],
-      },
-    };
-  }
-
-  return { success: true, data: { isValid: true } };
-}
-
-// ─────────────────────────────────────────────────────────────
-// T010 — Server Action: Submit Booking
-// Contract: specs/006-booking-wizard-step2/contracts/submit-booking.md
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Validates the full booking payload, verifies the route price against the
- * database (tamper prevention), inserts the booking record, dispatches a
- * transactional confirmation email to the passenger, dispatches a "New Booking
- * Request" alert to the configured ADMIN_EMAIL, and returns the booking
- * reference UUID.
- *
- * Price verification: The client-submitted price is compared against the
- * server-side pricing matrix. If it differs by more than $0.01, the action
- * rejects with a validation error.
- *
- * Email dispatch is non-fatal: SMTP failures are logged but do not cause
- * the action to return an error — the booking is already persisted.
- */
-export async function submitBookingAction(
-  payload: unknown
-): Promise<ServerActionResponse<{ bookingReference: string }>> {
-  // ── Step 1: Schema validation ──
-  const parsed = SubmitBookingSchema.safeParse(payload);
+export async function submitBookingRequestAction(
+  payload: unknown,
+): Promise<ServerActionResponse<SubmitBookingSuccess>> {
+  const parsed = TransferBookingSchema.safeParse(payload);
   if (!parsed.success) {
     const fieldErrors = parsed.error.flatten().fieldErrors as Record<string, string[]>;
     return {
@@ -192,120 +58,201 @@ export async function submitBookingAction(
     };
   }
 
-  const {
-    pickupLocationId,
-    destinationLocationId,
-    date,
-    time,
-    price,
-    customerName,
-    customerEmail,
-    customerPhone,
-    flightNumber,
-    notes,
-  } = parsed.data;
+  const data = parsed.data;
 
   try {
     const supabase = await createClient();
 
-    // ── Step 2: Server-side price verification (tamper prevention) ──
-    const { data: priceRow, error: priceError } = await supabase
-      .from('route_prices')
-      .select('price')
-      .eq('pickup_location_id', pickupLocationId)
-      .eq('destination_location_id', destinationLocationId)
-      .maybeSingle();
+    // ── Server-side price verification (tamper prevention) ──
+    const outboundPrice = await verifyRoutePriceAction(
+      data.pickup.locationId,
+      data.dropoff.locationId,
+      data.vehicleClass,
+    );
 
-    if (priceError) {
-      return { success: false, error: 'Failed to verify route pricing. Please try again.' };
-    }
-
-    if (!priceRow) {
+    if (outboundPrice === null) {
       return {
         success: false,
-        validationErrors: {
-          price: ['No pricing is available for this route. Please start over and select a valid route.'],
-        },
+        error: 'No pricing is available for this route.',
+        validationErrors: { pickup: ['No pricing is available for this route.'] },
       };
     }
 
-    const serverPrice = Number(priceRow.price);
-    if (Math.abs(serverPrice - price) > 0.01) {
+    let returnPrice = 0;
+    if (data.tripType === 'round_trip') {
+      const reverse = await verifyRoutePriceAction(
+        data.returnPickup?.locationId ?? data.dropoff.locationId,
+        data.returnDropoff?.locationId ?? data.pickup.locationId,
+        data.vehicleClass,
+      );
+      // Fall back to 2× outbound if reverse leg is unpriced (stable, predictable).
+      returnPrice = reverse ?? outboundPrice;
+    }
+
+    const totalPrice = outboundPrice + returnPrice;
+
+    // Reject if the client-submitted price drifts too far from the server price.
+    if (Math.abs(totalPrice - data.price) > 1) {
       return {
         success: false,
-        validationErrors: {
-          price: ['Price verification failed. Price does not match.'],
-        },
+        error: 'Price verification failed.',
+        validationErrors: { price: ['Price verification failed. Please refresh and try again.'] },
       };
     }
 
-    // ── Step 3: Fetch location names for email ──
-    const { data: locations } = await supabase
+    // ── Resolve location names for display / email / WhatsApp ──
+    const locationIds = Array.from(
+      new Set([
+        data.pickup.locationId,
+        data.dropoff.locationId,
+        ...(data.returnPickup?.locationId ? [data.returnPickup.locationId] : []),
+        ...(data.returnDropoff?.locationId ? [data.returnDropoff.locationId] : []),
+      ]),
+    );
+
+    const { data: locationRows } = (await supabase
       .from('locations')
       .select('id, name')
-      .in('id', [pickupLocationId, destinationLocationId]);
+      .in('id', locationIds)) as { data: LocationNameRow[] | null };
 
-    const pickupName = locations?.find((l) => l.id === pickupLocationId)?.name ?? 'Unknown';
-    const destName   = locations?.find((l) => l.id === destinationLocationId)?.name ?? 'Unknown';
+    const locationNameById = new Map<string, string>(
+      (locationRows ?? []).map((row) => [row.id, row.name]),
+    );
 
-    // ── Step 4: Insert booking record ──
-    const { data: booking, error: insertError } = await supabase
-      .from('bookings')
-      .insert({
-        pickup_location_id: pickupLocationId,
-        destination_location_id: destinationLocationId,
-        booking_date: date,
-        booking_time: time,
-        price: serverPrice,
-        customer_name: customerName,
-        customer_email: customerEmail,
-        customer_phone: customerPhone,
-        flight_number: flightNumber || null,
-        notes: notes || null,
-        status: 'Pending',
-      })
-      .select('booking_reference')
-      .single();
+    const pickupName = locationNameById.get(data.pickup.locationId) ?? 'Unknown';
+    const dropoffName = locationNameById.get(data.dropoff.locationId) ?? 'Unknown';
+    const returnPickupName =
+      locationNameById.get(data.returnPickup?.locationId ?? '') ?? dropoffName;
+    const returnDropoffName =
+      locationNameById.get(data.returnDropoff?.locationId ?? '') ?? pickupName;
 
-    if (insertError || !booking) {
-      console.error('[submitBookingAction] DB insert error:', insertError);
+    // ── Resolve car name ──
+    const { data: carRow } = await supabase
+      .from('cars')
+      .select('name, name_ar')
+      .eq('id', data.carId)
+      .maybeSingle();
+
+    const carName =
+      (carRow && (data.language === 'ar' ? carRow.name_ar : carRow.name)) || 'Car';
+
+    // ── Insert booking ──
+    const referenceId = generateReferenceId();
+    const tripDateTime = combineDateTime(data.date, data.time);
+    const returnDateTime =
+      data.tripType === 'round_trip' && data.returnDate && data.returnTime
+        ? combineDateTime(data.returnDate, data.returnTime)
+        : null;
+
+    const insertRow = {
+      reference_id: referenceId,
+      pickup_location_id: data.pickup.locationId,
+      destination_location_id: data.dropoff.locationId,
+      trip_date_time: tripDateTime,
+      vehicle_class: data.vehicleClass as VehicleClass,
+      customer_name: data.customerName,
+      customer_email: data.customerEmail?.trim() || null,
+      customer_phone: data.customerPhone,
+      total_price: totalPrice,
+      status: 'Pending',
+      trip_type: data.tripType,
+      pickup_type: data.pickup.type,
+      pickup_text: data.pickup.text?.trim() ?? '',
+      dropoff_type: data.dropoff.type,
+      dropoff_text: data.dropoff.text?.trim() ?? '',
+      flight_number: data.flightNumber?.trim() || null,
+      ticket_number: data.flightNumber?.trim() || '',
+      return_date_time: returnDateTime,
+      return_pickup_location_id: data.returnPickup?.locationId ?? null,
+      return_destination_location_id: data.returnDropoff?.locationId ?? null,
+      return_flight_number: data.returnFlightNumber?.trim() || null,
+      car_id: data.carId,
+      language: data.language,
+      notes: data.notes?.trim() || null,
+      payment_method: data.paymentMethod,
+      departure_airport: data.pickup.type === 'airport' ? pickupName : '',
+      arrival_airport: data.dropoff.type === 'airport' ? dropoffName : '',
+      vehicle_name: carName,
+    };
+
+    const { error: insertError } = await supabase.from('bookings').insert(insertRow);
+
+    if (insertError) {
+      console.error('[submitBookingRequestAction] DB insert error:', insertError);
       return { success: false, error: 'Failed to save booking. Please try again later.' };
     }
 
-    const bookingReference = booking.booking_reference as string;
-
-    // ── Step 5: Dispatch confirmation email (non-fatal) ──
-    void sendBookingConfirmationEmail({
-      bookingReference,
-      customerName,
-      customerEmail,
-      pickupLocationName: pickupName,
-      destinationLocationName: destName,
-      bookingDate: date,
-      bookingTime: time,
-      price: serverPrice,
-      flightNumber: flightNumber ?? null,
-      notes: notes ?? null,
+    // ── Admin notification row ──
+    await supabase.from('notifications').insert({
+      message: `New booking ${referenceId} — ${data.customerName} (${pickupName} → ${dropoffName})`,
+      type: 'admin_new_booking',
+      read_status: false,
     });
 
-    // ── Step 6: Dispatch admin "New Booking Request" alert (non-fatal) ──
-    // Spec 008 (F-08): notify the administrator of a new pending request.
+    // ── Admin email (non-fatal) ──
     const adminEmail = process.env.ADMIN_EMAIL;
     if (adminEmail) {
       void sendAdminNotificationEmail({
-        reference: bookingReference,
+        reference: referenceId,
         pickupName,
-        destinationName: destName,
-        date,
-        time,
-        customerName,
+        destinationName: dropoffName,
+        date: data.date,
+        time: data.time,
+        customerName: data.customerName,
         adminEmail,
       });
     }
 
-    return { success: true, data: { bookingReference } };
+    // ── Build prefilled WhatsApp URL ──
+    const settings = await getSiteSettings();
+    const message = buildWhatsappMessage({
+      language: data.language,
+      referenceId,
+      tripType: data.tripType,
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      customerEmail: data.customerEmail ?? null,
+      pickupLabel: pickupName,
+      pickupDetail: data.pickup.text ?? '',
+      dropoffLabel: dropoffName,
+      dropoffDetail: data.dropoff.text ?? '',
+      date: data.date,
+      time: data.time,
+      flightNumber: data.flightNumber ?? null,
+      returnDate: data.returnDate ?? null,
+      returnTime: data.returnTime ?? null,
+      returnFlightNumber: data.returnFlightNumber ?? null,
+      returnPickupLabel: returnPickupName,
+      returnPickupDetail: data.returnPickup?.text ?? '',
+      returnDropoffLabel: returnDropoffName,
+      returnDropoffDetail: data.returnDropoff?.text ?? '',
+      carName,
+      price: totalPrice,
+      paymentMethod: data.paymentMethod,
+      notes: data.notes ?? null,
+    });
+
+    const whatsappDelivery = await sendWhatsAppAdminNotification({
+      to: settings.whatsapp_number,
+      message,
+    });
+
+    if (!whatsappDelivery.delivered && whatsappDelivery.error) {
+      console.warn('[submitBookingRequestAction] WhatsApp delivery fallback:', whatsappDelivery.error);
+    }
+
+    const whatsappUrl = buildWhatsappUrl(settings.whatsapp_number, message);
+
+    return {
+      success: true,
+      data: {
+        bookingReference: referenceId,
+        whatsappUrl,
+        whatsappDelivered: whatsappDelivery.delivered,
+      },
+    };
   } catch (error) {
-    console.error('[submitBookingAction] Unexpected error:', error);
+    console.error('[submitBookingRequestAction] Unexpected error:', error);
     return { success: false, error: 'An unexpected error occurred. Please try again later.' };
   }
 }

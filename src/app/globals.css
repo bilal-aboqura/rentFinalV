@@ -12,15 +12,40 @@
 
 :root {
   --font-cairo: "Cairo", sans-serif;
-  --cms-bg: #f8fafc;
-  --cms-primary: #50a6b9;
-  --cms-secondary: #c3a16f;
+  --cms-bg: #f1f5f9;
+  --cms-primary: #0f6b7a;
+  --cms-secondary: #9a6a1f;
   --cms-surface: #ffffff;
   --cms-surface-strong: #ffffff;
-  --cms-border: rgba(15, 23, 42, 0.08);
-  --cms-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-  --cms-muted: #64748b;
+  --cms-border: rgba(15, 23, 42, 0.14);
+  --cms-border-strong: rgba(15, 23, 42, 0.22);
+  --cms-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --cms-muted: #475569;
   --cms-dark: #0f172a;
+  --cms-bg-gradient: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  --cms-text-on-primary: #ffffff;
+  --hero-gradient-start: rgba(255,255,255,.9);
+  --hero-gradient-mid: rgba(255,255,255,.72);
+  --hero-gradient-end: rgba(255,255,255,.48);
+}
+
+/* Eye-comfort / dark theme — toggled via data-theme="comfort" on <html>.
+   Keeps brand accents but uses warm dark surfaces + light text. */
+:root[data-theme="dark"],
+:root[data-theme="comfort"] {
+  --cms-bg: #1a2230;
+  --cms-surface: #222b3a;
+  --cms-surface-strong: #2a3445;
+  --cms-border: rgba(255, 255, 255, 0.14);
+  --cms-border-strong: rgba(255, 255, 255, 0.24);
+  --cms-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --cms-muted: #aab4c5;
+  --cms-dark: #f1f5f9;
+  --cms-bg-gradient: linear-gradient(180deg, #1a2230 0%, #141a25 100%);
+  --cms-text-on-primary: #ffffff;
+  --hero-gradient-start: rgba(26,34,48,.94);
+  --hero-gradient-mid: rgba(26,34,48,.82);
+  --hero-gradient-end: rgba(26,34,48,.65);
 }
 
 * {
@@ -37,7 +62,7 @@ body {
   margin: 0;
   direction: rtl;
   font-family: var(--font-cairo), system-ui, sans-serif;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: var(--cms-bg-gradient);
   color: var(--cms-dark);
   max-width: 100%;
   min-width: 320px;
@@ -86,7 +111,7 @@ textarea {
 input,
 select,
 textarea {
-  text-align: right;
+  text-align: start;
 }
 
 ::selection {
@@ -94,22 +119,30 @@ textarea {
   color: var(--cms-dark);
 }
 
+/* ---- Semantic surface / component classes (theme-aware) ---- */
 .glass {
-  background: rgba(255, 255, 255, 0.96);
+  background: color-mix(in srgb, var(--cms-surface) 96%, transparent);
   border: 1px solid var(--cms-border);
   box-shadow: var(--cms-shadow);
 }
 
 .panel-card {
-  background: #ffffff;
+  background: var(--cms-surface);
   border: 1px solid var(--cms-border);
   border-radius: 20px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
+.admin-panel {
+  background: var(--cms-surface);
+  border: 1px solid var(--cms-border);
+  border-radius: 20px;
+  box-shadow: var(--cms-shadow);
+}
+
 .soft-card {
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: var(--cms-surface);
+  border: 1px solid var(--cms-border);
   border-radius: 16px;
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
 }
@@ -123,7 +156,7 @@ textarea {
 }
 
 .animated-bg {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: var(--cms-bg-gradient);
 }
 
 .section-kicker {
@@ -153,8 +186,8 @@ textarea {
 .input-shell {
   width: 100%;
   border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  background: #ffffff;
+  border: 1px solid var(--cms-border-strong);
+  background: var(--cms-surface);
   padding: 0.85rem 1rem;
   color: var(--cms-dark);
 }
@@ -162,7 +195,7 @@ textarea {
 .input-shell:focus {
   outline: none;
   border-color: var(--cms-primary);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--cms-primary) 14%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--cms-primary) 20%, transparent);
 }
 
 :where(.btn-primary) {
@@ -171,8 +204,12 @@ textarea {
   gap: 0.6rem;
   border-radius: 12px;
   background: var(--cms-primary);
-  color: white;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--cms-primary) 18%, transparent);
+  color: var(--cms-text-on-primary);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--cms-primary) 22%, transparent);
+}
+
+:where(.btn-primary):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cms-primary) 82%, black);
 }
 
 :where(.btn-secondary) {
@@ -180,8 +217,8 @@ textarea {
   justify-content: center;
   gap: 0.6rem;
   border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: #ffffff;
+  border: 1px solid var(--cms-border-strong);
+  background: var(--cms-surface);
   color: var(--cms-dark);
 }
 
@@ -191,9 +228,9 @@ textarea {
 }
 
 .mobile-data-card {
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--cms-border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.86);
+  background: color-mix(in srgb, var(--cms-surface) 92%, transparent);
   padding: 0.9rem;
 }
 
@@ -203,7 +240,7 @@ textarea {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  border-top: 1px solid var(--cms-border);
   padding-top: 0.7rem;
 }
 
@@ -214,7 +251,7 @@ textarea {
 
 .mobile-data-label {
   flex: 0 0 auto;
-  color: #64748b;
+  color: var(--cms-muted);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -223,7 +260,7 @@ textarea {
   min-width: 0;
   overflow-wrap: anywhere;
   text-align: left;
-  color: #0f172a;
+  color: var(--cms-dark);
   font-size: 0.82rem;
 }
 
@@ -232,17 +269,149 @@ textarea {
   align-items: center;
   gap: 0.55rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--cms-border);
+  background: color-mix(in srgb, var(--cms-surface) 90%, transparent);
   padding: 0.7rem 0.9rem;
   color: var(--cms-dark);
 }
 
-.admin-panel {
-  background: #ffffff;
-  border: 1px solid var(--cms-border);
-  border-radius: 20px;
-  box-shadow: var(--cms-shadow);
+/* ---- Dark theme overrides for hardcoded Tailwind utilities ---- */
+:root[data-theme="dark"] body {
+  color: var(--cms-dark);
+}
+
+:root[data-theme="dark"] :where(.bg-white, .bg-white\/90, .bg-white\/92, .bg-white\/94, .bg-white\/95, .bg-white\/80, .bg-white\/70, .bg-white\/60, .bg-white\/50, .bg-white\/40) {
+  background-color: color-mix(in srgb, var(--cms-surface) 94%, transparent) !important;
+}
+
+:root[data-theme="dark"] :where(.bg-slate-50, .bg-slate-100, .bg-slate-200) {
+  background-color: var(--cms-surface-strong) !important;
+}
+
+:root[data-theme="dark"] :where(.hover\:bg-slate-50:hover, .hover\:bg-slate-100:hover, .hover\:bg-white\/40:hover, .hover\:bg-white\/50:hover, .hover\:bg-black\/5:hover, .hover\:bg-black\/\[0\.02\]:hover) {
+  background-color: color-mix(in srgb, var(--cms-surface-strong) 80%, transparent) !important;
+}
+
+:root[data-theme="dark"] :where(.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700) {
+  color: var(--cms-dark) !important;
+}
+
+:root[data-theme="dark"] :where(.text-slate-600, .text-slate-500, .text-slate-400) {
+  color: var(--cms-muted) !important;
+}
+
+:root[data-theme="dark"] :where(.border-slate-100, .border-slate-200, .border-slate-300, .border-slate-600, .border-slate-700, .border-slate-700\/50, .border-black\/5, .border-black\/6, .border-black\/8, .border-black\/10, .border-white\/60) {
+  border-color: var(--cms-border) !important;
+}
+
+:root[data-theme="dark"] :where(.divide-slate-100 > *, .divide-slate-200 > *, .divide-white\/5 > *) {
+  border-color: var(--cms-border) !important;
+}
+
+:root[data-theme="dark"] :where(input, select, textarea) {
+  background: var(--cms-surface-strong) !important;
+  border-color: var(--cms-border-strong) !important;
+  color: var(--cms-dark) !important;
+}
+
+:root[data-theme="dark"] :where(input::placeholder, textarea::placeholder) {
+  color: var(--cms-muted) !important;
+}
+
+:root[data-theme="dark"] :where(.shadow-sm, .shadow-lg, .shadow-2xl) {
+  box-shadow: var(--cms-shadow) !important;
+}
+
+:root[data-theme="dark"] :where(.bg-emerald-100, .bg-green-50) {
+  background-color: color-mix(in srgb, var(--cms-secondary) 18%, transparent) !important;
+}
+
+:root[data-theme="dark"] :where(.bg-red-50) {
+  background-color: color-mix(in srgb, #ef4444 14%, transparent) !important;
+}
+
+:root[data-theme="dark"] :where(.bg-slate-950, .bg-slate-800) {
+  background-color: var(--cms-primary) !important;
+}
+
+/* ============ Modern animations ============ */
+@keyframes at-fade-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes at-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes at-scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes at-slide-start {
+  from { opacity: 0; transform: translateX(var(--at-slide-dir, 32px)); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes at-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes at-pulse-glow {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.06); }
+}
+@keyframes at-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes at-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* On-load entrance utilities (play immediately on mount) */
+.at-rise { animation: at-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.at-fade { animation: at-fade-in 0.8s ease both; }
+.at-pop { animation: at-scale-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.at-in-start { animation: at-slide-start 0.75s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Continuous ambient animations */
+.at-float { animation: at-float 6s ease-in-out infinite; }
+.at-glow { animation: at-pulse-glow 5s ease-in-out infinite; }
+
+/* Scroll-triggered reveal system */
+.reveal {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+.reveal.r-up { transform: translateY(36px); }
+.reveal.r-scale { transform: scale(0.95); }
+.reveal.r-start { transform: translateX(var(--at-slide-dir, 32px)); }
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* RTL-aware slide direction */
+[dir="rtl"] {
+  --at-slide-dir: -32px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -250,16 +419,16 @@ textarea {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.35);
+  background: color-mix(in srgb, var(--cms-surface) 50%, transparent);
 }
 
 ::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: color-mix(in srgb, var(--cms-primary) 26%, white);
+  background: color-mix(in srgb, var(--cms-primary) 26%, var(--cms-surface));
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--cms-primary) 54%, white);
+  background: color-mix(in srgb, var(--cms-primary) 54%, var(--cms-surface));
 }
 
 @media (max-width: 640px) {

@@ -38,8 +38,13 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect all /admin/dashboard/* routes
-  if (pathname.startsWith('/admin/dashboard') && !user) {
+  // Protect all admin areas (legacy dashboard + new flat routes)
+  const isAdminRoute =
+    pathname.startsWith('/admin/dashboard') ||
+    (pathname.startsWith('/admin/') &&
+      !pathname.startsWith('/admin/login'));
+
+  if (isAdminRoute && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/admin/login';
     loginUrl.searchParams.set('redirectTo', pathname);

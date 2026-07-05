@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import {
   CalendarCheck,
+  Car,
   DollarSign,
   FileText,
   LogOut,
@@ -11,12 +12,14 @@ import {
   Users,
 } from 'lucide-react';
 import { adminLogoutAction } from '@/app/admin/dashboard/actions';
+import AdminThemeToggle from '@/components/admin-theme-toggle';
 import NotificationsList from '@/components/notifications-list';
 
 const NAV_LINKS = [
   { href: '/admin/bookings', label: 'الحجوزات', icon: CalendarCheck },
   { href: '/admin/inquiries', label: 'الاستفسارات', icon: FileText },
   { href: '/admin/drivers', label: 'السائقون', icon: Users },
+  { href: '/admin/cars', label: 'السيارات', icon: Car },
   { href: '/admin/locations', label: 'المواقع', icon: MapPin },
   { href: '/admin/pricing', label: 'الأسعار', icon: DollarSign },
   { href: '/admin/content', label: 'المحتوى', icon: Settings },
@@ -120,6 +123,7 @@ export default function AdminShell({
                 عرض الموقع العام
               </a>
               <NotificationsList />
+              <AdminThemeToggle />
             </div>
           </header>
 

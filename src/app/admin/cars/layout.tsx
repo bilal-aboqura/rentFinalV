@@ -1,0 +1,18 @@
+import type { ReactNode } from 'react';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import AdminShell from '@/components/admin-shell';
+
+export const metadata = {
+  title: 'إدارة السيارات | لوحة التحكم',
+};
+
+export default async function AdminCarsLayout({ children }: { children: ReactNode }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/admin/login');
+
+  return <AdminShell userEmail={user.email}>{children}</AdminShell>;
+}

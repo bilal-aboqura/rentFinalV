@@ -117,7 +117,7 @@ export default function InquiryDetailsModal({
             <h3 className="flex items-center gap-2 text-xs tracking-wide text-slate-500">
               <MessageSquare className="h-3.5 w-3.5" /> الرسالة
             </h3>
-            <p className="whitespace-pre-wrap rounded-xl border border-black/5 bg-[#E8F4F8]/40 p-4 text-sm text-slate-800">
+            <p className="whitespace-pre-wrap rounded-xl border border-black/5 bg-[var(--cms-surface)]/60 p-4 text-sm text-slate-800">
               {inquiry.message}
             </p>
           </section>

@@ -7,8 +7,17 @@ export type LocationType = 'city' | 'airport';
 export type LocationStatus = 'active' | 'inactive';
 export type DriverStatus = 'active' | 'inactive';
 export type VehicleClass = 'standard' | 'executive' | 'van';
-export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
+export type BookingStatus =
+  | 'Pending'
+  | 'Confirmed'
+  | 'Assigned'
+  | 'Completed'
+  | 'Cancelled';
 export type NotificationType = 'admin_new_booking' | 'customer_status_change';
+export type PaymentMethod = 'cash' | 'card_pos' | 'bank_transfer';
+export type TripType = 'one_way' | 'round_trip';
+export type EndpointType = 'airport' | 'hotel' | 'address' | 'other';
+export type BookingLanguage = 'ar' | 'en';
 
 // ----------------------------------------------------------------
 // Location
@@ -16,6 +25,7 @@ export type NotificationType = 'admin_new_booking' | 'customer_status_change';
 export interface Location {
   id: string;
   name: string;
+  name_ar: string | null;
   type: LocationType;
   status: LocationStatus;
   created_at: string;
@@ -58,6 +68,34 @@ export interface PricingRule extends RoutePrice {
 }
 
 // ----------------------------------------------------------------
+// Car catalog (maps to a VehicleClass for pricing)
+// ----------------------------------------------------------------
+export interface Car {
+  id: string;
+  name: string;
+  name_ar: string;
+  vehicle_class: VehicleClass;
+  passenger_capacity: number;
+  luggage_capacity: number;
+  image_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCarInput {
+  name: string;
+  name_ar: string;
+  vehicle_class: VehicleClass;
+  passenger_capacity: number;
+  luggage_capacity: number;
+  image_url?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+// ----------------------------------------------------------------
 // Booking
 // ----------------------------------------------------------------
 export interface Booking {
@@ -68,17 +106,58 @@ export interface Booking {
   trip_date_time: string;
   vehicle_class: VehicleClass;
   customer_name: string;
-  customer_email: string;
+  customer_email: string | null;
   customer_phone: string;
   total_price: number;
   status: BookingStatus;
   driver_id: string | null;
+  // Transfer-flow fields (migration 20260705000001)
+  trip_type: TripType;
+  pickup_type: EndpointType;
+  pickup_text: string;
+  dropoff_type: EndpointType;
+  dropoff_text: string;
+  flight_number: string | null;
+  return_date_time: string | null;
+  return_pickup_location_id: string | null;
+  return_destination_location_id: string | null;
+  return_flight_number: string | null;
+  car_id: string | null;
+  language: BookingLanguage;
+  notes: string | null;
+  payment_method: PaymentMethod;
+  // WhatsApp handoff / display fields (migration 20260704000008)
+  departure_airport: string;
+  arrival_airport: string;
+  ticket_number: string;
+  vehicle_name: string;
+  driver_phone: string;
   created_at: string;
   updated_at: string;
   // Joined fields (optional)
   pickup_location?: Location;
   destination_location?: Location;
   driver?: Driver | null;
+  car?: Car | null;
+}
+
+/** Price quote for a specific car on a route. */
+export interface CarPriceQuote {
+  car: Car;
+  vehicle_class: VehicleClass;
+  price: number;
+  available: boolean;
+}
+
+export interface PublicFleetCar {
+  id: string;
+  name: string;
+  name_ar: string;
+  passenger_capacity: number;
+  luggage_capacity: number;
+  image_url: string | null;
+  sort_order: number;
+  starting_price: number | null;
 }
 
 // ----------------------------------------------------------------
@@ -106,7 +185,35 @@ export interface SiteSettings {
   brand_secondary_color: string;
   hero_image_url: string | null;
   site_logo_url: string | null;
+  // Bank transfer details (migration 20260705000002)
+  bank_name: string;
+  account_holder_name: string;
+  iban: string;
+  bank_qr_url: string | null;
+  whatsapp_number: string;
   updated_at: string;
+}
+
+export interface BankAccount {
+  id: string;
+  bank_name: string;
+  account_holder_name: string;
+  iban: string;
+  qr_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SaveBankAccountInput {
+  id?: string;
+  bank_name: string;
+  account_holder_name: string;
+  iban: string;
+  qr_url?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
 }
 
 export type UpdateSiteSettingsInput = Pick<
@@ -117,7 +224,7 @@ export type UpdateSiteSettingsInput = Pick<
   | 'contact_email'
   | 'brand_primary_color'
   | 'brand_secondary_color'
->;
+> & Partial<Pick<SiteSettings, 'bank_name' | 'account_holder_name' | 'iban' | 'whatsapp_number'>>;
 
 export type SiteAssetType = 'logo' | 'hero';
 

@@ -24,7 +24,7 @@ export default async function AdminNavbar({ activeTab }: { activeTab: AdminTab }
   return (
     <nav
       aria-label="التنقل داخل لوحة الإدارة"
-      className="-mx-1 flex items-center gap-1 overflow-x-auto rounded-xl border border-black/10 bg-[#E8F4F8]/60 p-1.5 sm:mx-0 sm:gap-2 sm:rounded-2xl"
+      className="-mx-1 flex items-center gap-1 overflow-x-auto rounded-xl border border-black/10 bg-[var(--cms-surface)] p-1.5 sm:mx-0 sm:gap-2 sm:rounded-2xl"
     >
       {TABS.map((tab) => {
         const isActive = tab.key === activeTab;

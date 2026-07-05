@@ -1,499 +1,1199 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
-import { AlertCircle, Check, MessageCircle, Navigation } from 'lucide-react';
-
-const WHATSAPP_PHONE = '201102770678';
-const HOSPITALITY_PRICE = 50;
-
-const SERVICE_OPTIONS = [
-  { id: 'jeddah-makkah', icon: '✈️', label: 'مطار جدة ↔ مكة المكرمة' },
-  { id: 'taif-makkah', icon: '🛬', label: 'مطار الطائف ↔ مكة المكرمة' },
-  { id: 'makkah-madinah', icon: '🕌', label: 'مكة المكرمة ↔ المدينة المنورة' },
-  { id: 'hourly-driver', icon: '🚗', label: 'سيارة بسائق - بالساعة' },
-  { id: 'city-transfer', icon: '🏙️', label: 'توصيل داخل المدن' },
-] as const;
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Car as CarIcon,
+  CheckCircle2,
+  CreditCard,
+  Landmark,
+  MapPin,
+  MessageCircle,
+  Navigation,
+  Plane,
+  Wallet,
+} from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageProvider';
+import { getPublicLocationsAction } from '@/app/actions/locations';
+import { getRouteCarPricingAction } from '@/app/actions/pricing';
+import { submitBookingRequestAction } from '@/app/actions/booking';
+import { getPublicBankDetailsAction } from '@/app/actions/cms';
+import type { BankAccount, CarPriceQuote, Location } from '@/types';
+import type { EndpointType, PaymentMethod, TripType } from '@/lib/validation/transfer';
 
 const COUNTRY_CODES = [
-  { value: '+966', label: '🇸🇦 +966', hint: 'السعودية +966' },
-  { value: '+971', label: '🇦🇪 +971', hint: 'الإمارات +971' },
-  { value: '+965', label: '🇰🇼 +965', hint: 'الكويت +965' },
-  { value: '+974', label: '🇶🇦 +974', hint: 'قطر +974' },
-  { value: '+973', label: '🇧🇭 +973', hint: 'البحرين +973' },
-  { value: '+968', label: '🇴🇲 +968', hint: 'عمان +968' },
-  { value: '+20', label: '🇪🇬 +20', hint: 'مصر +20' },
-  { value: '+962', label: '🇯🇴 +962', hint: 'الأردن +962' },
-  { value: '+961', label: '🇱🇧 +961', hint: 'لبنان +961' },
-  { value: '+963', label: '🇸🇾 +963', hint: 'سوريا +963' },
-  { value: '+964', label: '🇮🇶 +964', hint: 'العراق +964' },
-  { value: '+967', label: '🇾🇪 +967', hint: 'اليمن +967' },
-  { value: '+249', label: '🇸🇩 +249', hint: 'السودان +249' },
-  { value: '+212', label: '🇲🇦 +212', hint: 'المغرب +212' },
-  { value: '+1', label: '🇺🇸 +1', hint: 'أمريكا +1' },
+  { value: '+966', label: 'SA +966' },
+  { value: '+971', label: 'AE +971' },
+  { value: '+965', label: 'KW +965' },
+  { value: '+974', label: 'QA +974' },
+  { value: '+973', label: 'BH +973' },
+  { value: '+968', label: 'OM +968' },
+  { value: '+20', label: 'EG +20' },
+  { value: '+962', label: 'JO +962' },
+  { value: '+961', label: 'LB +961' },
+  { value: '+964', label: 'IQ +964' },
+  { value: '+212', label: 'MA +212' },
+  { value: '+1', label: 'US +1' },
 ] as const;
 
-const CAR_OPTIONS = [
-  { id: 'camry', label: 'كامري', detail: '200 ريال', price: 200 },
-  { id: 'taurus', label: 'فورد توروس', detail: '250 ريال', price: 250 },
-  { id: 'staria-6', label: 'فان ستاريا - 6 ركاب', detail: '250 ريال', price: 250 },
-  { id: 'staria-7', label: 'فان ستاريا - 7 ركاب', detail: '275 ريال', price: 275 },
-  { id: 'staria-8', label: 'فان ستاريا - 8 ركاب', detail: '300 ريال', price: 300 },
-  { id: 'lexus-es', label: 'لكزس ES 2025', detail: '400 ريال', price: 400 },
-  { id: 'hiace', label: 'باص هايس 11 راكب', detail: '450 ريال', price: 450 },
-  { id: 'gmc-yukon', label: 'GMC يوكون', detail: '450 ريال', price: 450 },
-  { id: 'coaster', label: 'باص كوستر', detail: '650 ريال', price: 650 },
-] as const;
+const PAYMENT_OPTIONS: { value: PaymentMethod; icon: typeof Wallet; labelKey: string; descKey: string }[] = [
+  { value: 'cash', icon: Wallet, labelKey: 'payment.cash', descKey: 'payment.cash.desc' },
+  { value: 'card_pos', icon: CreditCard, labelKey: 'payment.card_pos', descKey: 'payment.card_pos.desc' },
+  { value: 'bank_transfer', icon: Landmark, labelKey: 'payment.bank_transfer', descKey: 'payment.bank_transfer.desc' },
+];
 
-const HOURS = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
-const MINUTES = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, '0'));
+const ENDPOINT_TYPES: { value: EndpointType; icon: typeof Plane; labelKey: string }[] = [
+  { value: 'airport', icon: Plane, labelKey: 'loc.type.airport' },
+  { value: 'hotel', icon: Building2, labelKey: 'loc.type.hotel' },
+  { value: 'address', icon: MapPin, labelKey: 'loc.type.address' },
+  { value: 'other', icon: Navigation, labelKey: 'loc.type.other' },
+];
 
-type TripMode = 'ذهاب فقط' | 'ذهاب وعودة';
+interface EndpointState {
+  type: EndpointType;
+  locationId: string;
+  text: string;
+}
 
-interface BookingFormState {
-  serviceId: (typeof SERVICE_OPTIONS)[number]['id'];
-  tripMode: TripMode;
+interface FormState {
   customerName: string;
   countryCode: string;
   customerPhone: string;
-  from: string;
-  to: string;
+  customerEmail: string;
+  tripType: TripType;
+  pickup: EndpointState;
+  dropoff: EndpointState;
   date: string;
-  hour: string;
-  minute: string;
-  period: 'صباح' | 'مساء';
+  time: string;
   flightNumber: string;
-  passengers: string;
-  hospitality: boolean;
+  returnDate: string;
+  returnTime: string;
+  returnFlightNumber: string;
+  returnPickup: EndpointState;
+  returnDropoff: EndpointState;
   carId: string;
+  paymentMethod: PaymentMethod;
+  notes: string;
 }
 
-const INITIAL_FORM: BookingFormState = {
-  serviceId: 'jeddah-makkah',
-  tripMode: 'ذهاب فقط',
+const INITIAL_FORM: FormState = {
   customerName: '',
   countryCode: '+966',
   customerPhone: '',
-  from: '',
-  to: '',
+  customerEmail: '',
+  tripType: 'one_way',
+  pickup: { type: 'airport', locationId: '', text: '' },
+  dropoff: { type: 'hotel', locationId: '', text: '' },
   date: '',
-  hour: '01',
-  minute: '00',
-  period: 'صباح',
+  time: '',
   flightNumber: '',
-  passengers: '1',
-  hospitality: false,
+  returnDate: '',
+  returnTime: '',
+  returnFlightNumber: '',
+  returnPickup: { type: 'hotel', locationId: '', text: '' },
+  returnDropoff: { type: 'airport', locationId: '', text: '' },
   carId: '',
+  paymentMethod: 'cash',
+  notes: '',
 };
 
-function makeBookingReference() {
-  const date = new Date();
-  const stamp = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(
-    date.getDate()
-  ).padStart(2, '0')}`;
-  const suffix = Math.random().toString(36).slice(2, 7).toUpperCase();
-  return `DQ-${stamp}-${suffix}`;
+const STEPS = [1, 2, 3, 4, 5] as const;
+
+function normalizePhone(countryCode: string, phone: string): string {
+  const digits = phone.replace(/[^\d]/g, '').replace(/^0+/, '');
+  return `${countryCode}${digits}`;
 }
 
-function normalizePhone(countryCode: string, phone: string) {
-  const localPhone = phone.replace(/[^\d]/g, '').replace(/^0+/, '');
-  return `${countryCode}${localPhone}`;
-}
-
-function buildWhatsappMessage(params: {
-  form: BookingFormState;
-  bookingReference: string;
-  serviceLabel: string;
-  carLabel: string;
-  total: number;
-}) {
-  const { form, bookingReference, serviceLabel, carLabel, total } = params;
-  const captainTime = `${form.hour}:${form.minute} ${form.period}`;
-  const customerPhone = normalizePhone(form.countryCode, form.customerPhone);
-  const tripType = `${serviceLabel} - ${form.tripMode}`;
-
-  return `*بيانات حجز رحلة الى : ${form.to || 'غير محدد'}*
-🔖 رقم الحجز : ${bookingReference}
-
-🔹 نوع الرحلة : ${tripType}
-🔹 اسم العميل : ${form.customerName}
-🔹 جوال العميل : ${customerPhone}
-🔹 موقع العميل : ${form.from}
-🔹 رقم رحلة الطيران : ${form.flightNumber || 'غير محدد'}
-🔹 تاريخ حضور الكابتن : ${form.date}
-🔹 وقت حضور الكابتن : ${captainTime}
-🔹 الوجهة الى : ${form.to}
-
-🔹 نوع السيارة : ${carLabel}${form.hospitality ? ' + ضيافة' : ''}
-🔹 المبلغ : ${total} ريال
-
-👨‍✈️ مسؤول الكباتن : غير محدد
-📞 جوال الكابتن : غير محدد
-
-شكراً لاختياركم مؤسسه دقة الوقت
-( رحلتك الآمنة تبدأ معنا بعد مشيئة الله )`;
-}
-
-function getTodayDateString() {
-  const date = new Date();
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-  return date.toISOString().slice(0, 10);
+function todayString(): string {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
 }
 
 export default function BookingForm() {
-  const [form, setForm] = useState<BookingFormState>(INITIAL_FORM);
+  const { t, lang, dir } = useLanguage();
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
+  const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState('');
 
-  const selectedService =
-    SERVICE_OPTIONS.find((service) => service.id === form.serviceId) ?? SERVICE_OPTIONS[0];
-  const selectedCountry =
-    COUNTRY_CODES.find((country) => country.value === form.countryCode) ?? COUNTRY_CODES[0];
-  const selectedCar = CAR_OPTIONS.find((car) => car.id === form.carId);
-  const total = useMemo(
-    () => (selectedCar?.price ?? 0) + (form.hospitality ? HOSPITALITY_PRICE : 0),
-    [form.hospitality, selectedCar?.price]
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [quotes, setQuotes] = useState<CarPriceQuote[]>([]);
+  const [pricingLoaded, setPricingLoaded] = useState(false);
+  const [routeKey, setRouteKey] = useState('');
+
+  const [result, setResult] = useState<{
+    bookingReference: string;
+    whatsappUrl: string;
+    whatsappDelivered: boolean;
+  } | null>(null);
+
+  // ── Load locations on mount (cars are embedded in the price quotes) ──
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const locsRes = await getPublicLocationsAction();
+      if (!active) return;
+      setLocations(locsRes);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const airports = useMemo(() => locations.filter((l) => l.type === 'airport'), [locations]);
+  const cities = useMemo(() => locations.filter((l) => l.type === 'city'), [locations]);
+
+  // ── Load pricing whenever both route endpoints resolve ──
+  const routeReady = Boolean(
+    form.pickup.locationId &&
+      form.dropoff.locationId &&
+      form.pickup.locationId !== form.dropoff.locationId,
   );
+  const currentRouteKey = routeReady
+    ? `${form.pickup.locationId}|${form.dropoff.locationId}`
+    : '';
+  const pricingStale = currentRouteKey !== routeKey;
 
-  const updateField = <Key extends keyof BookingFormState>(
-    field: Key,
-    value: BookingFormState[Key]
+  useEffect(() => {
+    if (!routeReady) return;
+    let active = true;
+    (async () => {
+      const res = await getRouteCarPricingAction(form.pickup.locationId, form.dropoff.locationId);
+      if (!active) return;
+      setQuotes(res.success ? res.data : []);
+      setPricingLoaded(true);
+      setRouteKey(`${form.pickup.locationId}|${form.dropoff.locationId}`);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [form.pickup.locationId, form.dropoff.locationId, routeReady]);
+
+  // Derive the effective quotes for the CURRENT route so stale results
+  // from a previous route don't leak into the car step.
+  const effectiveQuotes = useMemo(
+    () => (routeReady && !pricingStale ? quotes : []),
+    [pricingStale, quotes, routeReady],
+  );
+  const availableQuotes = useMemo(() => effectiveQuotes.filter((q) => q.available), [effectiveQuotes]);
+  const selectedQuote = useMemo(
+    () => effectiveQuotes.find((q) => q.car.id === form.carId) ?? null,
+    [effectiveQuotes, form.carId],
+  );
+  const pricingLoading = routeReady && (pricingStale || !pricingLoaded);
+
+  const roundTripMultiplier = form.tripType === 'round_trip' ? 2 : 1;
+  const displayTotal = selectedQuote ? selectedQuote.price * roundTripMultiplier : 0;
+
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key as string]: '', general: '' }));
+    setServerError('');
+  };
+
+  const setTripType = (tripType: TripType) => {
+    setForm((prev) => {
+      if (tripType === prev.tripType) return prev;
+      if (tripType === 'round_trip') {
+        return {
+          ...prev,
+          tripType,
+          returnPickup: prev.returnPickup.locationId ? prev.returnPickup : { ...prev.dropoff },
+          returnDropoff: prev.returnDropoff.locationId ? prev.returnDropoff : { ...prev.pickup },
+        };
+      }
+      return { ...prev, tripType };
+    });
+    setErrors((prev) => ({ ...prev, tripType: '', returnPickup: '', returnDropoff: '' }));
+    setServerError('');
+  };
+
+  const updateEndpoint = (
+    which: 'pickup' | 'dropoff' | 'returnPickup' | 'returnDropoff',
+    next: Partial<EndpointState>,
   ) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: '', general: '' }));
+    setForm((prev) => ({
+      ...prev,
+      [which]: { ...prev[which], ...next },
+      ...(which === 'pickup' || which === 'dropoff' ? { carId: '' } : {}),
+    }));
+    setErrors((prev) => ({ ...prev, [which]: '' }));
+    setServerError('');
   };
 
-  const validate = () => {
-    const nextErrors: Record<string, string> = {};
-    if (!form.customerName.trim()) nextErrors.customerName = 'يرجى إدخال اسم العميل.';
-    if (!form.customerPhone.trim()) nextErrors.customerPhone = 'يرجى إدخال جوال العميل.';
-    if (!form.from.trim()) nextErrors.from = 'يرجى إدخال موقع العميل أو نقطة الانطلاق.';
-    if (!form.to.trim()) nextErrors.to = 'يرجى إدخال الوجهة.';
-    if (!form.date) nextErrors.date = 'يرجى اختيار تاريخ حضور الكابتن.';
-    if (!form.carId) nextErrors.carId = 'يرجى اختيار نوع السيارة.';
-    return nextErrors;
+  const involvesAirport = form.pickup.type === 'airport' || form.dropoff.type === 'airport';
+  const returnInvolvesAirport =
+    form.returnPickup.type === 'airport' || form.returnDropoff.type === 'airport';
+
+  // ── Per-step validation ──
+  const validateStep = (current: number): Record<string, string> => {
+    const e: Record<string, string> = {};
+    if (current === 1) {
+      if (form.customerName.trim().length < 2) e.customerName = t('err.name');
+      const phone = normalizePhone(form.countryCode, form.customerPhone);
+      if (!/^\+?[1-9]\d{6,14}$/.test(phone)) e.customerPhone = t('err.phone');
+      if (form.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail))
+        e.customerEmail = t('err.email');
+    }
+    if (current === 2) {
+      if (!form.pickup.locationId) e.pickup = t('err.from');
+      if (!form.dropoff.locationId) e.dropoff = t('err.to');
+      if (
+        form.pickup.locationId &&
+        form.dropoff.locationId &&
+        form.pickup.locationId === form.dropoff.locationId
+      )
+        e.dropoff = t('err.sameLocation');
+      if (!form.date) e.date = t('err.date');
+      if (!form.time) e.time = t('err.time');
+      if (involvesAirport && !form.flightNumber.trim()) e.flightNumber = t('err.flight');
+      if (form.tripType === 'round_trip') {
+        if (!form.returnPickup.locationId) e.returnPickup = t('err.from');
+        if (!form.returnDropoff.locationId) e.returnDropoff = t('err.to');
+        if (
+          form.returnPickup.locationId &&
+          form.returnDropoff.locationId &&
+          form.returnPickup.locationId === form.returnDropoff.locationId
+        )
+          e.returnDropoff = t('err.sameLocation');
+        if (!form.returnDate) e.returnDate = t('err.returnDate');
+        if (!form.returnTime) e.returnTime = t('err.returnTime');
+        if (returnInvolvesAirport && !form.returnFlightNumber.trim()) {
+          e.returnFlightNumber = t('err.flight');
+        }
+      }
+    }
+    if (current === 3) {
+      if (!selectedQuote) e.carId = t('err.car');
+    }
+    if (current === 4) {
+      if (!form.paymentMethod) e.paymentMethod = t('err.payment');
+    }
+    return e;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const nextErrors = validate();
-    if (Object.values(nextErrors).some(Boolean)) {
-      setErrors(nextErrors);
+  const goNext = () => {
+    const e = validateStep(step);
+    if (Object.values(e).some(Boolean)) {
+      setErrors(e);
       return;
     }
+    setErrors({});
+    setStep((s) => (Math.min(6, s + 1) as 1 | 2 | 3 | 4 | 5 | 6));
+  };
 
-    const bookingReference = makeBookingReference();
-    const message = buildWhatsappMessage({
-      form,
-      bookingReference,
-      serviceLabel: selectedService.label,
-      carLabel: selectedCar ? `${selectedCar.label} - ${selectedCar.detail}` : 'غير محدد',
-      total,
-    });
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encodeURIComponent(message)}`;
-    window.location.href = whatsappUrl;
+  const goBack = () => {
+    setErrors({});
+    setStep((s) => (Math.max(1, s - 1) as 1 | 2 | 3 | 4 | 5 | 6));
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const e = validateStep(5);
+    if (Object.values(e).some(Boolean)) {
+      setErrors(e);
+      return;
+    }
+    setSubmitting(true);
+    setServerError('');
+
+    const payload = {
+      language: lang,
+      customerName: form.customerName.trim(),
+      customerPhone: normalizePhone(form.countryCode, form.customerPhone),
+      customerEmail: form.customerEmail.trim(),
+      tripType: form.tripType,
+      pickup: {
+        type: form.pickup.type,
+        locationId: form.pickup.locationId,
+        text: form.pickup.text,
+      },
+      dropoff: {
+        type: form.dropoff.type,
+        locationId: form.dropoff.locationId,
+        text: form.dropoff.text,
+      },
+      date: form.date,
+      time: form.time,
+      flightNumber: form.flightNumber,
+      ...(form.tripType === 'round_trip'
+        ? {
+            returnDate: form.returnDate,
+            returnTime: form.returnTime,
+            returnFlightNumber: form.returnFlightNumber,
+            returnPickup: {
+              type: form.returnPickup.type,
+              locationId: form.returnPickup.locationId,
+              text: form.returnPickup.text,
+            },
+            returnDropoff: {
+              type: form.returnDropoff.type,
+              locationId: form.returnDropoff.locationId,
+              text: form.returnDropoff.text,
+            },
+          }
+        : {
+            returnDate: '',
+            returnTime: '',
+            returnFlightNumber: '',
+          }),
+      carId: form.carId,
+      vehicleClass: selectedQuote?.vehicle_class ?? 'standard',
+      paymentMethod: form.paymentMethod,
+      notes: form.notes,
+      price: displayTotal,
+    };
+
+    try {
+      const res = await submitBookingRequestAction(payload);
+      if (!res.success) {
+        setServerError(res.error || t('err.generic'));
+        setSubmitting(false);
+        return;
+      }
+      setResult({
+        bookingReference: res.data.bookingReference,
+        whatsappUrl: res.data.whatsappUrl,
+        whatsappDelivered: res.data.whatsappDelivered,
+      });
+      setStep(6);
+      setSubmitting(false);
+      if (!res.data.whatsappDelivered) {
+        try {
+          window.open(res.data.whatsappUrl, '_blank', 'noopener,noreferrer');
+        } catch {
+          // ignore — manual link available
+        }
+      }
+    } catch {
+      setServerError(t('err.generic'));
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setForm(INITIAL_FORM);
+    setErrors({});
+    setQuotes([]);
+    setPricingLoaded(false);
+    setRouteKey('');
+    setResult(null);
+    setStep(1);
   };
 
   const fieldClass =
-    'w-full rounded-xl border border-black/8 bg-white/90 px-3 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] focus:border-[var(--cms-primary)]/35 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[var(--cms-primary)]/12';
-  const labelClass = 'mb-1 block text-right text-xs font-semibold text-[var(--cms-primary)]';
+    'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:border-[var(--cms-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--cms-primary)]/15';
+  const compactFieldClass =
+    'rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:border-[var(--cms-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--cms-primary)]/15';
+  const labelClass = 'mb-1.5 block text-sm font-semibold text-slate-700';
+  const BackIcon = dir === 'rtl' ? ArrowRight : ArrowLeft;
+  const NextIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
+
+  // ───────────────────────────────────────────────────────────
+  // Success step
+  // ───────────────────────────────────────────────────────────
+  if (step === 6 && result) {
+    return (
+      <div className="w-full rounded-2xl border border-emerald-200 bg-white p-6 text-center shadow-sm sm:p-8">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+          <CheckCircle2 className="h-9 w-9 text-emerald-600" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900">{t('success.title')}</h3>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-600">{t('success.message')}</p>
+        <div className="mx-auto mt-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {t('success.reference')}:
+          </span>
+          <span dir="ltr" className="font-bold text-[var(--cms-primary)]">
+            {result.bookingReference}
+          </span>
+        </div>
+        <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-start">
+          <p className="text-xs font-semibold text-emerald-800">
+            {result.whatsappDelivered ? t('success.whatsappAuto') : t('success.whatsappHint')}
+          </p>
+          {!result.whatsappDelivered && (
+            <p className="mt-1 text-xs text-emerald-700">{t('success.popupBlocked')}</p>
+          )}
+        </div>
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          {!result.whatsappDelivered && (
+            <a
+              href={result.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:brightness-105"
+            >
+              <MessageCircle className="h-4 w-4" />
+              {t('btn.sendWhatsapp')}
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={resetForm}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            {t('btn.bookAnother')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full rounded-[24px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),color-mix(in_srgb,var(--cms-primary)_4%,white))] p-4 shadow-[0_20px_55px_rgba(15,23,42,0.08)] sm:rounded-[30px] sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-slate-950">احجز رحلتك الآن</h2>
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--cms-secondary)]/20 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-secondary)_18%,white),color-mix(in_srgb,var(--cms-primary)_10%,white))]">
+    <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_55px_rgba(15,23,42,0.08)] sm:p-5">
+      {/* Header */}
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--cms-primary)]/12">
           <Navigation className="h-5 w-5 text-[var(--cms-primary)]" />
         </div>
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">{t('booking.title')}</h2>
+          <p className="text-xs text-slate-500">{t('booking.subtitle')}</p>
+        </div>
       </div>
 
-      <div className="mb-5 rounded-2xl border border-black/6 bg-white/72 p-3 sm:p-4">
-        <p className="mb-2 text-right text-xs font-bold tracking-[0.14em] text-[var(--cms-primary)]">
-          اختر نوع الخدمة
-        </p>
-        <div className="grid grid-cols-1 gap-2">
-          {SERVICE_OPTIONS.map((service) => {
-            const isSelected = form.serviceId === service.id;
-
-            return (
-              <button
-                key={service.id}
-                type="button"
-                onClick={() => updateField('serviceId', service.id)}
-                className={`flex w-full items-center gap-3 rounded-xl border px-4 py-2.5 text-right transition-all ${
-                  isSelected
-                    ? 'scale-[1.01] border-[var(--cms-primary)]/24 bg-[linear-gradient(135deg,var(--cms-primary),color-mix(in_srgb,var(--cms-secondary)_38%,var(--cms-primary)))] text-white shadow-[0_10px_24px_color-mix(in_srgb,var(--cms-primary)_18%,transparent)]'
-                    : 'border-black/6 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-primary)_5%,white),color-mix(in_srgb,var(--cms-secondary)_9%,white))] text-slate-950 hover:border-[var(--cms-primary)]/14'
+      {/* Stepper */}
+      <ol className="mb-5 flex items-center gap-1">
+        {STEPS.map((s) => {
+          const active = step === s;
+          const done = step > s;
+          return (
+            <li key={s} className="flex flex-1 flex-col items-center gap-1">
+              <div
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition ${
+                  active
+                    ? 'bg-[var(--cms-primary)] text-white'
+                    : done
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-slate-100 text-slate-400'
                 }`}
               >
-                <span className="shrink-0 text-xl">{service.icon}</span>
-                <span className="flex-1 text-sm font-bold">{service.label}</span>
-                {isSelected && (
-                  <span className="shrink-0 rounded-full bg-white/18 px-2 py-0.5 text-xs font-bold text-white">
-                    محدد
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        <div className="my-4 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--cms-secondary)_80%,transparent),transparent)]" />
-      </div>
-
-      <div className="mb-4 flex gap-2 rounded-2xl border border-black/6 bg-white/72 p-1">
-        {(['ذهاب فقط', 'ذهاب وعودة'] as const).map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            onClick={() => updateField('tripMode', mode)}
-            className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition-all ${
-              form.tripMode === mode
-                ? 'bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-secondary)_34%,var(--cms-primary)),var(--cms-primary))] text-white shadow-[0_8px_20px_color-mix(in_srgb,var(--cms-primary)_16%,transparent)]'
-                : 'text-slate-700 hover:bg-[var(--cms-primary)]/6'
-            }`}
-          >
-            {mode}
-          </button>
-        ))}
-      </div>
-
-      <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-        <div>
-          <label className={labelClass} htmlFor="customer-name">
-            اسم العميل
-          </label>
-          <input
-            id="customer-name"
-            name="name"
-            value={form.customerName}
-            onChange={(event) => updateField('customerName', event.target.value)}
-            placeholder="الاسم الكامل"
-            className={fieldClass}
-          />
-          {errors.customerName && <p className="mt-1 text-xs text-red-600">{errors.customerName}</p>}
-        </div>
-
-        <div>
-          <label className={labelClass} htmlFor="customer-phone">
-            جوال العميل
-          </label>
-          <div className="flex gap-2">
-            <select
-              value={form.countryCode}
-              onChange={(event) => updateField('countryCode', event.target.value)}
-              className="min-w-[6.5rem] shrink-0 rounded-xl border border-black/8 bg-white/90 px-2 py-2.5 text-sm text-slate-950 focus:border-[var(--cms-primary)]/35 focus:outline-none focus:ring-4 focus:ring-[var(--cms-primary)]/12"
-              dir="ltr"
-              aria-label="مقدمة الدولة"
-            >
-              {COUNTRY_CODES.map((country) => (
-                <option key={country.value} value={country.value}>
-                  {country.label}
-                </option>
-              ))}
-            </select>
-            <input
-              id="customer-phone"
-              name="phone"
-              value={form.customerPhone}
-              onChange={(event) => updateField('customerPhone', event.target.value)}
-              placeholder="5xxxxxxxx"
-              className={fieldClass}
-              inputMode="tel"
-              dir="ltr"
-            />
-          </div>
-          <p className="mt-1 text-right text-xs text-slate-500">{selectedCountry.hint}</p>
-          {errors.customerPhone && <p className="mt-1 text-xs text-red-600">{errors.customerPhone}</p>}
-        </div>
-
-        <div className="rounded-2xl border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),color-mix(in_srgb,var(--cms-secondary)_10%,white))] p-3">
-          <div className="mb-2 text-xs font-semibold text-[var(--cms-primary)]">رحلة الذهاب</div>
-          <div className="flex flex-col gap-2">
-            <input
-              name="from"
-              value={form.from}
-              onChange={(event) => updateField('from', event.target.value)}
-              placeholder="نقطة الانطلاق - مثال: مطار الملك عبدالعزيز"
-              className={fieldClass}
-            />
-            {errors.from && <p className="text-xs text-red-600">{errors.from}</p>}
-            <input
-              name="to"
-              value={form.to}
-              onChange={(event) => updateField('to', event.target.value)}
-              placeholder="الوجهة - مثال: الحرم المكي - مكة المكرمة"
-              className={fieldClass}
-            />
-            {errors.to && <p className="text-xs text-red-600">{errors.to}</p>}
-          </div>
-        </div>
-
-        <div>
-          <div className="mb-1 flex justify-between gap-2">
-            <span className="text-xs text-slate-500">الفترة</span>
-            <span className="text-xs text-slate-500">الدقيقة : الساعة - التاريخ</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <input
-              required
-              name="date"
-              type="date"
-              min={getTodayDateString()}
-              value={form.date}
-              onChange={(event) => updateField('date', event.target.value)}
-              className="min-w-0 flex-[2] rounded-xl border border-black/8 bg-white/90 px-1 py-2.5 text-center text-sm text-slate-950 [color-scheme:light] focus:border-[var(--cms-primary)]/35 focus:outline-none focus:ring-4 focus:ring-[var(--cms-primary)]/12"
-            />
-            <select
-              name="hour"
-              value={form.hour}
-              onChange={(event) => updateField('hour', event.target.value)}
-              className="min-w-0 flex-1 rounded-xl border border-black/8 bg-white/90 px-1 py-2.5 text-center text-sm text-slate-950 focus:border-[var(--cms-primary)]/35 focus:outline-none focus:ring-4 focus:ring-[var(--cms-primary)]/12"
-            >
-              {HOURS.map((hour) => (
-                <option key={hour}>{hour}</option>
-              ))}
-            </select>
-            <span className="shrink-0 text-sm font-bold text-slate-500">:</span>
-            <select
-              name="minute"
-              value={form.minute}
-              onChange={(event) => updateField('minute', event.target.value)}
-              className="min-w-0 flex-1 rounded-xl border border-black/8 bg-white/90 px-1 py-2.5 text-center text-sm text-slate-950 focus:border-[var(--cms-primary)]/35 focus:outline-none focus:ring-4 focus:ring-[var(--cms-primary)]/12"
-            >
-              {MINUTES.map((minute) => (
-                <option key={minute}>{minute}</option>
-              ))}
-            </select>
-            <div className="flex shrink-0 flex-col gap-1">
-              {(['صباح', 'مساء'] as const).map((period) => (
-                <button
-                  key={period}
-                  type="button"
-                  onClick={() => updateField('period', period)}
-                  className={`rounded-lg px-2 py-1 text-xs font-bold ${
-                    form.period === period
-                      ? 'bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-secondary)_34%,var(--cms-primary)),var(--cms-primary))] text-white'
-                      : 'bg-[var(--cms-primary)]/8 text-[var(--cms-primary)]'
-                  }`}
-                >
-                  {period}
-                </button>
-              ))}
-            </div>
-          </div>
-          {errors.date && <p className="mt-1 text-xs text-red-600">{errors.date}</p>}
-        </div>
-
-        <div>
-          <label className={labelClass} htmlFor="flight-number">
-            رقم رحلة الوصول
-          </label>
-          <input
-            id="flight-number"
-            name="flight"
-            value={form.flightNumber}
-            onChange={(event) => updateField('flightNumber', event.target.value)}
-            placeholder="مثال: SV123"
-            className={fieldClass}
-            dir="ltr"
-          />
-        </div>
-
-        <div>
-          <label className={labelClass} htmlFor="passengers">
-            عدد الركاب
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              id="passengers"
-              name="passengers"
-              type="number"
-              min="1"
-              max="50"
-              value={form.passengers}
-              onChange={(event) => updateField('passengers', event.target.value)}
-              className={fieldClass}
-            />
-            <span className="shrink-0 text-sm text-slate-500">راكب</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => updateField('hospitality', !form.hospitality)}
-          className={`select-none rounded-2xl border p-3 text-right ${
-            form.hospitality
-              ? 'border-[var(--cms-secondary)]/30 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-secondary)_18%,white),white)]'
-              : 'border-black/6 bg-white/72'
-          }`}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+                {done ? '✓' : s}
+              </div>
               <span
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${
-                  form.hospitality
-                    ? 'border-[var(--cms-secondary)] bg-[var(--cms-secondary)]'
-                    : 'border-black/10'
+                className={`hidden text-[0.65rem] font-semibold sm:block ${
+                  active ? 'text-[var(--cms-primary)]' : 'text-slate-400'
                 }`}
               >
-                {form.hospitality && <Check className="h-3.5 w-3.5 text-slate-950" />}
+                {t(`booking.step.${['', 'customer', 'trip', 'car', 'payment', 'summary'][s]}`)}
               </span>
-              <span className="text-xs font-bold text-slate-500">+ {HOSPITALITY_PRICE} ريال</span>
-            </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        {/* ───────── Step 1: Customer ───────── */}
+        {step === 1 && (
+          <div className="flex flex-col gap-4">
             <div>
-              <div className="text-sm font-black text-slate-950">☕ إضافة ضيافة</div>
-              <div className="mt-0.5 text-xs text-slate-500">قهوة · تمر · ماء</div>
+              <label className={labelClass} htmlFor="bf-name">
+                {t('field.fullName')}
+              </label>
+              <input
+                id="bf-name"
+                value={form.customerName}
+                onChange={(e) => update('customerName', e.target.value)}
+                placeholder={t('field.fullName.placeholder')}
+                className={fieldClass}
+              />
+              {errors.customerName && <FieldError msg={errors.customerName} />}
             </div>
-          </div>
-        </button>
 
-        <div>
-          <label className={labelClass} htmlFor="car-type">
-            نوع السيارة
-          </label>
-          <select
-            id="car-type"
-            name="car"
-            value={form.carId}
-            onChange={(event) => updateField('carId', event.target.value)}
-            className={fieldClass}
-          >
-            <option value="">اختر نوع السيارة</option>
-            {CAR_OPTIONS.map((car) => (
-              <option key={car.id} value={car.id}>
-                {car.label} - {car.detail}
-              </option>
-            ))}
-          </select>
-          {errors.carId && <p className="mt-1 text-xs text-red-600">{errors.carId}</p>}
-        </div>
+            <div>
+              <label className={labelClass} htmlFor="bf-phone">
+                {t('field.phone')}
+              </label>
+              <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2" dir="ltr">
+                <select
+                  value={form.countryCode}
+                  onChange={(e) => update('countryCode', e.target.value)}
+                  className={`${compactFieldClass} w-full`}
+                  dir="ltr"
+                  aria-label={t('field.phone')}
+                >
+                  {COUNTRY_CODES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  id="bf-phone"
+                  value={form.customerPhone}
+                  onChange={(e) => update('customerPhone', e.target.value)}
+                  placeholder={t('field.phone.placeholder')}
+                  className={fieldClass}
+                  inputMode="tel"
+                  dir="ltr"
+                />
+              </div>
+              {errors.customerPhone && <FieldError msg={errors.customerPhone} />}
+            </div>
 
-        {selectedCar && (
-          <div className="rounded-2xl border border-[var(--cms-secondary)]/22 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--cms-secondary)_16%,white),rgba(255,255,255,0.96))] px-4 py-3 text-right">
-            <p className="text-xs font-semibold text-[var(--cms-primary)]">المبلغ الإجمالي</p>
-            <p className="mt-1 text-2xl font-black text-slate-950">{total} ريال</p>
+            <div>
+              <label className={labelClass} htmlFor="bf-email">
+                {t('field.email')}
+              </label>
+              <input
+                id="bf-email"
+                type="email"
+                value={form.customerEmail}
+                onChange={(e) => update('customerEmail', e.target.value)}
+                placeholder={t('field.email.placeholder')}
+                className={fieldClass}
+                dir="ltr"
+              />
+              {errors.customerEmail && <FieldError msg={errors.customerEmail} />}
+            </div>
           </div>
         )}
 
-        <div className="flex items-start justify-end gap-2 rounded-2xl border border-red-500/24 bg-red-500/6 px-4 py-3 text-right">
-          <div>
-            <p className="mb-0.5 text-xs font-black text-red-600">تنبيه مهم قبل الحجز</p>
-            <p className="text-xs leading-relaxed text-red-700">
-              لا يؤكد الحجز إلا بعد إرساله إلى واتساب الشركة وتلقي رد من الفريق.
-            </p>
+        {/* ───────── Step 2: Trip ───────── */}
+        {step === 2 && (
+          <div className="flex flex-col gap-4">
+            {/* Trip type */}
+            <div>
+              <span className={labelClass}>{t('trip.type')}</span>
+              <div className="grid grid-cols-2 gap-2">
+                {(['one_way', 'round_trip'] as const).map((tt) => (
+                  <button
+                    key={tt}
+                    type="button"
+                    onClick={() => setTripType(tt)}
+                    className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
+                      form.tripType === tt
+                        ? 'border-[var(--cms-primary)] bg-[var(--cms-primary)]/10 text-[var(--cms-primary)]'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    {t(tt === 'one_way' ? 'trip.oneWay' : 'trip.roundTrip')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <EndpointField
+              label={t('trip.from')}
+              value={form.pickup}
+              onChange={(next) => updateEndpoint('pickup', next)}
+              airports={airports}
+              cities={cities}
+              t={t}
+              fieldClass={fieldClass}
+              labelClass={labelClass}
+              lang={lang}
+            />
+            <EndpointField
+              label={t('trip.to')}
+              value={form.dropoff}
+              onChange={(next) => updateEndpoint('dropoff', next)}
+              airports={airports}
+              cities={cities}
+              t={t}
+              fieldClass={fieldClass}
+              labelClass={labelClass}
+              lang={lang}
+            />
+            {errors.pickup && <FieldError msg={errors.pickup} />}
+            {errors.dropoff && <FieldError msg={errors.dropoff} />}
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelClass} htmlFor="bf-date">
+                  {t('trip.date')}
+                </label>
+                <input
+                  id="bf-date"
+                  type="date"
+                  min={todayString()}
+                  value={form.date}
+                  onChange={(e) => update('date', e.target.value)}
+                  className={fieldClass}
+                />
+                {errors.date && <FieldError msg={errors.date} />}
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="bf-time">
+                  {t('trip.time')}
+                </label>
+                <input
+                  id="bf-time"
+                  type="time"
+                  value={form.time}
+                  onChange={(e) => update('time', e.target.value)}
+                  className={fieldClass}
+                  dir="ltr"
+                />
+                {errors.time && <FieldError msg={errors.time} />}
+              </div>
+            </div>
+
+            {(involvesAirport || form.flightNumber) && (
+              <div>
+                <label className={labelClass} htmlFor="bf-flight">
+                  {t('trip.flightNumber')}{' '}
+                  {involvesAirport && <span className="text-red-600">*</span>}
+                </label>
+                <input
+                  id="bf-flight"
+                  value={form.flightNumber}
+                  onChange={(e) => update('flightNumber', e.target.value)}
+                  placeholder={t('trip.flightNumber.placeholder')}
+                  className={fieldClass}
+                  dir="ltr"
+                />
+                {errors.flightNumber && <FieldError msg={errors.flightNumber} />}
+              </div>
+            )}
+
+            {/* Return leg */}
+            {form.tripType === 'round_trip' && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="mb-3 text-sm font-bold text-slate-700">{t('trip.returnTitle')}</p>
+                <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  <EndpointField
+                    label={t('trip.from')}
+                    value={form.returnPickup}
+                    onChange={(next) => updateEndpoint('returnPickup', next)}
+                    airports={airports}
+                    cities={cities}
+                    t={t}
+                    fieldClass={fieldClass}
+                    labelClass={labelClass}
+                    lang={lang}
+                  />
+                  <EndpointField
+                    label={t('trip.to')}
+                    value={form.returnDropoff}
+                    onChange={(next) => updateEndpoint('returnDropoff', next)}
+                    airports={airports}
+                    cities={cities}
+                    t={t}
+                    fieldClass={fieldClass}
+                    labelClass={labelClass}
+                    lang={lang}
+                  />
+                </div>
+                {errors.returnPickup && <FieldError msg={errors.returnPickup} />}
+                {errors.returnDropoff && <FieldError msg={errors.returnDropoff} />}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass} htmlFor="bf-rdate">
+                      {t('trip.returnDate')}
+                    </label>
+                    <input
+                      id="bf-rdate"
+                      type="date"
+                      min={form.date || todayString()}
+                      value={form.returnDate}
+                      onChange={(e) => update('returnDate', e.target.value)}
+                      className={fieldClass}
+                    />
+                    {errors.returnDate && <FieldError msg={errors.returnDate} />}
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="bf-rtime">
+                      {t('trip.returnTime')}
+                    </label>
+                    <input
+                      id="bf-rtime"
+                      type="time"
+                      value={form.returnTime}
+                      onChange={(e) => update('returnTime', e.target.value)}
+                      className={fieldClass}
+                      dir="ltr"
+                    />
+                    {errors.returnTime && <FieldError msg={errors.returnTime} />}
+                  </div>
+                </div>
+                {returnInvolvesAirport && (
+                  <div className="mt-3">
+                    <label className={labelClass} htmlFor="bf-rflight">
+                      {t('trip.returnFlight')}
+                      <span className="text-red-600"> *</span>
+                    </label>
+                    <input
+                      id="bf-rflight"
+                      value={form.returnFlightNumber}
+                      onChange={(e) => update('returnFlightNumber', e.target.value)}
+                      placeholder={t('trip.flightNumber.placeholder')}
+                      className={fieldClass}
+                      dir="ltr"
+                    />
+                    {errors.returnFlightNumber && <FieldError msg={errors.returnFlightNumber} />}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
-        </div>
+        )}
 
-        {errors.general && <p className="text-center text-xs text-red-600">{errors.general}</p>}
+        {/* ───────── Step 3: Car ───────── */}
+        {step === 3 && (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-base font-bold text-slate-800">{t('car.title')}</h3>
+            {!routeReady && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                {t('err.from')} / {t('err.to')}
+              </div>
+            )}
+            {routeReady && pricingLoading && (
+              <p className="text-sm text-slate-500">{lang === 'ar' ? 'جاري تحميل الأسعار...' : 'Loading prices...'}</p>
+            )}
+            {routeReady && !pricingLoading && availableQuotes.length === 0 && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                {t('car.noPricing')}
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {availableQuotes.map((q) => {
+                const selected = form.carId === q.car.id;
+                const price = q.price * roundTripMultiplier;
+                return (
+                  <button
+                    key={q.car.id}
+                    type="button"
+                    onClick={() => update('carId', q.car.id)}
+                    className={`flex items-start gap-3 rounded-xl border p-3 text-start transition ${
+                      selected
+                        ? 'border-[var(--cms-primary)] bg-[var(--cms-primary)]/8 ring-2 ring-[var(--cms-primary)]/30'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--cms-primary)]/10">
+                      <CarIcon className="h-5 w-5 text-[var(--cms-primary)]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-slate-900">
+                        {lang === 'ar' ? q.car.name_ar : q.car.name}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {q.car.passenger_capacity} {t('car.passengers')} · {q.car.luggage_capacity}{' '}
+                        {t('car.luggage')}
+                      </p>
+                      <p className="mt-1 text-sm font-bold text-emerald-700">
+                        {price} <span className="text-xs font-semibold">{lang === 'ar' ? 'ريال' : 'SAR'}</span>
+                      </p>
+                    </div>
+                    {selected && (
+                      <span className="shrink-0 rounded-full bg-[var(--cms-primary)] px-2 py-0.5 text-[0.65rem] font-bold text-white">
+                        {t('car.selected')}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {errors.carId && <FieldError msg={errors.carId} />}
+            {selectedQuote && form.tripType === 'round_trip' && (
+              <p className="text-xs text-slate-500">{t('summary.roundTripNote')}</p>
+            )}
+          </div>
+        )}
 
-        <button
-          type="submit"
-          className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#25d366,#128c7e)] py-3.5 text-base font-bold text-white shadow-[0_10px_24px_rgba(37,211,102,0.24)] hover:scale-[1.01] active:scale-[0.99]"
-        >
-          <MessageCircle className="h-5 w-5" />
-          احجز عبر واتساب
-        </button>
+        {/* ───────── Step 4: Payment ───────── */}
+        {step === 4 && (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-base font-bold text-slate-800">{t('payment.title')}</h3>
+            <div className="grid grid-cols-1 gap-2.5">
+              {PAYMENT_OPTIONS.map(({ value, icon: Icon, labelKey, descKey }) => {
+                const selected = form.paymentMethod === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => update('paymentMethod', value)}
+                    className={`flex items-center gap-3 rounded-xl border p-3 text-start transition ${
+                      selected
+                        ? 'border-[var(--cms-primary)] bg-[var(--cms-primary)]/8 ring-2 ring-[var(--cms-primary)]/30'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 ${selected ? 'text-[var(--cms-primary)]' : 'text-slate-400'}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900">{t(labelKey)}</p>
+                      <p className="text-xs text-slate-500">{t(descKey)}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {errors.paymentMethod && <FieldError msg={errors.paymentMethod} />}
+
+            <BankDetailsCard visible={form.paymentMethod === 'bank_transfer'} t={t} />
+
+            <div>
+              <label className={labelClass} htmlFor="bf-notes">
+                {t('field.notes')}
+              </label>
+              <textarea
+                id="bf-notes"
+                rows={2}
+                value={form.notes}
+                onChange={(e) => update('notes', e.target.value)}
+                placeholder={t('field.notes.placeholder')}
+                className={fieldClass}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ───────── Step 5: Summary ───────── */}
+        {step === 5 && (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-base font-bold text-slate-800">{t('summary.title')}</h3>
+            <SummaryRow label={t('trip.type')} value={t(form.tripType === 'one_way' ? 'trip.oneWay' : 'trip.roundTrip')} />
+            <SummaryRow label={t('trip.from')} value={endpointDisplay(form.pickup, locations, lang)} />
+            <SummaryRow label={t('trip.to')} value={endpointDisplay(form.dropoff, locations, lang)} />
+            <SummaryRow label={t('trip.date')} value={`${form.date} · ${form.time}`} dir="ltr" />
+            {involvesAirport && form.flightNumber && (
+              <SummaryRow label={t('trip.flightNumber')} value={form.flightNumber} dir="ltr" />
+            )}
+            {form.tripType === 'round_trip' && (
+              <>
+                <SummaryRow
+                  label={lang === 'ar' ? 'مسار العودة' : 'Return Route'}
+                  value={`${endpointDisplay(form.returnPickup, locations, lang)} → ${endpointDisplay(form.returnDropoff, locations, lang)}`}
+                />
+                <SummaryRow
+                  label={t('trip.returnDate')}
+                  value={`${form.returnDate} · ${form.returnTime}`}
+                  dir="ltr"
+                />
+              </>
+            )}
+            {form.tripType === 'round_trip' && returnInvolvesAirport && form.returnFlightNumber && (
+              <SummaryRow label={t('trip.returnFlight')} value={form.returnFlightNumber} dir="ltr" />
+            )}
+            <SummaryRow
+              label={t('summary.car')}
+              value={
+                selectedQuote
+                  ? `${lang === 'ar' ? selectedQuote.car.name_ar : selectedQuote.car.name}`
+                  : '-'
+              }
+            />
+            <SummaryRow label={t('summary.payment')} value={paymentLabel(form.paymentMethod, lang)} />
+            <SummaryRow
+              label={t('summary.total')}
+              value={`${displayTotal} ${lang === 'ar' ? 'ريال' : 'SAR'}`}
+              strong
+              dir="ltr"
+            />
+            <SummaryRow label={t('field.fullName')} value={form.customerName} />
+            <SummaryRow label={t('field.phone')} value={normalizePhone(form.countryCode, form.customerPhone)} dir="ltr" />
+            {form.customerEmail && <SummaryRow label={t('field.email')} value={form.customerEmail} dir="ltr" />}
+
+            {serverError && (
+              <div className="flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 p-3">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+                <p className="text-xs text-red-700">{serverError}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Footer nav */}
+        {step < 6 && (
+          <div className="mt-1 flex items-center justify-between gap-2">
+            {step > 1 ? (
+              <button
+                type="button"
+                onClick={goBack}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <BackIcon className="h-4 w-4" />
+                {t('btn.back')}
+              </button>
+            ) : (
+              <span />
+            )}
+
+            {step < 5 ? (
+              <button
+                type="button"
+                onClick={goNext}
+                className="btn-primary inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold"
+              >
+                {t('btn.next')}
+                <NextIcon className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:brightness-105 disabled:opacity-60"
+              >
+                <MessageCircle className="h-4 w-4" />
+                {submitting ? '...' : t('btn.submit')}
+              </button>
+            )}
+          </div>
+        )}
       </form>
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────
+// Sub-components
+// ───────────────────────────────────────────────────────────
+
+function FieldError({ msg }: { msg: string }) {
+  return (
+    <p className="mt-1 flex items-center gap-1 text-xs font-medium text-red-600">
+      <AlertCircle className="h-3 w-3" />
+      {msg}
+    </p>
+  );
+}
+
+function SummaryRow({
+  label,
+  value,
+  strong,
+  dir,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+  dir?: 'ltr' | 'rtl';
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span>
+      <span
+        dir={dir}
+        className={`text-start text-sm ${strong ? 'font-bold text-emerald-700' : 'font-semibold text-slate-900'}`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function paymentLabel(method: PaymentMethod, lang: 'ar' | 'en'): string {
+  const map: Record<PaymentMethod, { ar: string; en: string }> = {
+    cash: { ar: 'نقدًا', en: 'Cash' },
+    card_pos: { ar: 'بطاقة / نقاط بيع', en: 'Card / POS' },
+    bank_transfer: { ar: 'تحويل بنكي', en: 'Bank Transfer' },
+  };
+  return map[method][lang];
+}
+
+function locationDisplayName(location: Location | undefined, lang: 'ar' | 'en'): string {
+  if (!location) return '';
+  return lang === 'ar' ? location.name_ar || location.name : location.name;
+}
+
+function endpointDisplay(
+  endpoint: EndpointState,
+  locations: Location[],
+  lang: 'ar' | 'en',
+): string {
+  const loc = locations.find((l) => l.id === endpoint.locationId);
+  const name = locationDisplayName(loc, lang);
+  const detail = endpoint.text?.trim();
+  if (detail && detail !== name) return `${name} — ${detail}`;
+  return name || (lang === 'ar' ? '—' : '—');
+}
+
+interface EndpointFieldProps {
+  label: string;
+  value: EndpointState;
+  onChange: (next: Partial<EndpointState>) => void;
+  airports: Location[];
+  cities: Location[];
+  t: (key: string) => string;
+  fieldClass: string;
+  labelClass: string;
+  lang: 'ar' | 'en';
+}
+
+function EndpointField({
+  label,
+  value,
+  onChange,
+  airports,
+  cities,
+  t,
+  fieldClass,
+  labelClass,
+  lang,
+}: EndpointFieldProps) {
+  const isAirport = value.type === 'airport';
+  const showText = true;
+  const selectOptions = isAirport ? airports : cities;
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-sm font-bold text-slate-700">{label}</span>
+      </div>
+
+      {/* Type selector */}
+      <div className="mb-2 grid grid-cols-4 gap-1.5">
+        {ENDPOINT_TYPES.map(({ value: tv, icon: Icon, labelKey }) => {
+          const selected = value.type === tv;
+          return (
+            <button
+              key={tv}
+              type="button"
+              onClick={() => onChange({ type: tv, locationId: '', text: '' })}
+              className={`flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-[0.7rem] font-semibold transition ${
+                selected
+                  ? 'border-[var(--cms-primary)] bg-[var(--cms-primary)]/10 text-[var(--cms-primary)]'
+                  : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {t(labelKey)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Location select */}
+      <div className="mb-2">
+        <span className={`${labelClass} text-xs`}>{isAirport ? t('loc.selectAirport') : t('loc.routeCity')}</span>
+        <select
+          value={value.locationId}
+          onChange={(e) => {
+            onChange({ locationId: e.target.value });
+          }}
+          className={fieldClass}
+        >
+          <option value="">
+            {isAirport ? t('loc.selectAirport') : t('loc.routeCity')}
+          </option>
+          {selectOptions.map((l) => (
+            <option key={l.id} value={l.id}>
+              {locationDisplayName(l, lang)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Detail text */}
+      {showText && (
+        <div>
+          <span className={`${labelClass} text-xs`}>
+            {value.type === 'airport' && t('loc.airportOther')}
+            {value.type === 'hotel' && t('loc.hotelName')}
+            {value.type === 'address' && t('loc.type.address')}
+            {value.type === 'other' && t('loc.detail')}
+          </span>
+          <input
+            value={value.text}
+            onChange={(e) => onChange({ text: e.target.value })}
+            placeholder={
+              value.type === 'hotel'
+                ? t('loc.hotelName.placeholder')
+                : value.type === 'address'
+                  ? t('loc.address.placeholder')
+                  : value.type === 'airport'
+                    ? t('loc.airportDetail.placeholder')
+                    : ''
+            }
+            className={fieldClass}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BankDetailsCard({ visible, t }: { visible: boolean; t: (key: string) => string }) {
+  const [details, setDetails] = useState<{
+    bank_name: string;
+    account_holder_name: string;
+    iban: string;
+    bank_qr_url: string | null;
+    accounts: BankAccount[];
+  } | null>(null);
+
+  useEffect(() => {
+    if (!visible || details) return;
+    let active = true;
+    (async () => {
+      const res = await getPublicBankDetailsAction();
+      if (!active) return;
+      setDetails(res);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [visible, details]);
+
+  if (!visible) return null;
+
+  const accounts =
+    details?.accounts.length
+      ? details.accounts
+      : details
+        ? [
+            {
+              id: 'legacy-bank-details',
+              bank_name: details.bank_name,
+              account_holder_name: details.account_holder_name,
+              iban: details.iban,
+              qr_url: details.bank_qr_url,
+              sort_order: 0,
+              is_active: true,
+              created_at: '',
+              updated_at: '',
+            } satisfies BankAccount,
+          ]
+        : [];
+
+  return (
+    <div className="rounded-xl border border-[var(--cms-primary)]/25 bg-[var(--cms-primary)]/5 p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <Landmark className="h-4 w-4 text-[var(--cms-primary)]" />
+        <p className="text-sm font-bold text-slate-800">{t('payment.bank_transfer')}</p>
+      </div>
+      {details ? (
+        <div className="space-y-3">
+          {accounts.map((account) => (
+            <div key={account.id} className="rounded-xl border border-slate-200 bg-white/80 p-3">
+              <dl className="space-y-1.5">
+                {[
+                  { label: t('payment.bank.name'), value: account.bank_name },
+                  { label: t('payment.bank.holder'), value: account.account_holder_name },
+                  { label: t('payment.bank.iban'), value: account.iban },
+                ].map((row) => (
+                  <div key={row.label} className="flex items-center justify-between gap-3">
+                    <dt className="text-xs font-semibold text-slate-500">{row.label}</dt>
+                    <dd dir="ltr" className="text-start text-sm font-bold text-slate-900">
+                      {row.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              {account.qr_url && (
+                <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="mb-2 text-xs font-semibold text-slate-500">{t('payment.bank.qr')}</p>
+                  <img
+                    src={account.qr_url}
+                    alt={t('payment.bank.qr')}
+                    className="mx-auto h-32 w-32 rounded-lg object-contain"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-500">...</p>
+      )}
+      <p className="mt-2 text-xs text-slate-600">{t('payment.bank.note')}</p>
     </div>
   );
 }

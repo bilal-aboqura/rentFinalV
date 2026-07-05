@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import {
   createDriverSchema,
   updateDriverSchema,
@@ -25,7 +25,6 @@ import type {
 } from '@/types';
 import {
   sendBookingStatusEmail,
-  sendBookingConfirmationEmail,
 } from '@/lib/email/nodemailer';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -97,7 +96,7 @@ export async function getBookingsAction(
 
   if (search) {
     query = query.or(
-      `reference_id.ilike.%${search}%,customer_name.ilike.%${search}%,customer_email.ilike.%${search}%`
+      `reference_id.ilike.%${search}%,customer_name.ilike.%${search}%,customer_email.ilike.%${search}%,customer_phone.ilike.%${search}%`
     );
   }
 
@@ -156,7 +155,7 @@ export async function updateBookingStatusAction(
   }
 
   // Trigger transactional email to customer
-  if (status === 'confirmed' || status === 'cancelled' || status === 'completed') {
+  if (status === 'Confirmed' || status === 'Cancelled' || status === 'Completed') {
     try {
       await sendBookingStatusEmail({
         customerName: existing.customer_name,
@@ -229,7 +228,7 @@ export async function assignDriverAction(
       .select('id, reference_id, trip_date_time')
       .eq('driver_id', driverId)
       .neq('id', bookingId)
-      .neq('status', 'cancelled')
+      .neq('status', 'Cancelled')
       .gte('trip_date_time', windowStart)
       .lte('trip_date_time', windowEnd);
 

@@ -26,11 +26,11 @@ export default function DriversManager({ drivers }: Props) {
   const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', phone: '', licensePlate: '' });
+  const [form, setForm] = useState({ name: '', phone: '', licensePlate: '', status: 'active' as 'active' | 'inactive' });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const resetForm = () => {
-    setForm({ name: '', phone: '', licensePlate: '' });
+    setForm({ name: '', phone: '', licensePlate: '', status: 'active' });
     setValidationErrors({});
     setEditingId(null);
     setShowForm(false);
@@ -71,9 +71,26 @@ export default function DriversManager({ drivers }: Props) {
   };
 
   const startEdit = (driver: Driver) => {
-    setForm({ name: driver.name, phone: driver.phone, licensePlate: driver.license_plate });
+    setForm({
+      name: driver.name,
+      phone: driver.phone,
+      licensePlate: driver.license_plate,
+      status: driver.status === 'inactive' ? 'inactive' : 'active',
+    });
     setEditingId(driver.id);
     setShowForm(true);
+  };
+
+  const handleToggleStatus = (driver: Driver) => {
+    const next = driver.status === 'active' ? 'inactive' : 'active';
+    startTransition(async () => {
+      const result = await updateDriverAction({ id: driver.id, status: next });
+      if (result.success) {
+        router.refresh();
+      } else {
+        setError(result.error);
+      }
+    });
   };
 
   return (
@@ -154,6 +171,20 @@ export default function DriversManager({ drivers }: Props) {
               )}
             </div>
           </div>
+          <div>
+            <label className="mb-1 block text-xs text-slate-500" htmlFor="driver-status">
+              الحالة
+            </label>
+            <select
+              id="driver-status"
+              value={form.status}
+              onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as 'active' | 'inactive' }))}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none sm:max-w-xs"
+            >
+              <option value="active">نشط</option>
+              <option value="inactive">غير نشط</option>
+            </select>
+          </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               id="driver-form-save-btn"
@@ -190,15 +221,18 @@ export default function DriversManager({ drivers }: Props) {
                     <p className="font-medium text-slate-900">{driver.name}</p>
                     <p className="mt-1 text-xs text-slate-500" dir="ltr">{driver.phone}</p>
                   </div>
-                  <span
-                    className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
+                  <button
+                    onClick={() => handleToggleStatus(driver)}
+                    disabled={isPending}
+                    title={driver.status === 'active' ? 'اضغط لإلغاء التنشيط' : 'اضغط للتنشيط'}
+                    className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-all disabled:opacity-50 ${
                       driver.status === 'active'
                         ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
                         : 'border-slate-300 bg-slate-100 text-slate-600'
                     }`}
                   >
                     {STATUS_LABELS[driver.status] ?? driver.status}
-                  </span>
+                  </button>
                 </div>
                 <div className="mobile-data-row">
                   <span className="mobile-data-label">لوحة السيارة</span>
@@ -244,15 +278,24 @@ export default function DriversManager({ drivers }: Props) {
                   <td className="px-5 py-4 text-slate-700" dir="ltr">{driver.phone}</td>
                   <td className="px-5 py-4 font-mono text-slate-700" dir="ltr">{driver.license_plate}</td>
                   <td className="px-5 py-4">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
+                    <button
+                      id={`toggle-driver-status-${driver.id}`}
+                      onClick={() => handleToggleStatus(driver)}
+                      disabled={isPending}
+                      title={driver.status === 'active' ? 'اضغط لإلغاء التنشيط' : 'اضغط للتنشيط'}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all disabled:opacity-50 ${
                         driver.status === 'active'
-                          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
-                          : 'border-slate-300 bg-slate-100 text-slate-600'
+                          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                          : 'border-slate-300 bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
+                      <span
+                        className={`inline-block h-2 w-2 rounded-full ${
+                          driver.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'
+                        }`}
+                      />
                       {STATUS_LABELS[driver.status] ?? driver.status}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">

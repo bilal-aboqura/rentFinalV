@@ -3,8 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import type {
+  BankAccount,
   CreateHomepagePriceCardInput,
   HomepagePriceCard,
+  SaveBankAccountInput,
   SiteAssetType,
   SiteSettings,
   UpdateHomepagePriceCardInput,
@@ -29,6 +31,12 @@ type HomepagePriceCardDeleteResult =
 type UploadHomepagePriceCardImageResult =
   | { success: true; data: HomepagePriceCard }
   | { success: false; error: string };
+type BankAccountActionResult =
+  | { success: true; data: BankAccount }
+  | { success: false; error: string };
+type BankAccountDeleteResult =
+  | { success: true; data: { id: string } }
+  | { success: false; error: string };
 
 const DEFAULT_SITE_SETTINGS: SiteSettings = {
   id: SITE_SETTINGS_ID,
@@ -36,10 +44,15 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   about_text: 'نوفر خدمة نقل احترافية بسائقين موثوقين وتجربة حجز عربية واضحة وأنيقة.',
   contact_phone: '+1 (555) 019-9000',
   contact_email: 'contact@rentfinal.com',
-  brand_primary_color: '#50A6B9',
-  brand_secondary_color: '#C3A16F',
+  brand_primary_color: '#0F6B7A',
+  brand_secondary_color: '#B8862F',
   hero_image_url: null,
   site_logo_url: null,
+  bank_name: 'Al Rajhi Bank',
+  account_holder_name: 'Airport Transfer Co.',
+  iban: 'SA00 0000 0000 0000 0000',
+  bank_qr_url: null,
+  whatsapp_number: '201102770678',
   updated_at: '1970-01-01T00:00:00.000Z',
 };
 
@@ -94,6 +107,17 @@ function toSiteSettings(value: unknown): SiteSettings | null {
     brand_secondary_color: value.brand_secondary_color,
     hero_image_url: asNullableString(value.hero_image_url),
     site_logo_url: asNullableString(value.site_logo_url),
+    bank_name: typeof value.bank_name === 'string' ? value.bank_name : DEFAULT_SITE_SETTINGS.bank_name,
+    account_holder_name:
+      typeof value.account_holder_name === 'string'
+        ? value.account_holder_name
+        : DEFAULT_SITE_SETTINGS.account_holder_name,
+    iban: typeof value.iban === 'string' ? value.iban : DEFAULT_SITE_SETTINGS.iban,
+    bank_qr_url: asNullableString(value.bank_qr_url),
+    whatsapp_number:
+      typeof value.whatsapp_number === 'string'
+        ? value.whatsapp_number
+        : DEFAULT_SITE_SETTINGS.whatsapp_number,
     updated_at: value.updated_at,
   };
 }
@@ -103,14 +127,14 @@ function isColorValue(value: string): boolean {
 }
 
 function validateSettingsInput(input: UpdateSiteSettingsInput): string | null {
-  const requiredFields: Array<keyof UpdateSiteSettingsInput> = [
+  const requiredFields = [
     'hero_title',
     'about_text',
     'contact_phone',
     'contact_email',
     'brand_primary_color',
     'brand_secondary_color',
-  ];
+  ] as const;
 
   for (const field of requiredFields) {
     if (input[field].trim().length === 0) {
@@ -160,6 +184,38 @@ function toHomepagePriceCard(value: unknown): HomepagePriceCard | null {
     passenger_capacity: value.passenger_capacity,
     image_url: asNullableString(value.image_url),
     sort_order: sortOrder,
+    created_at: value.created_at,
+    updated_at: value.updated_at,
+  };
+}
+
+function toBankAccount(value: unknown): BankAccount | null {
+  if (!isRecord(value)) return null;
+
+  const sortOrder =
+    typeof value.sort_order === 'number' ? value.sort_order : Number(value.sort_order);
+
+  if (
+    typeof value.id !== 'string' ||
+    typeof value.bank_name !== 'string' ||
+    typeof value.account_holder_name !== 'string' ||
+    typeof value.iban !== 'string' ||
+    Number.isNaN(sortOrder) ||
+    typeof value.is_active !== 'boolean' ||
+    typeof value.created_at !== 'string' ||
+    typeof value.updated_at !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    id: value.id,
+    bank_name: value.bank_name,
+    account_holder_name: value.account_holder_name,
+    iban: value.iban,
+    qr_url: asNullableString(value.qr_url),
+    sort_order: sortOrder,
+    is_active: value.is_active,
     created_at: value.created_at,
     updated_at: value.updated_at,
   };
@@ -258,6 +314,47 @@ async function fetchHomepagePriceCards(): Promise<HomepagePriceCard[]> {
   }
 }
 
+async function fetchBankAccounts(activeOnly = false): Promise<BankAccount[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from('bank_accounts')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (activeOnly) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
+    if (error) return [];
+
+    const accounts = (data ?? [])
+      .map((item) => toBankAccount(item))
+      .filter((item): item is BankAccount => item !== null);
+
+    if (accounts.length > 0 || !activeOnly) return accounts;
+
+    const settings = await fetchSiteSettings();
+    return [
+      {
+        id: 'site-settings-default',
+        bank_name: settings.bank_name,
+        account_holder_name: settings.account_holder_name,
+        iban: settings.iban,
+        qr_url: settings.bank_qr_url,
+        sort_order: 1,
+        is_active: true,
+        created_at: settings.updated_at,
+        updated_at: settings.updated_at,
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
+
 async function ensurePublicAssetsBucket() {
   const serviceClient = await createServiceClient();
   const { data: buckets, error: listError } = await serviceClient.storage.listBuckets();
@@ -295,6 +392,32 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 
 export async function getHomepagePriceCards(): Promise<HomepagePriceCard[]> {
   return fetchHomepagePriceCards();
+}
+
+export async function getBankAccountsAction(): Promise<BankAccount[]> {
+  return fetchBankAccounts(false);
+}
+
+/**
+ * Public: bank transfer details for the booking payment step.
+ * Safe to expose under RLS (public SELECT on site_settings).
+ */
+export async function getPublicBankDetailsAction(): Promise<{
+  bank_name: string;
+  account_holder_name: string;
+  iban: string;
+  bank_qr_url: string | null;
+  accounts: BankAccount[];
+}> {
+  const settings = await fetchSiteSettings();
+  const accounts = await fetchBankAccounts(true);
+  return {
+    bank_name: settings.bank_name,
+    account_holder_name: settings.account_holder_name,
+    iban: settings.iban,
+    bank_qr_url: settings.bank_qr_url,
+    accounts,
+  };
 }
 
 export async function updateSiteSettings(
@@ -336,6 +459,120 @@ export async function updateSiteSettings(
     return { success: true };
   } catch {
     return { success: false, error: 'تعذر حفظ إعدادات الموقع.' };
+  }
+}
+
+/**
+ * Admin: update bank transfer + WhatsApp details shown on the booking flow.
+ */
+export async function updateBankDetailsAction(input: {
+  bank_name: string;
+  account_holder_name: string;
+  iban: string;
+  bank_qr_url?: string;
+  whatsapp_number: string;
+}): Promise<CmsActionResult> {
+  if (!input.bank_name.trim() || !input.account_holder_name.trim() || !input.iban.trim()) {
+    return { success: false, error: 'يرجى تعبئة جميع حقول البنك.' };
+  }
+  try {
+    const supabase = await createClient();
+    const existing = await fetchSiteSettings();
+    const payload: SiteSettings = {
+      ...existing,
+      id: SITE_SETTINGS_ID,
+      bank_name: input.bank_name.trim(),
+      account_holder_name: input.account_holder_name.trim(),
+      iban: input.iban.trim(),
+      bank_qr_url: input.bank_qr_url?.trim() || null,
+      whatsapp_number: input.whatsapp_number.trim() || existing.whatsapp_number,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert(payload, { onConflict: 'id' });
+    if (error) {
+      return { success: false, error: `تعذر حفظ بيانات البنك: ${error.message}` };
+    }
+    revalidateCmsSurfaces();
+    return { success: true };
+  } catch {
+    return { success: false, error: 'تعذر حفظ بيانات البنك.' };
+  }
+}
+
+function validateBankAccountInput(input: SaveBankAccountInput): string | null {
+  if (!input.bank_name.trim() || !input.account_holder_name.trim() || !input.iban.trim()) {
+    return 'يرجى تعبئة اسم البنك واسم صاحب الحساب ورقم الآيبان.';
+  }
+  return null;
+}
+
+export async function saveBankAccountAction(
+  input: SaveBankAccountInput,
+): Promise<BankAccountActionResult> {
+  const authResult = await requireAuthenticatedUser();
+  if (!authResult.success) return authResult;
+
+  const validationError = validateBankAccountInput(input);
+  if (validationError) return { success: false, error: validationError };
+
+  try {
+    const supabase = await createClient();
+    const payload = {
+      bank_name: input.bank_name.trim(),
+      account_holder_name: input.account_holder_name.trim(),
+      iban: input.iban.trim(),
+      qr_url: input.qr_url?.trim() || null,
+      sort_order: input.sort_order ?? 0,
+      is_active: input.is_active ?? true,
+      updated_at: new Date().toISOString(),
+    };
+
+    const query = input.id && isUuid(input.id)
+      ? supabase.from('bank_accounts').update(payload).eq('id', input.id)
+      : supabase.from('bank_accounts').insert(payload);
+
+    const { data, error } = await query.select('*').single();
+    if (error || !data) {
+      return { success: false, error: error?.message ?? 'تعذر حفظ الحساب البنكي.' };
+    }
+
+    const account = toBankAccount(data);
+    if (!account) return { success: false, error: 'تم الحفظ لكن تعذرت قراءة بيانات الحساب.' };
+
+    revalidateCmsSurfaces();
+    return { success: true, data: account };
+  } catch {
+    return { success: false, error: 'تعذر حفظ الحساب البنكي.' };
+  }
+}
+
+export async function deleteBankAccountAction(id: string): Promise<BankAccountDeleteResult> {
+  const authResult = await requireAuthenticatedUser();
+  if (!authResult.success) return authResult;
+
+  if (!isUuid(id)) {
+    return { success: false, error: 'معرف الحساب البنكي غير صالح.' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('bank_accounts')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .single();
+
+    if (error || !data) {
+      return { success: false, error: error?.message ?? 'تعذر حذف الحساب البنكي.' };
+    }
+
+    revalidateCmsSurfaces();
+    return { success: true, data: { id: data.id as string } };
+  } catch {
+    return { success: false, error: 'تعذر حذف الحساب البنكي.' };
   }
 }
 

@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getHomepagePriceCards, getSiteSettings } from '@/app/actions/cms';
+import { getBankAccountsAction, getSiteSettings } from '@/app/actions/cms';
 import { createClient } from '@/lib/supabase/server';
 import AdminShell from '@/components/admin-shell';
 import ContentSettingsForm from './content-settings-form';
+import BankDetailsForm from './bank-details-form';
 
 export const metadata: Metadata = {
   title: 'إدارة المحتوى - لوحة التحكم',
@@ -19,7 +20,10 @@ export default async function AdminContentPage() {
     redirect('/admin/login');
   }
 
-  const [settings, priceCards] = await Promise.all([getSiteSettings(), getHomepagePriceCards()]);
+  const [settings, bankAccounts] = await Promise.all([
+    getSiteSettings(),
+    getBankAccountsAction(),
+  ]);
 
   return (
     <AdminShell userEmail={user.email}>
@@ -30,10 +34,16 @@ export default async function AdminContentPage() {
             تحكم في نصوص الموقع العامة وألوان الهوية والشعار وصورة الواجهة الرئيسية.
           </p>
         </header>
-        <ContentSettingsForm
-          key={`${settings.updated_at}-${priceCards.map((card) => card.updated_at).join('-')}`}
-          initialSettings={settings}
-          initialPriceCards={priceCards}
+        <ContentSettingsForm key={settings.updated_at} initialSettings={settings} />
+        <BankDetailsForm
+          initial={{
+            bank_name: settings.bank_name,
+            account_holder_name: settings.account_holder_name,
+            iban: settings.iban,
+            bank_qr_url: settings.bank_qr_url ?? '',
+            whatsapp_number: settings.whatsapp_number,
+          }}
+          initialAccounts={bankAccounts}
         />
       </div>
     </AdminShell>

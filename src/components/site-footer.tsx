@@ -1,8 +1,47 @@
-import Link from "next/link";
-import { Mail, Phone, Plane } from "lucide-react";
-import type { SiteSettings } from "@/types";
+'use client';
+
+import Link from 'next/link';
+import { Mail, Phone, Plane } from 'lucide-react';
+import type { SiteSettings } from '@/types';
+import { useLanguage } from '@/lib/i18n/LanguageProvider';
+
+const FOOTER_COPY = {
+  ar: {
+    tagline: 'خدمة نقل مميزة',
+    brand: 'دقه الوقت',
+    description:
+      'رحلات مطار، وتنقلات داخل المدينة، ودعم احترافي للحجز ضمن تجربة بسيطة وأنيقة تناسب العميل من أول زيارة.',
+    phone: 'الهاتف',
+    email: 'البريد الإلكتروني',
+    browse: 'تصفح',
+    book: 'احجز رحلتك',
+    experience: 'مميزات الخدمة',
+    contact: 'تواصل معنا',
+    admin: 'دخول الإدارة',
+    rights: 'جميع الحقوق محفوظة.',
+    developedBy: 'تم التطوير بواسطة',
+  },
+  en: {
+    tagline: 'Premium transfer service',
+    brand: 'Daqat Alwaqt',
+    description:
+      'Airport transfers, city rides, and professional booking support in a simple, elegant experience from the first visit.',
+    phone: 'Phone',
+    email: 'Email',
+    browse: 'Browse',
+    book: 'Book Your Trip',
+    experience: 'Service Features',
+    contact: 'Contact Us',
+    admin: 'Admin Login',
+    rights: 'All rights reserved.',
+    developedBy: 'Developed by',
+  },
+} as const;
 
 export default function SiteFooter({ settings }: { settings: SiteSettings }) {
+  const { lang } = useLanguage();
+  const copy = FOOTER_COPY[lang];
+
   return (
     <footer className="relative overflow-hidden bg-slate-950 text-slate-300">
       <div className="h-px w-full bg-gradient-to-l from-transparent via-[var(--cms-primary)]/60 to-transparent" />
@@ -16,7 +55,7 @@ export default function SiteFooter({ settings }: { settings: SiteSettings }) {
               {settings.site_logo_url ? (
                 <img
                   src={settings.site_logo_url}
-                  alt="شعار دقه الوقت"
+                  alt={copy.brand}
                   className="h-12 w-12 rounded-2xl border border-white/10 bg-white object-contain p-2 shadow-lg shadow-black/30"
                 />
               ) : (
@@ -26,15 +65,12 @@ export default function SiteFooter({ settings }: { settings: SiteSettings }) {
               )}
               <div>
                 <p className="text-[0.68rem] font-bold tracking-[0.24em] text-[var(--cms-primary)]">
-                  خدمة نقل مميزة
+                  {copy.tagline}
                 </p>
-                <h2 className="text-2xl font-semibold text-white">دقه الوقت</h2>
+                <h2 className="text-2xl font-semibold text-white">{copy.brand}</h2>
               </div>
             </div>
-            <p className="mt-6 max-w-sm text-sm leading-7 text-slate-400">
-              رحلات مطار، وتنقلات داخل المدينة، ودعم احترافي للحجز ضمن تجربة عربية
-              بسيطة وأنيقة تناسب العميل من أول زيارة.
-            </p>
+            <p className="mt-6 max-w-sm text-sm leading-7 text-slate-400">{copy.description}</p>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
@@ -48,7 +84,7 @@ export default function SiteFooter({ settings }: { settings: SiteSettings }) {
               </div>
               <div className="min-w-0">
                 <p className="text-[0.7rem] font-semibold tracking-[0.18em] text-slate-500">
-                  الهاتف
+                  {copy.phone}
                 </p>
                 <p className="mt-1 truncate text-sm font-semibold text-white">
                   {settings.contact_phone}
@@ -65,7 +101,7 @@ export default function SiteFooter({ settings }: { settings: SiteSettings }) {
               </div>
               <div className="min-w-0">
                 <p className="text-[0.7rem] font-semibold tracking-[0.18em] text-slate-500">
-                  البريد الإلكتروني
+                  {copy.email}
                 </p>
                 <p className="mt-1 truncate text-sm font-semibold text-white">
                   {settings.contact_email}
@@ -76,27 +112,37 @@ export default function SiteFooter({ settings }: { settings: SiteSettings }) {
 
           <div className="flex flex-col gap-3.5 text-sm">
             <p className="text-[0.7rem] font-semibold tracking-[0.18em] text-slate-500">
-              تصفح
+              {copy.browse}
             </p>
             <a href="#booking" className="w-fit text-slate-300 hover:text-white">
-              احجز رحلتك
+              {copy.book}
             </a>
             <a href="#experience" className="w-fit text-slate-300 hover:text-white">
-              مميزات الخدمة
+              {copy.experience}
             </a>
             <Link href="/contact" className="w-fit text-slate-300 hover:text-white">
-              تواصل معنا
+              {copy.contact}
             </Link>
             <Link href="/admin/login" className="w-fit text-slate-500 hover:text-slate-300">
-              دخول الإدارة
+              {copy.admin}
             </Link>
           </div>
         </div>
 
         <div className="mt-14 flex flex-col gap-3 border-t border-white/8 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} دقه الوقت. جميع الحقوق محفوظة.</p>
+          <p>
+            © {new Date().getFullYear()} {copy.brand}. {copy.rights}
+          </p>
           <p className="text-slate-600">
-            تم التطوير بواسطه <a href="https://bilalaboqura.com/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Bilal Aboqura</a>
+            {copy.developedBy}{' '}
+            <a
+              href="https://bilalaboqura.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-white"
+            >
+              Bilal Aboqura
+            </a>
           </p>
         </div>
       </div>

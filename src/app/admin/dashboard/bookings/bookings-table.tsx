@@ -28,25 +28,47 @@ interface Props {
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'all', label: 'كل الحالات' },
-  { value: 'pending', label: 'قيد الانتظار' },
-  { value: 'confirmed', label: 'مؤكد' },
-  { value: 'completed', label: 'مكتمل' },
-  { value: 'cancelled', label: 'ملغي' },
+  { value: 'Pending', label: 'قيد الانتظار' },
+  { value: 'Confirmed', label: 'مؤكد' },
+  { value: 'Assigned', label: 'مُسند للسائق' },
+  { value: 'Completed', label: 'مكتمل' },
+  { value: 'Cancelled', label: 'ملغي' },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-  confirmed: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-  completed: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  cancelled: 'bg-red-500/10 text-red-600 border-red-500/20',
+  Pending: 'bg-amber-500/15 text-amber-700 border-amber-500/30',
+  Confirmed: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
+  Assigned: 'bg-indigo-500/15 text-indigo-700 border-indigo-500/30',
+  Completed: 'bg-blue-500/15 text-blue-700 border-blue-500/30',
+  Cancelled: 'bg-red-500/15 text-red-700 border-red-500/30',
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'قيد الانتظار',
-  confirmed: 'مؤكد',
-  completed: 'مكتمل',
-  cancelled: 'ملغي',
+  Pending: 'قيد الانتظار',
+  Confirmed: 'مؤكد',
+  Assigned: 'مُسند للسائق',
+  Completed: 'مكتمل',
+  Cancelled: 'ملغي',
 };
+
+const PAYMENT_LABELS: Record<string, string> = {
+  cash: 'نقدًا',
+  card_pos: 'بطاقة / نقاط بيع',
+  bank_transfer: 'تحويل بنكي',
+};
+
+const TRIP_TYPE_LABELS: Record<string, string> = {
+  one_way: 'ذهاب فقط',
+  round_trip: 'ذهاب وعودة',
+};
+
+const STATUS_SELECT_OPTIONS = [
+  { value: 'Pending', label: 'قيد الانتظار' },
+  { value: 'Confirmed', label: 'مؤكد' },
+  { value: 'Assigned', label: 'مُسند للسائق' },
+  { value: 'Completed', label: 'مكتمل' },
+  { value: 'Cancelled', label: 'ملغي' },
+];
 
 const VEHICLE_LABELS: Record<string, string> = {
   standard: 'عادية',
@@ -213,7 +235,7 @@ export default function BookingsTable({
                             >
                               {new Intl.NumberFormat('ar-EG', {
                                 style: 'currency',
-                                currency: 'USD',
+                                currency: 'SAR',
                               }).format(Number(booking.total_price))}
                             </span>
                           </div>
@@ -230,10 +252,11 @@ export default function BookingsTable({
                               disabled={isPending}
                               className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
                             >
-                              <option value="pending">قيد الانتظار</option>
-                              <option value="confirmed">مؤكد</option>
-                              <option value="completed">مكتمل</option>
-                              <option value="cancelled">ملغي</option>
+                              {STATUS_SELECT_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>
@@ -267,7 +290,7 @@ export default function BookingsTable({
                           <div className="px-5 py-4 font-semibold text-emerald-600" dir="ltr">
                             {new Intl.NumberFormat('ar-EG', {
                               style: 'currency',
-                              currency: 'USD',
+                              currency: 'SAR',
                             }).format(Number(booking.total_price))}
                           </div>
                           <div className="px-5 py-4">
@@ -290,10 +313,11 @@ export default function BookingsTable({
                               disabled={isPending}
                               className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
                             >
-                              <option value="pending">قيد الانتظار</option>
-                              <option value="confirmed">مؤكد</option>
-                              <option value="completed">مكتمل</option>
-                              <option value="cancelled">ملغي</option>
+                              {STATUS_SELECT_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>
@@ -302,17 +326,38 @@ export default function BookingsTable({
                           <div className="border-t border-black/5 bg-white/50 px-5 py-4">
                             <div className="mb-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
                               <div>
-                                <p className="mb-1 text-xs text-slate-500">الهاتف</p>
+                                <p className="mb-1 text-xs text-slate-500">الهاتف / واتساب</p>
                                 <p className="text-slate-700" dir="ltr">{booking.customer_phone}</p>
                               </div>
                               <div>
-                                <p className="mb-1 text-xs text-slate-500">تاريخ الحجز</p>
+                                <p className="mb-1 text-xs text-slate-500">نوع الرحلة</p>
                                 <p className="text-slate-700">
-                                  {new Date(booking.created_at).toLocaleString('ar-EG', {
-                                    dateStyle: 'short',
-                                    timeStyle: 'short',
-                                  })}
+                                  {TRIP_TYPE_LABELS[booking.trip_type] ?? booking.trip_type}
                                 </p>
+                              </div>
+                              <div>
+                                <p className="mb-1 text-xs text-slate-500">رقم الرحلة</p>
+                                <p className="text-slate-700" dir="ltr">
+                                  {booking.flight_number || booking.ticket_number || '—'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="mb-1 text-xs text-slate-500">طريقة الدفع</p>
+                                <p className="text-slate-700">
+                                  {PAYMENT_LABELS[booking.payment_method] ?? booking.payment_method}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="mb-1 text-xs text-slate-500">تفاصيل الانطلاق</p>
+                                <p className="text-slate-700">{booking.pickup_text || '—'}</p>
+                              </div>
+                              <div>
+                                <p className="mb-1 text-xs text-slate-500">تفاصيل الوجهة</p>
+                                <p className="text-slate-700">{booking.dropoff_text || '—'}</p>
+                              </div>
+                              <div>
+                                <p className="mb-1 text-xs text-slate-500">السيارة</p>
+                                <p className="text-slate-700">{booking.vehicle_name || '—'}</p>
                               </div>
                               <div>
                                 <p className="mb-1 text-xs text-slate-500">السائق المعين</p>
@@ -320,14 +365,24 @@ export default function BookingsTable({
                                   {(booking.driver as { name?: string } | null)?.name ?? 'غير معين'}
                                 </p>
                               </div>
+                              {booking.notes && (
+                                <div className="col-span-2 md:col-span-4">
+                                  <p className="mb-1 text-xs text-slate-500">ملاحظات</p>
+                                  <p className="text-slate-700">{booking.notes}</p>
+                                </div>
+                              )}
                             </div>
 
-                            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center" onClick={(e) => e.stopPropagation()}>
                               <UserCheck className="h-4 w-4 shrink-0 text-slate-500" />
                               <select
                                 id={`driver-select-${booking.id}`}
                                 value={booking.driver_id ?? ''}
-                                onChange={(e) => handleDriverAssign(booking.id, e.target.value || null)}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  handleDriverAssign(booking.id, e.target.value || null);
+                                }}
                                 disabled={isPending}
                                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none disabled:opacity-50 sm:w-auto"
                               >
