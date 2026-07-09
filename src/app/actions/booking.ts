@@ -10,8 +10,7 @@
  *   the business owner instantly.
  *
  * Pricing is read from `pricing_rules` keyed on
- * (pickup_location_id, destination_location_id, vehicle_class) — the
- * `route_prices` table referenced by earlier code never existed.
+ * (pickup_location_id, destination_location_id, vehicle_class).
  */
 
 import { createClient } from '@/lib/supabase/server';
@@ -21,7 +20,7 @@ import { TransferBookingSchema } from '@/lib/validation/transfer';
 import { buildWhatsappMessage, buildWhatsappUrl } from '@/lib/whatsapp/buildMessage';
 import { sendWhatsAppAdminNotification } from '@/lib/whatsapp/notify';
 import { sendAdminNotificationEmail } from '@/lib/mail/smtp';
-import type { ServerActionResponse, VehicleClass } from '@/types';
+import type { BookingHospitalitySelection, ServerActionResponse, VehicleClass } from '@/types';
 
 function generateReferenceId(): string {
   const stamp = Date.now().toString(36).toUpperCase().slice(-5);
@@ -30,13 +29,19 @@ function generateReferenceId(): string {
 }
 
 function combineDateTime(date: string, time: string): string {
-  // Build an ISO timestamp in the server's local timezone interpretation.
   return new Date(`${date}T${time}:00`).toISOString();
 }
 
 interface LocationNameRow {
   id: string;
   name: string;
+}
+
+interface HospitalityOptionRow {
+  id: string;
+  name: string;
+  name_ar: string;
+  is_active: boolean;
 }
 
 export interface SubmitBookingSuccess {
@@ -63,7 +68,6 @@ export async function submitBookingRequestAction(
   try {
     const supabase = await createClient();
 
-    // ── Server-side price verification (tamper prevention) ──
     const outboundPrice = await verifyRoutePriceAction(
       data.pickup.locationId,
       data.dropoff.locationId,
@@ -85,13 +89,11 @@ export async function submitBookingRequestAction(
         data.returnDropoff?.locationId ?? data.pickup.locationId,
         data.vehicleClass,
       );
-      // Fall back to 2× outbound if reverse leg is unpriced (stable, predictable).
       returnPrice = reverse ?? outboundPrice;
     }
 
     const totalPrice = outboundPrice + returnPrice;
 
-    // Reject if the client-submitted price drifts too far from the server price.
     if (Math.abs(totalPrice - data.price) > 1) {
       return {
         success: false,
@@ -100,7 +102,6 @@ export async function submitBookingRequestAction(
       };
     }
 
-    // ── Resolve location names for display / email / WhatsApp ──
     const locationIds = Array.from(
       new Set([
         data.pickup.locationId,
@@ -126,7 +127,6 @@ export async function submitBookingRequestAction(
     const returnDropoffName =
       locationNameById.get(data.returnDropoff?.locationId ?? '') ?? pickupName;
 
-    // ── Resolve car name ──
     const { data: carRow } = await supabase
       .from('cars')
       .select('name, name_ar')
@@ -136,7 +136,56 @@ export async function submitBookingRequestAction(
     const carName =
       (carRow && (data.language === 'ar' ? carRow.name_ar : carRow.name)) || 'Car';
 
-    // ── Insert booking ──
+    const hospitalitySelectionsSnapshot: BookingHospitalitySelection[] = [];
+    if (data.hospitalitySelections.length > 0) {
+      const selectedHospitalityIds = data.hospitalitySelections.map((selection) => selection.optionId);
+      const { data: hospitalityRows, error: hospitalityError } = (await supabase
+        .from('hospitality_options')
+        .select('id, name, name_ar, is_active')
+        .in('id', selectedHospitalityIds)) as {
+        data: HospitalityOptionRow[] | null;
+        error: { message: string } | null;
+      };
+
+      if (hospitalityError) {
+        return { success: false, error: 'Failed to validate hospitality options.' };
+      }
+
+      const hospitalityMap = new Map<string, HospitalityOptionRow>(
+        (hospitalityRows ?? []).map((row) => [row.id, row]),
+      );
+
+      for (const selection of data.hospitalitySelections) {
+        const option = hospitalityMap.get(selection.optionId);
+        if (!option || !option.is_active) {
+          return {
+            success: false,
+            error: 'Invalid hospitality selection.',
+            validationErrors: {
+              hospitalitySelections: ['One or more hospitality items are unavailable.'],
+            },
+          };
+        }
+
+        if (selection.quantity > data.passengerCount) {
+          return {
+            success: false,
+            error: 'Hospitality quantity exceeds passenger count.',
+            validationErrors: {
+              hospitalitySelections: ['Hospitality quantities cannot exceed passenger count.'],
+            },
+          };
+        }
+
+        hospitalitySelectionsSnapshot.push({
+          option_id: option.id,
+          name: option.name,
+          name_ar: option.name_ar,
+          quantity: selection.quantity,
+        });
+      }
+    }
+
     const referenceId = generateReferenceId();
     const tripDateTime = combineDateTime(data.date, data.time);
     const returnDateTime =
@@ -170,6 +219,8 @@ export async function submitBookingRequestAction(
       language: data.language,
       notes: data.notes?.trim() || null,
       payment_method: data.paymentMethod,
+      passenger_count: data.passengerCount,
+      hospitality_selections: hospitalitySelectionsSnapshot,
       departure_airport: data.pickup.type === 'airport' ? pickupName : '',
       arrival_airport: data.dropoff.type === 'airport' ? dropoffName : '',
       vehicle_name: carName,
@@ -182,14 +233,12 @@ export async function submitBookingRequestAction(
       return { success: false, error: 'Failed to save booking. Please try again later.' };
     }
 
-    // ── Admin notification row ──
     await supabase.from('notifications').insert({
-      message: `New booking ${referenceId} — ${data.customerName} (${pickupName} → ${dropoffName})`,
+      message: `New booking ${referenceId} - ${data.customerName} (${pickupName} -> ${dropoffName})`,
       type: 'admin_new_booking',
       read_status: false,
     });
 
-    // ── Admin email (non-fatal) ──
     const adminEmail = process.env.ADMIN_EMAIL;
     if (adminEmail) {
       void sendAdminNotificationEmail({
@@ -203,7 +252,6 @@ export async function submitBookingRequestAction(
       });
     }
 
-    // ── Build prefilled WhatsApp URL ──
     const settings = await getSiteSettings();
     const message = buildWhatsappMessage({
       language: data.language,
@@ -227,6 +275,8 @@ export async function submitBookingRequestAction(
       returnDropoffLabel: returnDropoffName,
       returnDropoffDetail: data.returnDropoff?.text ?? '',
       carName,
+      passengerCount: data.passengerCount,
+      hospitalitySelections: hospitalitySelectionsSnapshot,
       price: totalPrice,
       paymentMethod: data.paymentMethod,
       notes: data.notes ?? null,

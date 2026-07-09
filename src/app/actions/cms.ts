@@ -5,8 +5,10 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import type {
   BankAccount,
   CreateHomepagePriceCardInput,
+  HospitalityOption,
   HomepagePriceCard,
   SaveBankAccountInput,
+  SaveHospitalityOptionInput,
   SiteAssetType,
   SiteSettings,
   UpdateHomepagePriceCardInput,
@@ -35,6 +37,12 @@ type BankAccountActionResult =
   | { success: true; data: BankAccount }
   | { success: false; error: string };
 type BankAccountDeleteResult =
+  | { success: true; data: { id: string } }
+  | { success: false; error: string };
+type HospitalityOptionActionResult =
+  | { success: true; data: HospitalityOption }
+  | { success: false; error: string };
+type HospitalityOptionDeleteResult =
   | { success: true; data: { id: string } }
   | { success: false; error: string };
 
@@ -221,6 +229,35 @@ function toBankAccount(value: unknown): BankAccount | null {
   };
 }
 
+function toHospitalityOption(value: unknown): HospitalityOption | null {
+  if (!isRecord(value)) return null;
+
+  const sortOrder =
+    typeof value.sort_order === 'number' ? value.sort_order : Number(value.sort_order);
+
+  if (
+    typeof value.id !== 'string' ||
+    typeof value.name !== 'string' ||
+    typeof value.name_ar !== 'string' ||
+    Number.isNaN(sortOrder) ||
+    typeof value.is_active !== 'boolean' ||
+    typeof value.created_at !== 'string' ||
+    typeof value.updated_at !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    id: value.id,
+    name: value.name,
+    name_ar: value.name_ar,
+    sort_order: sortOrder,
+    is_active: value.is_active,
+    created_at: value.created_at,
+    updated_at: value.updated_at,
+  };
+}
+
 function localizeLegacySettings(settings: SiteSettings): SiteSettings {
   return {
     ...settings,
@@ -355,6 +392,30 @@ async function fetchBankAccounts(activeOnly = false): Promise<BankAccount[]> {
   }
 }
 
+async function fetchHospitalityOptions(activeOnly = false): Promise<HospitalityOption[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from('hospitality_options')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (activeOnly) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
+    if (error) return [];
+
+    return (data ?? [])
+      .map((item) => toHospitalityOption(item))
+      .filter((item): item is HospitalityOption => item !== null);
+  } catch {
+    return [];
+  }
+}
+
 async function ensurePublicAssetsBucket() {
   const serviceClient = await createServiceClient();
   const { data: buckets, error: listError } = await serviceClient.storage.listBuckets();
@@ -396,6 +457,14 @@ export async function getHomepagePriceCards(): Promise<HomepagePriceCard[]> {
 
 export async function getBankAccountsAction(): Promise<BankAccount[]> {
   return fetchBankAccounts(false);
+}
+
+export async function getHospitalityOptionsAction(): Promise<HospitalityOption[]> {
+  return fetchHospitalityOptions(false);
+}
+
+export async function getPublicHospitalityOptionsAction(): Promise<HospitalityOption[]> {
+  return fetchHospitalityOptions(true);
 }
 
 /**
@@ -508,6 +577,21 @@ function validateBankAccountInput(input: SaveBankAccountInput): string | null {
   return null;
 }
 
+function validateHospitalityOptionInput(input: SaveHospitalityOptionInput): string | null {
+  if (!input.name.trim() || !input.name_ar.trim()) {
+    return 'ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ø³Ù… Ø§Ù„Ø¶ÙŠØ§ÙØ© Ø¨Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© ÙˆØ§Ù„Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠØ©.';
+  }
+
+  if (
+    input.sort_order !== undefined &&
+    (!Number.isInteger(input.sort_order) || input.sort_order < 0)
+  ) {
+    return 'ØªØ±ØªÙŠØ¨ Ø§Ù„Ø¸Ù‡ÙˆØ± ÙŠØ¬Ø¨ Ø£Ù† ÙŠÙƒÙˆÙ† Ø±Ù‚Ù…Ù‹Ø§ ØµØ­ÙŠØ­Ù‹Ø§ ØµÙØ±Ù‹Ø§ Ø£Ùˆ Ø£ÙƒØ¨Ø±.';
+  }
+
+  return null;
+}
+
 export async function saveBankAccountAction(
   input: SaveBankAccountInput,
 ): Promise<BankAccountActionResult> {
@@ -573,6 +657,77 @@ export async function deleteBankAccountAction(id: string): Promise<BankAccountDe
     return { success: true, data: { id: data.id as string } };
   } catch {
     return { success: false, error: 'تعذر حذف الحساب البنكي.' };
+  }
+}
+
+export async function saveHospitalityOptionAction(
+  input: SaveHospitalityOptionInput,
+): Promise<HospitalityOptionActionResult> {
+  const authResult = await requireAuthenticatedUser();
+  if (!authResult.success) return authResult;
+
+  const validationError = validateHospitalityOptionInput(input);
+  if (validationError) return { success: false, error: validationError };
+
+  try {
+    const supabase = await createClient();
+    const payload = {
+      name: input.name.trim(),
+      name_ar: input.name_ar.trim(),
+      sort_order: input.sort_order ?? 0,
+      is_active: input.is_active ?? true,
+      updated_at: new Date().toISOString(),
+    };
+
+    const query =
+      input.id && isUuid(input.id)
+        ? supabase.from('hospitality_options').update(payload).eq('id', input.id)
+        : supabase.from('hospitality_options').insert(payload);
+
+    const { data, error } = await query.select('*').single();
+    if (error || !data) {
+      return { success: false, error: error?.message ?? 'ØªØ¹Ø°Ø± Ø­ÙØ¸ Ø®ÙŠØ§Ø± Ø§Ù„Ø¶ÙŠØ§ÙØ©.' };
+    }
+
+    const option = toHospitalityOption(data);
+    if (!option) {
+      return { success: false, error: 'ØªÙ… Ø§Ù„Ø­ÙØ¸ Ù„ÙƒÙ† ØªØ¹Ø°Ø±Øª Ù‚Ø±Ø§Ø¡Ø© Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¶ÙŠØ§ÙØ©.' };
+    }
+
+    revalidateCmsSurfaces();
+    return { success: true, data: option };
+  } catch {
+    return { success: false, error: 'ØªØ¹Ø°Ø± Ø­ÙØ¸ Ø®ÙŠØ§Ø± Ø§Ù„Ø¶ÙŠØ§ÙØ©.' };
+  }
+}
+
+export async function deleteHospitalityOptionAction(
+  id: string,
+): Promise<HospitalityOptionDeleteResult> {
+  const authResult = await requireAuthenticatedUser();
+  if (!authResult.success) return authResult;
+
+  if (!isUuid(id)) {
+    return { success: false, error: 'Ù…Ø¹Ø±Ù Ø®ÙŠØ§Ø± Ø§Ù„Ø¶ÙŠØ§ÙØ© ØºÙŠØ± ØµØ§Ù„Ø­.' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('hospitality_options')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .single();
+
+    if (error || !data) {
+      return { success: false, error: error?.message ?? 'ØªØ¹Ø°Ø± Ø­Ø°Ù Ø®ÙŠØ§Ø± Ø§Ù„Ø¶ÙŠØ§ÙØ©.' };
+    }
+
+    revalidateCmsSurfaces();
+    return { success: true, data: { id: data.id as string } };
+  } catch {
+    return { success: false, error: 'ØªØ¹Ø°Ø± Ø­Ø°Ù Ø®ÙŠØ§Ø± Ø§Ù„Ø¶ÙŠØ§ÙØ©.' };
   }
 }
 

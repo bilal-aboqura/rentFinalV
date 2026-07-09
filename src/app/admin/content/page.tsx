@@ -1,10 +1,15 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getBankAccountsAction, getSiteSettings } from '@/app/actions/cms';
+import {
+  getBankAccountsAction,
+  getHospitalityOptionsAction,
+  getSiteSettings,
+} from '@/app/actions/cms';
 import { createClient } from '@/lib/supabase/server';
 import AdminShell from '@/components/admin-shell';
 import ContentSettingsForm from './content-settings-form';
 import BankDetailsForm from './bank-details-form';
+import HospitalityOptionsForm from './hospitality-options-form';
 
 export const metadata: Metadata = {
   title: 'إدارة المحتوى - لوحة التحكم',
@@ -20,9 +25,10 @@ export default async function AdminContentPage() {
     redirect('/admin/login');
   }
 
-  const [settings, bankAccounts] = await Promise.all([
+  const [settings, bankAccounts, hospitalityOptions] = await Promise.all([
     getSiteSettings(),
     getBankAccountsAction(),
+    getHospitalityOptionsAction(),
   ]);
 
   return (
@@ -45,6 +51,7 @@ export default async function AdminContentPage() {
           }}
           initialAccounts={bankAccounts}
         />
+        <HospitalityOptionsForm initialOptions={hospitalityOptions} />
       </div>
     </AdminShell>
   );

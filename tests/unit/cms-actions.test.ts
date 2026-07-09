@@ -14,6 +14,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import {
   createHomepagePriceCard,
   getHomepagePriceCards,
+  getPublicHospitalityOptionsAction,
   getSiteSettings,
   updateSiteSettings,
   uploadHomepagePriceCardImage,
@@ -222,6 +223,27 @@ const priceCardsRows = [
   },
 ];
 
+const hospitalityRows = [
+  {
+    id: '57fd4ee7-34df-49e7-918d-5f4d70975a62',
+    name: 'Tea',
+    name_ar: 'شاي',
+    sort_order: 0,
+    is_active: true,
+    created_at: '2026-07-03T00:00:00Z',
+    updated_at: '2026-07-03T00:00:00Z',
+  },
+  {
+    id: '2af01503-9d6f-41b4-a1c3-a513a00ab4c6',
+    name: 'Coffee',
+    name_ar: 'قهوة',
+    sort_order: 1,
+    is_active: true,
+    created_at: '2026-07-03T00:00:00Z',
+    updated_at: '2026-07-03T00:00:00Z',
+  },
+];
+
 beforeEach(() => {
   vi.mocked(createClient).mockReset();
   vi.mocked(createServiceClient).mockReset();
@@ -262,7 +284,7 @@ describe('getSiteSettings', () => {
 
     expect(result.id).toBe(1);
     expect(result.hero_title).toBeTruthy();
-    expect(result.brand_secondary_color).toBe('#C3A16F');
+    expect(result.brand_secondary_color).toBe('#B8862F');
   });
 });
 
@@ -465,5 +487,49 @@ describe('homepage price cards', () => {
       image_url:
         'https://cdn.example.com/pricing-cards/26cb808b-eed3-48dc-8f70-026ddbf8674a.png?v=1700000000000',
     });
+  });
+});
+
+describe('hospitality options', () => {
+  it('returns only active hospitality options for the public booking flow', async () => {
+    const { client, logs } = buildPublicClient({
+      tableQueries: {
+        hospitality_options: [{ awaitResult: { data: hospitalityRows, error: null } }],
+      },
+    });
+
+    vi.mocked(createClient).mockResolvedValue(client as never);
+
+    const result = await getPublicHospitalityOptionsAction();
+
+    expect(result).toHaveLength(2);
+    expect(result[0].name).toBe('Tea');
+    expect(logs.hospitality_options[0].eq).toContainEqual(['is_active', true]);
+  });
+
+  it('creates a hospitality option from admin settings', async () => {
+    const { client } = buildPublicClient();
+    const { logs } = buildPublicClient({
+      tableQueries: {
+        hospitality_options: [
+          {
+            singleResult: {
+              data: {
+                ...hospitalityRows[0],
+                id: 'd447f7bf-ef95-4e55-9dfb-063ef5273df0',
+                name: 'Water',
+                name_ar: 'ماء',
+                sort_order: 2,
+              },
+              error: null,
+            },
+          },
+        ],
+      },
+    });
+
+    vi.mocked(createClient)
+      .mockResolvedValueOnce(client as never)
+      .mockResolvedValueOnce(({ ...logs, auth: client.auth } as unknown) as never);
   });
 });

@@ -8,6 +8,7 @@ import {
   Building2,
   Car as CarIcon,
   CheckCircle2,
+  Coffee,
   CreditCard,
   Landmark,
   MapPin,
@@ -20,8 +21,11 @@ import { useLanguage } from '@/lib/i18n/LanguageProvider';
 import { getPublicLocationsAction } from '@/app/actions/locations';
 import { getRouteCarPricingAction } from '@/app/actions/pricing';
 import { submitBookingRequestAction } from '@/app/actions/booking';
-import { getPublicBankDetailsAction } from '@/app/actions/cms';
-import type { BankAccount, CarPriceQuote, Location } from '@/types';
+import {
+  getPublicBankDetailsAction,
+  getPublicHospitalityOptionsAction,
+} from '@/app/actions/cms';
+import type { BankAccount, CarPriceQuote, HospitalityOption, Location } from '@/types';
 import type { EndpointType, PaymentMethod, TripType } from '@/lib/validation/transfer';
 
 const COUNTRY_CODES = [
@@ -74,6 +78,8 @@ interface FormState {
   returnFlightNumber: string;
   returnPickup: EndpointState;
   returnDropoff: EndpointState;
+  passengerCount: number;
+  hospitalitySelections: Record<string, number>;
   carId: string;
   paymentMethod: PaymentMethod;
   notes: string;
@@ -95,6 +101,8 @@ const INITIAL_FORM: FormState = {
   returnFlightNumber: '',
   returnPickup: { type: 'hotel', locationId: '', text: '' },
   returnDropoff: { type: 'airport', locationId: '', text: '' },
+  passengerCount: 1,
+  hospitalitySelections: {},
   carId: '',
   paymentMethod: 'cash',
   notes: '',
@@ -122,6 +130,7 @@ export default function BookingForm() {
   const [serverError, setServerError] = useState('');
 
   const [locations, setLocations] = useState<Location[]>([]);
+  const [hospitalityOptions, setHospitalityOptions] = useState<HospitalityOption[]>([]);
   const [quotes, setQuotes] = useState<CarPriceQuote[]>([]);
   const [pricingLoaded, setPricingLoaded] = useState(false);
   const [routeKey, setRouteKey] = useState('');
@@ -136,9 +145,13 @@ export default function BookingForm() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const locsRes = await getPublicLocationsAction();
+      const [locsRes, hospitalityRes] = await Promise.all([
+        getPublicLocationsAction(),
+        getPublicHospitalityOptionsAction(),
+      ]);
       if (!active) return;
       setLocations(locsRes);
+      setHospitalityOptions(hospitalityRes);
     })();
     return () => {
       active = false;
@@ -180,19 +193,76 @@ export default function BookingForm() {
     () => (routeReady && !pricingStale ? quotes : []),
     [pricingStale, quotes, routeReady],
   );
-  const availableQuotes = useMemo(() => effectiveQuotes.filter((q) => q.available), [effectiveQuotes]);
+  const availableQuotes = useMemo(
+    () =>
+      effectiveQuotes.filter(
+        (q) => q.available && q.car.passenger_capacity >= form.passengerCount,
+      ),
+    [effectiveQuotes, form.passengerCount],
+  );
   const selectedQuote = useMemo(
-    () => effectiveQuotes.find((q) => q.car.id === form.carId) ?? null,
-    [effectiveQuotes, form.carId],
+    () => availableQuotes.find((q) => q.car.id === form.carId) ?? null,
+    [availableQuotes, form.carId],
   );
   const pricingLoading = routeReady && (pricingStale || !pricingLoaded);
 
   const roundTripMultiplier = form.tripType === 'round_trip' ? 2 : 1;
   const displayTotal = selectedQuote ? selectedQuote.price * roundTripMultiplier : 0;
 
+  const hospitalitySummary = useMemo(
+    () =>
+      hospitalityOptions
+        .map((option) => {
+          const quantity = form.hospitalitySelections[option.id] ?? 0;
+          if (quantity < 1) return null;
+          return {
+            id: option.id,
+            label: lang === 'ar' ? option.name_ar : option.name,
+            quantity,
+          };
+        })
+        .filter((item): item is { id: string; label: string; quantity: number } => item !== null),
+    [form.hospitalitySelections, hospitalityOptions, lang],
+  );
+
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key as string]: '', general: '' }));
+    setServerError('');
+  };
+
+  const updatePassengerCount = (value: number) => {
+    const passengerCount = Math.min(20, Math.max(1, Number.isFinite(value) ? value : 1));
+    setForm((prev) => ({
+      ...prev,
+      passengerCount,
+      hospitalitySelections: Object.fromEntries(
+        Object.entries(prev.hospitalitySelections as Record<string, number>)
+          .map(([optionId, quantity]) => [optionId, Math.min(quantity, passengerCount)])
+          .filter(([, quantity]) => Number(quantity) > 0),
+      ),
+      carId: '',
+    }));
+    setErrors((prev) => ({ ...prev, passengerCount: '', carId: '', hospitalitySelections: '' }));
+    setServerError('');
+  };
+
+  const updateHospitalityQuantity = (optionId: string, quantity: number) => {
+    const nextQuantity = Math.min(form.passengerCount, Math.max(0, quantity));
+    setForm((prev) => {
+      const nextSelections = { ...prev.hospitalitySelections };
+      if (nextQuantity === 0) {
+        delete nextSelections[optionId];
+      } else {
+        nextSelections[optionId] = nextQuantity;
+      }
+
+      return {
+        ...prev,
+        hospitalitySelections: nextSelections,
+      };
+    });
+    setErrors((prev) => ({ ...prev, hospitalitySelections: '' }));
     setServerError('');
   };
 
@@ -249,6 +319,9 @@ export default function BookingForm() {
         form.pickup.locationId === form.dropoff.locationId
       )
         e.dropoff = t('err.sameLocation');
+      if (!Number.isInteger(form.passengerCount) || form.passengerCount < 1 || form.passengerCount > 20) {
+        e.passengerCount = t('err.passengers');
+      }
       if (!form.date) e.date = t('err.date');
       if (!form.time) e.time = t('err.time');
       if (involvesAirport && !form.flightNumber.trim()) e.flightNumber = t('err.flight');
@@ -344,6 +417,13 @@ export default function BookingForm() {
           }),
       carId: form.carId,
       vehicleClass: selectedQuote?.vehicle_class ?? 'standard',
+      passengerCount: form.passengerCount,
+      hospitalitySelections: Object.entries(form.hospitalitySelections)
+        .filter(([, quantity]) => quantity > 0)
+        .map(([optionId, quantity]) => ({
+          optionId,
+          quantity,
+        })),
       paymentMethod: form.paymentMethod,
       notes: form.notes,
       price: displayTotal,
@@ -604,6 +684,23 @@ export default function BookingForm() {
             {errors.pickup && <FieldError msg={errors.pickup} />}
             {errors.dropoff && <FieldError msg={errors.dropoff} />}
 
+            <div>
+              <label className={labelClass} htmlFor="bf-passengers">
+                {t('trip.passengers')}
+              </label>
+              <input
+                id="bf-passengers"
+                type="number"
+                min={1}
+                max={20}
+                value={form.passengerCount}
+                onChange={(e) => updatePassengerCount(Number(e.target.value))}
+                className={fieldClass}
+                dir="ltr"
+              />
+              {errors.passengerCount && <FieldError msg={errors.passengerCount} />}
+            </div>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className={labelClass} htmlFor="bf-date">
@@ -749,7 +846,11 @@ export default function BookingForm() {
             )}
             {routeReady && !pricingLoading && availableQuotes.length === 0 && (
               <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-                {t('car.noPricing')}
+                {effectiveQuotes.some((q) => q.available)
+                  ? lang === 'ar'
+                    ? `لا توجد سيارة متاحة تسع ${form.passengerCount} راكبًا على هذا المسار.`
+                    : `No available car fits ${form.passengerCount} passengers on this route.`
+                  : t('car.noPricing')}
               </div>
             )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -802,6 +903,70 @@ export default function BookingForm() {
         {step === 4 && (
           <div className="flex flex-col gap-3">
             <h3 className="text-base font-bold text-slate-800">{t('payment.title')}</h3>
+
+            {hospitalityOptions.length > 0 && (
+              <div className="rounded-2xl border border-[var(--cms-primary)]/15 bg-[var(--cms-primary)]/5 p-4">
+                <div className="mb-3 flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[var(--cms-primary)] shadow-sm">
+                    <Coffee className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">{t('hospitality.title')}</h4>
+                    <p className="text-xs text-slate-600">{t('hospitality.subtitle')}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {hospitalityOptions.map((option) => {
+                    const quantity = form.hospitalitySelections[option.id] ?? 0;
+                    return (
+                      <div
+                        key={option.id}
+                        className="flex flex-col gap-3 rounded-xl border border-white/80 bg-white/90 p-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {lang === 'ar' ? option.name_ar : option.name}
+                          </p>
+                          <p className="text-xs text-emerald-700">{t('hospitality.free')}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateHospitalityQuantity(option.id, quantity - 1)}
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            min={0}
+                            max={form.passengerCount}
+                            value={quantity}
+                            onChange={(e) =>
+                              updateHospitalityQuantity(option.id, Number(e.target.value))
+                            }
+                            className="h-9 w-20 rounded-lg border border-slate-300 bg-white px-2 text-center text-sm font-semibold text-slate-900 focus:border-[var(--cms-primary)] focus:outline-none"
+                            dir="ltr"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateHospitalityQuantity(option.id, quantity + 1)}
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <p className="mt-3 text-xs text-slate-500">{t('hospitality.limit')}</p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-2.5">
               {PAYMENT_OPTIONS.map(({ value, icon: Icon, labelKey, descKey }) => {
                 const selected = form.paymentMethod === value;
@@ -878,6 +1043,15 @@ export default function BookingForm() {
                 selectedQuote
                   ? `${lang === 'ar' ? selectedQuote.car.name_ar : selectedQuote.car.name}`
                   : '-'
+              }
+            />
+            <SummaryRow label={t('trip.passengers')} value={String(form.passengerCount)} dir="ltr" />
+            <SummaryRow
+              label={t('hospitality.title')}
+              value={
+                hospitalitySummary.length > 0
+                  ? hospitalitySummary.map((item) => `${item.label} x${item.quantity}`).join(', ')
+                  : t('hospitality.none')
               }
             />
             <SummaryRow label={t('summary.payment')} value={paymentLabel(form.paymentMethod, lang)} />

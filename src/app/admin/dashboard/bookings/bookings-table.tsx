@@ -76,6 +76,16 @@ const VEHICLE_LABELS: Record<string, string> = {
   van: 'فان',
 };
 
+function formatHospitalitySelections(booking: Booking): string {
+  if (!Array.isArray(booking.hospitality_selections) || booking.hospitality_selections.length === 0) {
+    return 'لا توجد';
+  }
+
+  return booking.hospitality_selections
+    .map((selection) => `${selection.name_ar || selection.name} × ${selection.quantity}`)
+    .join('، ');
+}
+
 export default function BookingsTable({
   bookings,
   drivers,
@@ -364,6 +374,14 @@ export default function BookingsTable({
                                 <p className="text-slate-700">
                                   {(booking.driver as { name?: string } | null)?.name ?? 'غير معين'}
                                 </p>
+                              </div>
+                              <div className="col-span-2 md:col-span-4">
+                                <p className="mb-1 text-xs text-slate-500">عدد الركاب</p>
+                                <p className="text-slate-700" dir="ltr">{booking.passenger_count ?? 1}</p>
+                              </div>
+                              <div className="col-span-2 md:col-span-4">
+                                <p className="mb-1 text-xs text-slate-500">الضيافة المجانية</p>
+                                <p className="text-slate-700">{formatHospitalitySelections(booking)}</p>
                               </div>
                               {booking.notes && (
                                 <div className="col-span-2 md:col-span-4">

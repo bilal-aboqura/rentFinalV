@@ -36,6 +36,11 @@ const EndpointSchema = z.object({
   text: z.string().max(200).optional().or(z.literal('')),
 });
 
+const HospitalitySelectionSchema = z.object({
+  optionId: z.string().uuid('Hospitality option is invalid.'),
+  quantity: z.number().int().min(1, 'Hospitality quantity must be at least 1.'),
+});
+
 export const TransferBookingSchema = z
   .object({
     language: z.enum(BOOKING_LANGUAGES).default('ar'),
@@ -73,6 +78,8 @@ export const TransferBookingSchema = z
     // Car + payment
     carId: z.string().min(1, 'Please select a car.'),
     vehicleClass: z.enum(['standard', 'executive', 'van']),
+    passengerCount: z.number().int().min(1, 'Passenger count is required.').max(20),
+    hospitalitySelections: z.array(HospitalitySelectionSchema).default([]),
     paymentMethod: z.enum(PAYMENT_METHODS),
     notes: z.string().trim().max(1000).optional().or(z.literal('')),
     // Client-displayed price (re-verified server-side).
@@ -105,7 +112,30 @@ export const TransferBookingSchema = z
       message: 'Return route, date, and time are required for a round trip.',
       path: ['returnDate'],
     },
-  );
+  )
+  .superRefine((data, ctx) => {
+    const uniqueIds = new Set<string>();
+
+    data.hospitalitySelections.forEach((selection, index) => {
+      if (selection.quantity > data.passengerCount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['hospitalitySelections', index, 'quantity'],
+          message: 'Hospitality quantity cannot exceed passenger count.',
+        });
+      }
+
+      if (uniqueIds.has(selection.optionId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['hospitalitySelections', index, 'optionId'],
+          message: 'Duplicate hospitality option selected.',
+        });
+      }
+
+      uniqueIds.add(selection.optionId);
+    });
+  });
 
 export type TransferBookingInput = z.infer<typeof TransferBookingSchema>;
 
@@ -133,7 +163,14 @@ export interface TransferBookingPayload {
   returnDropoff?: TransferEndpoint;
   carId: string;
   vehicleClass: 'standard' | 'executive' | 'van';
+  passengerCount: number;
+  hospitalitySelections: TransferHospitalitySelection[];
   paymentMethod: PaymentMethod;
   notes?: string;
   price: number;
+}
+
+export interface TransferHospitalitySelection {
+  optionId: string;
+  quantity: number;
 }

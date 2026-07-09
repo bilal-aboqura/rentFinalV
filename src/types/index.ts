@@ -19,6 +19,31 @@ export type TripType = 'one_way' | 'round_trip';
 export type EndpointType = 'airport' | 'hotel' | 'address' | 'other';
 export type BookingLanguage = 'ar' | 'en';
 
+export interface HospitalityOption {
+  id: string;
+  name: string;
+  name_ar: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SaveHospitalityOptionInput {
+  id?: string;
+  name: string;
+  name_ar: string;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+export interface BookingHospitalitySelection {
+  option_id: string;
+  name: string;
+  name_ar: string;
+  quantity: number;
+}
+
 // ----------------------------------------------------------------
 // Location
 // ----------------------------------------------------------------
@@ -126,6 +151,8 @@ export interface Booking {
   language: BookingLanguage;
   notes: string | null;
   payment_method: PaymentMethod;
+  passenger_count: number;
+  hospitality_selections: BookingHospitalitySelection[];
   // WhatsApp handoff / display fields (migration 20260704000008)
   departure_airport: string;
   arrival_airport: string;
