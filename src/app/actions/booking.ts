@@ -13,7 +13,7 @@
  * (pickup_location_id, destination_location_id, vehicle_class).
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { getSiteSettings } from '@/app/actions/cms';
 import { verifyRoutePriceAction } from '@/app/actions/pricing';
 import { TransferBookingSchema } from '@/lib/validation/transfer';
@@ -66,7 +66,7 @@ export async function submitBookingRequestAction(
   const data = parsed.data;
 
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
 
     const outboundPrice = await verifyRoutePriceAction(
       data.pickup.locationId,

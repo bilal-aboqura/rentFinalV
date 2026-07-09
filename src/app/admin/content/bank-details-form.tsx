@@ -155,7 +155,7 @@ export default function BankDetailsForm({ initial, initialAccounts }: BankDetail
             value={whatsappNumber}
             onChange={(event) => setWhatsappNumber(event.target.value)}
             dir="ltr"
-            placeholder="201102770678"
+            placeholder="966503520446"
           />
           <button
             type="submit"

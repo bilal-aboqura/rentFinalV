@@ -60,7 +60,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   account_holder_name: 'Airport Transfer Co.',
   iban: 'SA00 0000 0000 0000 0000',
   bank_qr_url: null,
-  whatsapp_number: '201102770678',
+  whatsapp_number: '966503520446',
   updated_at: '1970-01-01T00:00:00.000Z',
 };
 
