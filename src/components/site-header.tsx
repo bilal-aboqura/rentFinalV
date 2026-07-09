@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -9,27 +10,29 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const NAV_ITEMS = [
-  { href: '#booking',     labelKey: 'nav.book' },
-  { href: '#prices',      labelKey: 'nav.fleet' },
-  { href: '#experience',  labelKey: 'nav.experience' },
+  { href: '#booking', labelKey: 'nav.book' },
+  { href: '#prices', labelKey: 'nav.fleet' },
+  { href: '#experience', labelKey: 'nav.experience' },
   { href: '#how-it-works', labelKey: 'nav.howItWorks' },
 ];
 
+const BRAND_NAME = {
+  ar: 'دقه الوقت',
+  en: 'Daqat Alwaqt',
+} as const;
+
 export default function SiteHeader({ settings }: { settings: SiteSettings }) {
   const [open, setOpen] = useState(false);
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
 
   return (
     <header className="sticky top-0 z-50 overflow-hidden border-b border-slate-200 bg-white/95 backdrop-blur-md">
-      {/* ─── Top bar ─────────────────────────────────── */}
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:px-6 sm:py-3.5">
-
-        {/* Brand */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {settings.site_logo_url ? (
             <img
               src={settings.site_logo_url}
-              alt="Logo"
+              alt={BRAND_NAME[lang]}
               className="h-9 w-9 rounded-xl border border-slate-200 bg-white object-contain p-1.5 sm:h-10 sm:w-10 sm:p-2"
             />
           ) : (
@@ -38,11 +41,10 @@ export default function SiteHeader({ settings }: { settings: SiteSettings }) {
             </div>
           )}
           <span className="truncate text-base font-semibold text-slate-950 sm:text-lg">
-            دقة الوقت
+            {BRAND_NAME[lang]}
           </span>
         </div>
 
-        {/* Desktop nav */}
         <nav className="hidden items-center gap-5 lg:flex">
           {NAV_ITEMS.map((item) => (
             <a
@@ -67,7 +69,6 @@ export default function SiteHeader({ settings }: { settings: SiteSettings }) {
           </Link>
         </nav>
 
-        {/* Desktop actions (lg+) */}
         <div className="hidden items-center gap-2 lg:flex">
           <ThemeToggle />
           <LanguageSwitcher />
@@ -82,12 +83,11 @@ export default function SiteHeader({ settings }: { settings: SiteSettings }) {
           </a>
         </div>
 
-        {/* Mobile: compact actions + hamburger */}
         <div className="flex items-center gap-1.5 lg:hidden">
           <ThemeToggle />
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => setOpen((value) => !value)}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             aria-label={open ? t('nav.close') : t('nav.open')}
             aria-expanded={open}
@@ -97,7 +97,6 @@ export default function SiteHeader({ settings }: { settings: SiteSettings }) {
         </div>
       </div>
 
-      {/* ─── Mobile drawer ───────────────────────────── */}
       {open && (
         <div className="border-t border-slate-100 bg-white lg:hidden">
           <nav className="mx-auto flex max-w-7xl flex-col gap-0.5 px-3 pb-4 pt-2 sm:px-6">
@@ -126,10 +125,8 @@ export default function SiteHeader({ settings }: { settings: SiteSettings }) {
               {t('nav.dashboard')}
             </Link>
 
-            {/* Divider */}
             <div className="my-2 border-t border-slate-100" />
 
-            {/* Language + phone */}
             <div className="flex flex-wrap items-center gap-2 px-1">
               <LanguageSwitcher />
               <a

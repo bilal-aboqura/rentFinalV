@@ -278,6 +278,10 @@ export default function CustomerHome({
   const { lang, dir } = useLanguage();
   const copy = COPY[lang];
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
+  const heroTitleClass =
+    lang === 'ar'
+      ? 'text-[clamp(2.4rem,9vw,6.2rem)] leading-[1.08]'
+      : 'max-w-[14ch] text-[clamp(2.2rem,5.4vw,4.8rem)] leading-[1.02] [text-wrap:balance]';
   const priceFormatter = new Intl.NumberFormat(lang === 'ar' ? 'ar-SA' : 'en-US', {
     maximumFractionDigits: 2,
   });
@@ -315,7 +319,10 @@ export default function CustomerHome({
               <p className="at-rise mx-auto w-fit rounded-full border border-[var(--brand-primary)]/20 bg-white/70 px-4 py-2 text-xs font-bold tracking-[0.22em] text-[var(--brand-primary)] shadow-sm backdrop-blur lg:mx-0" style={{ animationDelay: '0ms' }}>
                 AIRPORT TRANSFER
               </p>
-              <h1 className="at-rise mx-auto max-w-5xl text-[clamp(2.4rem,9vw,6.2rem)] font-semibold leading-[1.08] text-slate-950 lg:mx-0" style={{ animationDelay: '90ms' }}>
+              <h1
+                className={`at-rise mx-auto font-semibold text-slate-950 lg:mx-0 ${heroTitleClass}`}
+                style={{ animationDelay: '90ms' }}
+              >
                 {lang === 'ar' ? settings.hero_title || copy.heroTitle : copy.heroTitle}
               </h1>
               <p className="at-rise mx-auto max-w-3xl text-sm font-medium leading-7 text-slate-600 sm:text-[1.05rem] sm:leading-8 lg:mx-0" style={{ animationDelay: '180ms' }}>
@@ -343,7 +350,10 @@ export default function CustomerHome({
               </Link>
             </div>
 
-            <div className="at-rise hidden space-y-5 border-t border-slate-200 pt-6 lg:block" style={{ animationDelay: '380ms' }}>
+            <div
+              className="at-rise hidden space-y-5 border-t pt-6 lg:block"
+              style={{ animationDelay: '380ms', borderColor: 'color-mix(in srgb, var(--brand-secondary) 45%, white)' }}
+            >
               <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
                 <Phone className="h-4 w-4 text-[var(--brand-secondary)]" />
                 <span>{copy.supportLine}</span>
@@ -351,9 +361,20 @@ export default function CustomerHome({
                   {settings.contact_phone}
                 </a>
               </div>
-              <div className="grid gap-4 border-t border-slate-200 pt-5 sm:grid-cols-3">
+              <div
+                className="grid gap-4 border-t pt-5 sm:grid-cols-3"
+                style={{ borderColor: 'color-mix(in srgb, var(--brand-secondary) 45%, white)' }}
+              >
                 {copy.facts.map(([value, label]) => (
-                  <div key={label} className="space-y-2 transition-transform duration-300 hover:-translate-y-0.5 sm:border-r sm:border-slate-200 sm:pr-4">
+                  <div
+                    key={label}
+                    className={`space-y-2 transition-transform duration-300 hover:-translate-y-0.5 ${
+                      dir === 'rtl'
+                        ? 'sm:border-r sm:pr-4'
+                        : 'sm:border-l sm:pl-4'
+                    }`}
+                    style={{ borderColor: 'color-mix(in srgb, var(--brand-secondary) 45%, white)' }}
+                  >
                     <p className="text-2xl font-semibold text-slate-950">{value}</p>
                     <p className="text-sm leading-6 text-slate-600">{label}</p>
                   </div>
@@ -365,7 +386,14 @@ export default function CustomerHome({
           <div id="booking" className="at-pop relative min-w-0 lg:pt-8" style={{ animationDelay: '150ms' }}>
             <div className="at-glow absolute inset-x-8 top-4 h-28 rounded-full bg-[var(--brand-primary)]/10 blur-3xl" />
             <div className="relative overflow-hidden rounded-[22px] border border-black/6 bg-white/95 p-3 shadow-[0_28px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl sm:rounded-[34px]">
-              <div className="mb-3 rounded-[18px] border border-black/6 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_5%,white),color-mix(in_srgb,var(--brand-secondary)_10%,white))] px-4 py-4 text-slate-950">
+              <div
+                className="mb-3 rounded-[18px] border px-4 py-4 text-slate-950"
+                style={{
+                  borderColor: 'var(--cms-border)',
+                  background:
+                    'linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 9%, var(--cms-surface)), color-mix(in srgb, var(--brand-secondary) 14%, var(--cms-surface-strong)))',
+                }}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold tracking-[0.2em] text-slate-500">{copy.bookingEyebrow}</p>

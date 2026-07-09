@@ -11,7 +11,7 @@
 }
 
 :root {
-  --font-cairo: "Cairo", sans-serif;
+  --font-primary: var(--font-cairo);
   --cms-bg: #f1f5f9;
   --cms-primary: #0f6b7a;
   --cms-secondary: #9a6a1f;
@@ -27,6 +27,10 @@
   --hero-gradient-start: rgba(255,255,255,.9);
   --hero-gradient-mid: rgba(255,255,255,.72);
   --hero-gradient-end: rgba(255,255,255,.48);
+}
+
+:root[data-lang="en"] {
+  --font-primary: var(--font-poppins);
 }
 
 /* Eye-comfort / dark theme — toggled via data-theme="comfort" on <html>.
@@ -60,8 +64,8 @@ html {
 
 body {
   margin: 0;
-  direction: rtl;
-  font-family: var(--font-cairo), system-ui, sans-serif;
+  direction: inherit;
+  font-family: var(--font-primary), system-ui, sans-serif;
   background: var(--cms-bg-gradient);
   color: var(--cms-dark);
   max-width: 100%;
@@ -75,7 +79,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-cairo), system-ui, sans-serif;
+  font-family: var(--font-primary), system-ui, sans-serif;
   letter-spacing: 0;
 }
 

@@ -1,9 +1,11 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowRight,
   CheckCircle,
   Loader2,
@@ -13,6 +15,9 @@ import {
   Send,
 } from 'lucide-react';
 import { submitContactForm } from '@/app/actions/contact';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { useLanguage } from '@/lib/i18n/LanguageProvider';
 import type { SiteSettings } from '@/types';
 
 interface FormState {
@@ -31,7 +36,74 @@ const MAX_LENGTHS: Record<keyof FormState, number> = {
   message: 3000,
 };
 
+const CONTACT_COPY = {
+  ar: {
+    brand: 'دقه الوقت',
+    backToHome: 'العودة إلى موقع الحجز',
+    sectionKicker: 'تواصل معنا',
+    title: 'كيف يمكننا مساعدتك؟',
+    description:
+      'استخدم هذه الصفحة لطلبات المسارات الخاصة أو الاستفسارات أو أي دعم يحتاج ردًا سريعًا من الفريق.',
+    phone: 'الهاتف',
+    phoneDescription: 'الأفضل للتعديلات العاجلة على الرحلات والتنسيق في نفس اليوم.',
+    email: 'البريد الإلكتروني',
+    emailDescription: 'مناسب للطلبات التفصيلية وخطط الرحلات والاحتياجات الخاصة بالخدمة.',
+    afterSendTitle: 'ماذا تتوقع بعد الإرسال',
+    afterSendText:
+      'تُرسل رسالتك بصيغة منظمة تساعد الفريق على المراجعة والرد بشكل أسرع ومن دون مراسلات إضافية غير ضرورية.',
+    formEyebrow: 'نموذج التواصل',
+    formTitle: 'أخبرنا بما تحتاجه',
+    successTitle: 'تم إرسال الرسالة',
+    successText:
+      'شكرًا لك. استلم الفريق طلبك وسيقوم بالمتابعة عبر بيانات التواصل التي أدخلتها.',
+    sendAnother: 'إرسال رسالة أخرى',
+    backHome: 'العودة للرئيسية',
+    fullName: 'الاسم الكامل',
+    fullNamePlaceholder: 'الاسم الكامل',
+    subject: 'الموضوع',
+    subjectPlaceholder: 'طلب مسار خاص',
+    message: 'الرسالة',
+    messagePlaceholder: 'اكتب تفاصيل المسار أو الموعد أو أي متطلبات خاصة.',
+    submit: 'إرسال الرسالة',
+    submitting: 'جارٍ الإرسال...',
+  },
+  en: {
+    brand: 'Daqat Alwaqt',
+    backToHome: 'Back to booking website',
+    sectionKicker: 'Contact Us',
+    title: 'How can we help?',
+    description:
+      'Use this page for custom route requests, support questions, or any trip detail that needs a fast response from our team.',
+    phone: 'Phone',
+    phoneDescription: 'Best for urgent trip updates, same-day coordination, and quick booking help.',
+    email: 'Email',
+    emailDescription: 'Best for detailed requests, travel plans, and service requirements that need more context.',
+    afterSendTitle: 'What happens after you send this?',
+    afterSendText:
+      'Your message arrives in a structured format that helps our team review it quickly and respond without unnecessary back-and-forth.',
+    formEyebrow: 'Contact Form',
+    formTitle: 'Tell us what you need',
+    successTitle: 'Message sent successfully',
+    successText:
+      'Thank you. Our team received your request and will follow up using the contact details you provided.',
+    sendAnother: 'Send another message',
+    backHome: 'Back to home',
+    fullName: 'Full name',
+    fullNamePlaceholder: 'Your full name',
+    subject: 'Subject',
+    subjectPlaceholder: 'Custom route request',
+    message: 'Message',
+    messagePlaceholder: 'Share your route, date, or any special trip requirements.',
+    submit: 'Send message',
+    submitting: 'Sending...',
+  },
+} as const;
+
 export function ContactPageClient({ settings }: { settings: SiteSettings }) {
+  const { dir, lang } = useLanguage();
+  const copy = CONTACT_COPY[lang];
+  const BackIcon = dir === 'rtl' ? ArrowRight : ArrowLeft;
+
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -70,20 +142,26 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
     <main className="animated-bg relative min-h-screen overflow-x-clip px-3 py-5 sm:px-8 sm:py-6 lg:px-10">
       <div className="relative mx-auto max-w-7xl">
         <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href="/"
-            id="contact-back-link"
-            className="btn-secondary inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-semibold sm:w-fit"
-          >
-            <ArrowRight className="h-4 w-4" />
-            العودة إلى موقع الحجز
-          </Link>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              href="/"
+              id="contact-back-link"
+              className="btn-secondary inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-semibold sm:w-fit"
+            >
+              <BackIcon className="h-4 w-4" />
+              {copy.backToHome}
+            </Link>
+            <div className="flex items-center justify-center gap-2 sm:justify-start">
+              <ThemeToggle />
+              <LanguageSwitcher />
+            </div>
+          </div>
 
           <div className="flex items-center gap-3">
             {settings.site_logo_url ? (
               <img
                 src={settings.site_logo_url}
-                alt="شعار دقه الوقت"
+                alt={copy.brand}
                 className="h-10 w-10 rounded-xl border border-slate-200 bg-white object-contain p-2"
               />
             ) : (
@@ -92,41 +170,38 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
               </div>
             )}
             <div>
-              <p className="text-xl font-semibold text-slate-950">دقه الوقت</p>
+              <p className="text-xl font-semibold text-slate-950">{copy.brand}</p>
             </div>
           </div>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
           <section className="panel-card px-4 py-6 sm:px-8 sm:py-8">
-            <span className="section-kicker">تواصل معنا</span>
-            <h1 className="mt-4 text-3xl font-semibold text-slate-950 sm:text-4xl sm:text-5xl">كيف يمكننا مساعدتك؟</h1>
-            <p className="section-copy mt-4 max-w-xl">
-              استخدم هذه الصفحة لطلبات المسارات الخاصة أو الاستفسارات أو أي دعم يحتاج ردًا
-              سريعًا من الفريق.
-            </p>
+            <span className="section-kicker">{copy.sectionKicker}</span>
+            <h1 className="mt-4 text-3xl font-semibold text-slate-950 sm:text-4xl sm:text-5xl">
+              {copy.title}
+            </h1>
+            <p className="section-copy mt-4 max-w-xl">{copy.description}</p>
 
             <div className="mt-8 grid gap-6">
               <a
                 href={`tel:${settings.contact_phone}`}
-                dir="ltr"
                 className="flex min-w-0 items-start gap-3 border-b border-black/8 pb-5 hover:text-slate-950"
               >
                 <div className="rounded-full bg-[var(--cms-primary)]/10 p-2.5">
                   <Phone className="h-4 w-4 text-[var(--cms-primary)]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">الهاتف</p>
-                  <p className="mt-2 break-words text-base font-semibold text-slate-950 sm:text-lg">{settings.contact_phone}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600" dir="rtl">
-                    الأفضل للتعديلات العاجلة على الرحلات والتنسيق في نفس اليوم.
+                  <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">{copy.phone}</p>
+                  <p dir="ltr" className="mt-2 break-words text-base font-semibold text-slate-950 sm:text-lg">
+                    {settings.contact_phone}
                   </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{copy.phoneDescription}</p>
                 </div>
               </a>
 
               <a
                 href={`mailto:${settings.contact_email}`}
-                dir="ltr"
                 className="flex min-w-0 items-start gap-3 border-b border-black/8 pb-5 hover:text-slate-950"
               >
                 <div className="rounded-full bg-[var(--cms-secondary)]/14 p-2.5">
@@ -134,31 +209,28 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
-                    البريد الإلكتروني
+                    {copy.email}
                   </p>
-                  <p className="mt-2 break-words text-base font-semibold text-slate-950 sm:text-lg">{settings.contact_email}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600" dir="rtl">
-                    مناسب للطلبات التفصيلية وخطط الرحلات والاحتياجات الخاصة بالخدمة.
+                  <p dir="ltr" className="mt-2 break-words text-base font-semibold text-slate-950 sm:text-lg">
+                    {settings.contact_email}
                   </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{copy.emailDescription}</p>
                 </div>
               </a>
             </div>
 
             <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
               <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
-                ماذا تتوقع بعد الإرسال
+                {copy.afterSendTitle}
               </p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                تُرسل رسالتك بصيغة منظمة تساعد الفريق على المراجعة والرد بشكل أسرع ومن دون
-                مراسلات إضافية غير ضرورية.
-              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{copy.afterSendText}</p>
             </div>
           </section>
 
           <section className="glass overflow-hidden rounded-[20px] glow">
             <div className="border-b border-slate-200 px-4 py-5 sm:px-8 sm:py-6">
-              <p className="text-sm font-medium text-slate-500">نموذج التواصل</p>
-              <h2 className="mt-1 text-3xl font-semibold text-slate-950">أخبرنا بما تحتاجه</h2>
+              <p className="text-sm font-medium text-slate-500">{copy.formEyebrow}</p>
+              <h2 className="mt-1 text-3xl font-semibold text-slate-950">{copy.formTitle}</h2>
             </div>
 
             <div className="p-4 sm:p-8">
@@ -167,10 +239,10 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
                   <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/14">
                     <CheckCircle className="h-9 w-9 text-emerald-500" />
                   </div>
-                  <h3 className="mt-6 text-3xl font-semibold text-slate-950 sm:text-4xl">تم إرسال الرسالة</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">
-                    شكرًا لك. استلم الفريق طلبك وسيقوم بالمتابعة عبر بيانات التواصل التي أدخلتها.
-                  </p>
+                  <h3 className="mt-6 text-3xl font-semibold text-slate-950 sm:text-4xl">
+                    {copy.successTitle}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">{copy.successText}</p>
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
                     <button
                       id="contact-send-another-btn"
@@ -179,10 +251,10 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
                       className="btn-primary inline-flex px-6 py-4 text-sm font-semibold"
                     >
                       <Send className="h-4 w-4" />
-                      إرسال رسالة أخرى
+                      {copy.sendAnother}
                     </button>
                     <Link href="/" className="btn-secondary inline-flex px-6 py-4 text-sm font-semibold">
-                      العودة للرئيسية
+                      {copy.backHome}
                     </Link>
                   </div>
                 </div>
@@ -200,14 +272,14 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div className="sm:col-span-2">
                       <label htmlFor="contact-name" className="mb-2 block text-sm font-semibold text-slate-700">
-                        الاسم الكامل
+                        {copy.fullName}
                       </label>
                       <input
                         id="contact-name"
                         name="name"
                         type="text"
                         maxLength={MAX_LENGTHS.name}
-                        placeholder="الاسم الكامل"
+                        placeholder={copy.fullNamePlaceholder}
                         value={form.name}
                         onChange={(event) => updateField('name', event.target.value)}
                         className="input-shell text-sm"
@@ -217,7 +289,7 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
 
                     <div>
                       <label htmlFor="contact-email" className="mb-2 block text-sm font-semibold text-slate-700">
-                        البريد الإلكتروني
+                        {copy.email}
                       </label>
                       <input
                         id="contact-email"
@@ -235,14 +307,14 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
 
                     <div>
                       <label htmlFor="contact-subject" className="mb-2 block text-sm font-semibold text-slate-700">
-                        الموضوع
+                        {copy.subject}
                       </label>
                       <input
                         id="contact-subject"
                         name="subject"
                         type="text"
                         maxLength={MAX_LENGTHS.subject}
-                        placeholder="طلب مسار خاص"
+                        placeholder={copy.subjectPlaceholder}
                         value={form.subject}
                         onChange={(event) => updateField('subject', event.target.value)}
                         className="input-shell text-sm"
@@ -252,13 +324,13 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
 
                     <div className="sm:col-span-2">
                       <label htmlFor="contact-message" className="mb-2 block text-sm font-semibold text-slate-700">
-                        الرسالة
+                        {copy.message}
                       </label>
                       <textarea
                         id="contact-message"
                         name="message"
                         maxLength={MAX_LENGTHS.message}
-                        placeholder="اكتب تفاصيل المسار أو الموعد أو أي متطلبات خاصة."
+                        placeholder={copy.messagePlaceholder}
                         rows={6}
                         value={form.message}
                         onChange={(event) => updateField('message', event.target.value)}
@@ -277,12 +349,12 @@ export function ContactPageClient({ settings }: { settings: SiteSettings }) {
                     {isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        جارٍ الإرسال...
+                        {copy.submitting}
                       </>
                     ) : (
                       <>
                         <Send className="h-4 w-4" />
-                        إرسال الرسالة
+                        {copy.submit}
                       </>
                     )}
                   </button>

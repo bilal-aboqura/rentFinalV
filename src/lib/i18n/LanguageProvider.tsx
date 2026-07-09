@@ -11,11 +11,13 @@ import {
 } from "react";
 import {
   DEFAULT_LANGUAGE,
+  getLanguageDirection,
+  LANGUAGE_COOKIE_KEY,
+  LANGUAGE_STORAGE_KEY,
+  resolveLanguage,
   dictionary,
   type Language,
 } from "./dictionaries";
-
-const STORAGE_KEY = "at_lang";
 
 type TranslationFunction = (key: string, lang?: Language) => string;
 
@@ -32,49 +34,61 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 function readStoredLanguage(): Language {
   if (typeof window === "undefined") return DEFAULT_LANGUAGE;
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "ar" || stored === "en") return stored;
+    const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (stored) return resolveLanguage(stored);
   } catch {
     // localStorage may be unavailable (private mode); ignore.
   }
-  return DEFAULT_LANGUAGE;
+  return resolveLanguage(document.documentElement.getAttribute("data-lang"));
 }
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  // Start with the default (server-rendered) language to avoid hydration
-  // mismatches, then sync from localStorage after mount.
-  const [lang, setLangState] = useState<Language>(DEFAULT_LANGUAGE);
+function persistLanguage(next: Language) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
+  } catch {
+    // ignore storage failures
+  }
+  document.cookie = `${LANGUAGE_COOKIE_KEY}=${next}; path=/; max-age=31536000; samesite=lax`;
+}
+
+export function LanguageProvider({
+  children,
+  initialLanguage = DEFAULT_LANGUAGE,
+}: {
+  children: ReactNode;
+  initialLanguage?: Language;
+}) {
+  const [lang, setLangState] = useState<Language>(initialLanguage);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads persisted language after hydration (localStorage is unavailable during SSR)
-    setLangState(readStoredLanguage());
-  }, []);
+    const stored = readStoredLanguage();
+    if (stored !== lang) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reads persisted language after hydration (localStorage is unavailable during SSR)
+      setLangState(stored);
+      return;
+    }
+    persistLanguage(lang);
+  }, [lang]);
 
   // Keep <html lang/dir> in sync with the active language.
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const dir = lang === "ar" ? "rtl" : "ltr";
+    const dir = getLanguageDirection(lang);
     document.documentElement.lang = lang;
     document.documentElement.dir = dir;
+    document.documentElement.setAttribute("data-lang", lang);
   }, [lang]);
 
   const setLang = useCallback((next: Language) => {
     setLangState(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // ignore storage failures
-    }
+    persistLanguage(next);
   }, []);
 
   const toggleLang = useCallback(() => {
     setLangState((prev) => {
       const next: Language = prev === "ar" ? "en" : "ar";
-      try {
-        window.localStorage.setItem(STORAGE_KEY, next);
-      } catch {
-        // ignore storage failures
-      }
+      persistLanguage(next);
       return next;
     });
   }, []);
@@ -92,7 +106,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const value = useMemo<LanguageContextValue>(
     () => ({
       lang,
-      dir: lang === "ar" ? "rtl" : "ltr",
+      dir: getLanguageDirection(lang),
       setLang,
       toggleLang,
       t,

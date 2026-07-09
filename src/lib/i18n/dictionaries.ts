@@ -3,6 +3,20 @@ export type Language = "ar" | "en";
 export const LANGUAGES: Language[] = ["ar", "en"];
 
 export const DEFAULT_LANGUAGE: Language = "ar";
+export const LANGUAGE_STORAGE_KEY = "at_lang";
+export const LANGUAGE_COOKIE_KEY = "at_lang";
+
+export function isLanguage(value: string | null | undefined): value is Language {
+  return value === "ar" || value === "en";
+}
+
+export function resolveLanguage(value: string | null | undefined): Language {
+  return isLanguage(value) ? value : DEFAULT_LANGUAGE;
+}
+
+export function getLanguageDirection(lang: Language): "rtl" | "ltr" {
+  return lang === "ar" ? "rtl" : "ltr";
+}
 
 export const LANGUAGE_LABELS: Record<Language, string> = {
   ar: "العربية",
