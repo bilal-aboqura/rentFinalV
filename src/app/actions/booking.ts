@@ -129,7 +129,7 @@ export async function submitBookingRequestAction(
 
     const { data: carRow } = await supabase
       .from('cars')
-      .select('name, name_ar')
+      .select('name, name_ar, hospitality_enabled')
       .eq('id', data.carId)
       .maybeSingle();
 
@@ -138,6 +138,13 @@ export async function submitBookingRequestAction(
 
     const hospitalitySelectionsSnapshot: BookingHospitalitySelection[] = [];
     if (data.hospitalitySelections.length > 0) {
+      if (!carRow?.hospitality_enabled) {
+        return {
+          success: false,
+          error: 'Hospitality is not available for the selected car.',
+          validationErrors: { hospitalitySelections: ['Hospitality is not available for the selected car.'] },
+        };
+      }
       const selectedHospitalityIds = data.hospitalitySelections.map((selection) => selection.optionId);
       const { data: hospitalityRows, error: hospitalityError } = (await supabase
         .from('hospitality_options')

@@ -225,6 +225,8 @@ export default function BookingForm() {
     [form.hospitalitySelections, hospitalityOptions, lang],
   );
 
+  const hospitalityAvailable = selectedQuote?.car.hospitality_enabled === true;
+
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key as string]: '', general: '' }));
@@ -861,7 +863,15 @@ export default function BookingForm() {
                   <button
                     key={q.car.id}
                     type="button"
-                    onClick={() => update('carId', q.car.id)}
+                    onClick={() => {
+                      setForm((prev) => ({
+                        ...prev,
+                        carId: q.car.id,
+                        hospitalitySelections: q.car.hospitality_enabled ? prev.hospitalitySelections : {},
+                      }));
+                      setErrors((prev) => ({ ...prev, carId: '', hospitalitySelections: '', general: '' }));
+                      setServerError('');
+                    }}
                     className={`flex items-start gap-3 rounded-xl border p-3 text-start transition ${
                       selected
                         ? 'border-[var(--cms-primary)] bg-[var(--cms-primary)]/8 ring-2 ring-[var(--cms-primary)]/30'
@@ -904,7 +914,7 @@ export default function BookingForm() {
           <div className="flex flex-col gap-3">
             <h3 className="text-base font-bold text-slate-800">{t('payment.title')}</h3>
 
-            {hospitalityOptions.length > 0 && (
+            {hospitalityAvailable && hospitalityOptions.length > 0 && (
               <div className="rounded-2xl border border-[var(--cms-primary)]/15 bg-[var(--cms-primary)]/5 p-4">
                 <div className="mb-3 flex items-start gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[var(--cms-primary)] shadow-sm">

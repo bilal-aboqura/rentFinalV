@@ -14,6 +14,7 @@ import {
   Loader2,
   AlertCircle,
   UserCheck,
+  MessageCircle,
 } from 'lucide-react';
 
 interface Props {
@@ -413,6 +414,17 @@ export default function BookingsTable({
                                     </option>
                                   ))}
                               </select>
+                              {booking.driver?.phone && (
+                                <a
+                                  href={`https://wa.me/${booking.driver.phone.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-3 py-2 text-xs font-bold text-white transition hover:brightness-95"
+                                >
+                                  <MessageCircle className="h-4 w-4" />
+                                  مراسلة السائق واتساب
+                                </a>
+                              )}
                               <span className="text-xs text-slate-500">
                                 يتم التحقق من تعارض المواعيد خلال 3 ساعات
                               </span>

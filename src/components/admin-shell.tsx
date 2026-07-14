@@ -9,6 +9,7 @@ import {
   MapPin,
   Plane,
   Settings,
+  UserCog,
   Users,
 } from 'lucide-react';
 import { adminLogoutAction } from '@/app/admin/dashboard/actions';
@@ -16,6 +17,7 @@ import AdminThemeToggle from '@/components/admin-theme-toggle';
 import NotificationsList from '@/components/notifications-list';
 
 const NAV_LINKS = [
+  { href: '/admin/profile', label: 'الملف الشخصي', icon: UserCog },
   { href: '/admin/bookings', label: 'الحجوزات', icon: CalendarCheck },
   { href: '/admin/inquiries', label: 'الاستفسارات', icon: FileText },
   { href: '/admin/drivers', label: 'السائقون', icon: Users },
@@ -37,7 +39,7 @@ export default function AdminShell({
   return (
     <div className="relative min-h-screen overflow-x-clip bg-slate-50">
       <div className="relative mx-auto flex min-h-screen max-w-[1600px] flex-col gap-3 p-3 sm:gap-5 sm:p-6 xl:flex-row">
-        <aside className="admin-panel flex w-full shrink-0 flex-col gap-3 p-3 sm:gap-6 sm:p-5 xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)] xl:w-[310px]">
+        <aside className="admin-panel flex w-full shrink-0 flex-col gap-3 p-3 sm:gap-6 sm:p-5 xl:w-[310px]">
           <div className="panel-card px-4 py-4 sm:px-5 sm:py-5">
             <div className="flex items-center gap-3">
               {/* <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--cms-primary)]/12">

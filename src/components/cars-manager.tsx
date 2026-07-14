@@ -24,6 +24,7 @@ interface FormState {
   luggage_capacity: number;
   sort_order: number;
   is_active: boolean;
+  hospitality_enabled: boolean;
 }
 
 const EMPTY: FormState = {
@@ -34,6 +35,7 @@ const EMPTY: FormState = {
   luggage_capacity: 2,
   sort_order: 0,
   is_active: true,
+  hospitality_enabled: false,
 };
 
 export function CarsManager({ initialCars }: { initialCars: Car[] }) {
@@ -78,6 +80,7 @@ export function CarsManager({ initialCars }: { initialCars: Car[] }) {
       luggage_capacity: car.luggage_capacity,
       sort_order: car.sort_order,
       is_active: car.is_active,
+      hospitality_enabled: car.hospitality_enabled,
     });
     setError('');
   };
@@ -198,7 +201,7 @@ export function CarsManager({ initialCars }: { initialCars: Car[] }) {
               onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex flex-col justify-end gap-2">
             <label className="flex items-center gap-2 text-sm text-slate-700">
               <input
                 type="checkbox"
@@ -207,6 +210,15 @@ export function CarsManager({ initialCars }: { initialCars: Car[] }) {
                 className="h-4 w-4"
               />
               مفعّلة
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={form.hospitality_enabled}
+                onChange={(e) => setForm({ ...form, hospitality_enabled: e.target.checked })}
+                className="h-4 w-4"
+              />
+              الضيافة متاحة
             </label>
           </div>
         </div>

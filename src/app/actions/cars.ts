@@ -10,7 +10,7 @@ const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const CAR_SELECT =
-  'id, name, name_ar, vehicle_class, passenger_capacity, luggage_capacity, image_url, sort_order, is_active, created_at, updated_at';
+  'id, name, name_ar, vehicle_class, passenger_capacity, luggage_capacity, image_url, sort_order, is_active, hospitality_enabled, created_at, updated_at';
 
 const VEHICLE_CLASSES: VehicleClass[] = ['standard', 'executive', 'van'];
 
@@ -39,6 +39,7 @@ function toCar(row: unknown): Car | null {
     image_url: typeof r.image_url === 'string' ? r.image_url : null,
     sort_order: r.sort_order,
     is_active: r.is_active,
+    hospitality_enabled: r.hospitality_enabled === true,
     created_at: typeof r.created_at === 'string' ? r.created_at : '',
     updated_at: typeof r.updated_at === 'string' ? r.updated_at : '',
   };
@@ -142,6 +143,7 @@ export async function createCarAction(
       image_url: input.image_url ?? null,
       sort_order: input.sort_order ?? 0,
       is_active: input.is_active ?? true,
+      hospitality_enabled: input.hospitality_enabled ?? false,
     })
     .select(CAR_SELECT)
     .single();
@@ -176,6 +178,9 @@ export async function updateCarAction(
       ...(input.image_url !== undefined ? { image_url: input.image_url } : {}),
       ...(input.sort_order !== undefined ? { sort_order: input.sort_order } : {}),
       ...(input.is_active !== undefined ? { is_active: input.is_active } : {}),
+      ...(input.hospitality_enabled !== undefined
+        ? { hospitality_enabled: input.hospitality_enabled }
+        : {}),
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

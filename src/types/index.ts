@@ -105,6 +105,7 @@ export interface Car {
   image_url: string | null;
   sort_order: number;
   is_active: boolean;
+  hospitality_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -118,6 +119,7 @@ export interface CreateCarInput {
   image_url?: string | null;
   sort_order?: number;
   is_active?: boolean;
+  hospitality_enabled?: boolean;
 }
 
 // ----------------------------------------------------------------

@@ -70,6 +70,28 @@ export async function adminLogoutAction(): Promise<void> {
   redirect('/admin/login');
 }
 
+export async function updateAdminProfileAction(input: {
+  fullName: string;
+  password?: string;
+}): Promise<ServerActionResponse<{ fullName: string }>> {
+  const { supabase } = await requireAdmin();
+  const fullName = input.fullName.trim();
+  const password = input.password?.trim() ?? '';
+
+  if (!fullName) return { success: false, error: 'Name is required.' };
+  if (fullName.length > 100) return { success: false, error: 'Name must be 100 characters or less.' };
+  if (password && password.length < 6) return { success: false, error: 'Password must be at least 6 characters.' };
+
+  const { error } = await supabase.auth.updateUser({
+    data: { full_name: fullName },
+    ...(password ? { password } : {}),
+  });
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/admin/profile');
+  return { success: true, data: { fullName } };
+}
+
 // ----------------------------------------------------------------
 // T021: Fetch bookings with search, pagination, and status filters
 // ----------------------------------------------------------------
@@ -86,7 +108,7 @@ export async function getBookingsAction(
   let query = supabase
     .from('bookings')
     .select(
-      '*, pickup_location:locations!bookings_pickup_location_id_fkey(id,name), destination_location:locations!bookings_destination_location_id_fkey(id,name), driver:drivers(id,name)',
+      '*, pickup_location:locations!bookings_pickup_location_id_fkey(id,name), destination_location:locations!bookings_destination_location_id_fkey(id,name), driver:drivers(id,name,phone)',
       { count: 'exact' }
     );
 
