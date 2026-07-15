@@ -878,8 +878,17 @@ export default function BookingForm() {
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--cms-primary)]/10">
-                      <CarIcon className="h-5 w-5 text-[var(--cms-primary)]" />
+                    <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[var(--cms-primary)]/10">
+                      {q.car.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={q.car.image_url}
+                          alt={lang === 'ar' ? q.car.name_ar : q.car.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <CarIcon className="h-5 w-5 text-[var(--cms-primary)]" />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-slate-900">
