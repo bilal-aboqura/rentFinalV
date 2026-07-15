@@ -201,26 +201,39 @@ export function CarsManager({ initialCars }: { initialCars: Car[] }) {
               onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
             />
           </div>
-          <div className="flex flex-col justify-end gap-2">
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={form.is_active}
-                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                className="h-4 w-4"
-              />
-              مفعّلة
+          <div className="flex flex-col justify-end gap-3">
+            <label className="flex cursor-pointer items-center gap-3">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={form.is_active}
+                  onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                  className="peer sr-only"
+                />
+                <div className="h-5 w-9 rounded-full border border-slate-300 bg-slate-200 transition-colors peer-checked:border-emerald-500 peer-checked:bg-emerald-500" />
+                <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-[-16px]" />
+              </div>
+              <span className={`text-sm font-medium ${form.is_active ? 'text-emerald-600' : 'text-slate-500'}`}>
+                مفعّلة
+              </span>
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={form.hospitality_enabled}
-                onChange={(e) => setForm({ ...form, hospitality_enabled: e.target.checked })}
-                className="h-4 w-4"
-              />
-              الضيافة متاحة
+            <label className="flex cursor-pointer items-center gap-3">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={form.hospitality_enabled}
+                  onChange={(e) => setForm({ ...form, hospitality_enabled: e.target.checked })}
+                  className="peer sr-only"
+                />
+                <div className="h-5 w-9 rounded-full border border-slate-300 bg-slate-200 transition-colors peer-checked:border-amber-500 peer-checked:bg-amber-500" />
+                <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-[-16px]" />
+              </div>
+              <span className={`text-sm font-medium ${form.hospitality_enabled ? 'text-amber-600' : 'text-slate-500'}`}>
+                الضيافة متاحة
+              </span>
             </label>
           </div>
+
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

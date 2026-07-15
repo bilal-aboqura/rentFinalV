@@ -39,7 +39,7 @@ export default function AdminShell({
   return (
     <div className="relative min-h-screen overflow-x-clip bg-slate-50">
       <div className="relative mx-auto flex min-h-screen max-w-[1600px] flex-col gap-3 p-3 sm:gap-5 sm:p-6 xl:flex-row">
-        <aside className="admin-panel flex w-full shrink-0 flex-col gap-3 p-3 sm:gap-6 sm:p-5 xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)] xl:w-[310px]">
+        <aside className="admin-panel flex w-full shrink-0 flex-col gap-3 p-3 sm:gap-6 sm:p-5 xl:sticky xl:top-6 xl:w-[310px] xl:self-start">
           <div className="panel-card px-4 py-4 sm:px-5 sm:py-5">
             <div className="flex items-center gap-3">
               {/* <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--cms-primary)]/12">
@@ -54,7 +54,7 @@ export default function AdminShell({
             </p>
           </div>
 
-          <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:mx-0 xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-y-auto xl:px-0">
+          <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:mx-0 xl:flex-col xl:px-0">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}

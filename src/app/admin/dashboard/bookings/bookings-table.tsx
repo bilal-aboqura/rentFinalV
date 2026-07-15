@@ -87,6 +87,50 @@ function formatHospitalitySelections(booking: Booking): string {
     .join('، ');
 }
 
+function buildDriverWhatsAppUrl(booking: Booking, phone: string): string {
+  const clean = phone.replace(/\D/g, '');
+  const date = booking.trip_date_time
+    ? new Intl.DateTimeFormat('ar-EG', { dateStyle: 'full' }).format(new Date(booking.trip_date_time))
+    : '—';
+  const time = booking.trip_date_time
+    ? new Intl.DateTimeFormat('ar-EG', { timeStyle: 'short', hour12: true }).format(new Date(booking.trip_date_time))
+    : '—';
+  const hospitality = formatHospitalitySelections(booking);
+  const price = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'SAR' }).format(
+    Number(booking.total_price),
+  );
+  const tripType = TRIP_TYPE_LABELS[booking.trip_type] ?? booking.trip_type;
+  const flightOrTicket = booking.flight_number || booking.ticket_number || '—';
+  const payment = PAYMENT_LABELS[booking.payment_method] ?? booking.payment_method;
+
+  const lines = [
+    '🚖 *تفاصيل رحلة جديدة — دقه الوقت*',
+    '',
+    `👤 *العميل:* ${booking.customer_name}`,
+    `📞 *هاتف العميل:* ${booking.customer_phone}`,
+    '',
+    `📅 *التاريخ:* ${date}`,
+    `⏰ *وقت الانطلاق:* ${time}`,
+    `🔄 *نوع الرحلة:* ${tripType}`,
+    '',
+    `📍 *من:* ${booking.pickup_text || booking.pickup_location?.name_ar || booking.pickup_location?.name || '—'}`,
+    `🏁 *إلى:* ${booking.dropoff_text || booking.destination_location?.name_ar || booking.destination_location?.name || '—'}`,
+    '',
+    `🚗 *السيارة:* ${booking.vehicle_name || '—'}`,
+    `👥 *عدد الركاب:* ${booking.passenger_count ?? 1}`,
+    `✈️ *رقم الرحلة/التذكرة:* ${flightOrTicket}`,
+    '',
+    `🍵 *الضيافة:* ${hospitality}`,
+    `💳 *طريقة الدفع:* ${payment}`,
+    `💰 *الإجمالي:* ${price}`,
+    '',
+    `🔖 *رقم الحجز:* ${booking.reference_id}`,
+  ];
+
+  const message = encodeURIComponent(lines.join('\n'));
+  return `https://wa.me/${clean}?text=${message}`;
+}
+
 export default function BookingsTable({
   bookings,
   drivers,
@@ -416,13 +460,13 @@ export default function BookingsTable({
                               </select>
                               {booking.driver?.phone && (
                                 <a
-                                  href={`https://wa.me/${booking.driver.phone.replace(/\D/g, '')}`}
+                                  href={buildDriverWhatsAppUrl(booking, booking.driver.phone)}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-3 py-2 text-xs font-bold text-white transition hover:brightness-95"
                                 >
                                   <MessageCircle className="h-4 w-4" />
-                                  مراسلة السائق واتساب
+                                  إرسال تفاصيل الرحلة للسائق
                                 </a>
                               )}
                               <span className="text-xs text-slate-500">
