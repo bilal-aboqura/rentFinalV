@@ -54,7 +54,7 @@ export default function AdminShell({
             </p>
           </div>
 
-          <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:mx-0 xl:flex-1 xl:flex-col xl:overflow-visible xl:px-0">
+          <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 xl:mx-0 xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-y-auto xl:px-0">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
