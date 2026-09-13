@@ -31,11 +31,7 @@ export default function ProfileForm({ initialName, initialEmail }: { initialName
       setEmail(result.data.email);
       setPassword('');
       setConfirmPassword('');
-      setSuccessMessage(
-        result.data.emailChangePending
-          ? 'تم حفظ التغييرات. تحقق من رسائل البريد الإلكتروني وأكّد العنوان الجديد لإتمام تغييره.'
-          : 'تم حفظ التغييرات.'
-      );
+      setSuccessMessage('تم حفظ التغييرات وتحديث البريد الإلكتروني مباشرة.');
     });
   };
 
@@ -55,9 +51,7 @@ export default function ProfileForm({ initialName, initialEmail }: { initialName
           dir="ltr"
           className={fieldClass}
         />
-        <p className="mt-1.5 text-xs leading-5 text-slate-500">
-          قد يطلب مزود تسجيل الدخول تأكيد العنوان الجديد عبر البريد الإلكتروني.
-        </p>
+        <p className="mt-1.5 text-xs leading-5 text-slate-500">سيصبح البريد الجديد هو عنوان تسجيل الدخول فور الحفظ.</p>
       </div>
       <div>
         <label className="text-sm font-semibold text-slate-700" htmlFor="profile-name">الاسم</label>

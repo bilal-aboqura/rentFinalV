@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import {
   createDriverSchema,
   updateDriverSchema,
@@ -77,7 +77,6 @@ export async function updateAdminProfileAction(input: {
 }): Promise<ServerActionResponse<{
   fullName: string;
   email: string;
-  emailChangePending: boolean;
 }>> {
   const { supabase, user } = await requireAdmin();
   const fullName = input.fullName.trim();
@@ -93,23 +92,24 @@ export async function updateAdminProfileAction(input: {
 
   const currentEmail = user.email?.trim() ?? '';
   const emailChanged = email.toLowerCase() !== currentEmail.toLowerCase();
-  const { data, error } = await supabase.auth.updateUser({
-    data: { full_name: fullName },
-    ...(emailChanged ? { email } : {}),
+  const serviceClient = await createServiceClient();
+  const { data, error } = await serviceClient.auth.admin.updateUserById(user.id, {
+    user_metadata: { ...user.user_metadata, full_name: fullName },
+    ...(emailChanged ? { email, email_confirm: true } : {}),
     ...(password ? { password } : {}),
   });
   if (error) return { success: false, error: error.message };
 
+  // Refresh the current session so the admin header reflects the new email
+  // immediately without requiring a sign-out/sign-in cycle.
+  await supabase.auth.refreshSession();
   revalidatePath('/admin/profile');
-  const updatedEmail = data.user?.email?.trim() || currentEmail;
-  const emailChangePending = emailChanged && updatedEmail.toLowerCase() !== email.toLowerCase();
 
   return {
     success: true,
     data: {
       fullName,
-      email: emailChangePending ? email : updatedEmail,
-      emailChangePending,
+      email: data.user?.email?.trim() || email,
     },
   };
 }

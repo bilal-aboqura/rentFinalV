@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
-  updateUser: vi.fn(),
+  updateUserById: vi.fn(),
+  refreshSession: vi.fn(),
   revalidatePath: vi.fn(),
 }));
 
@@ -10,7 +11,14 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(async () => ({
     auth: {
       getUser: mocks.getUser,
-      updateUser: mocks.updateUser,
+      refreshSession: mocks.refreshSession,
+    },
+  })),
+  createServiceClient: vi.fn(async () => ({
+    auth: {
+      admin: {
+        updateUserById: mocks.updateUserById,
+      },
     },
   })),
 }));
@@ -28,13 +36,20 @@ describe('updateAdminProfileAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getUser.mockResolvedValue({
-      data: { user: { id: 'admin-1', email: 'old@example.com' } },
+      data: {
+        user: {
+          id: 'admin-1',
+          email: 'old@example.com',
+          user_metadata: { role: 'admin' },
+        },
+      },
       error: null,
     });
+    mocks.refreshSession.mockResolvedValue({ data: {}, error: null });
   });
 
-  it('updates the authenticated admin email with the rest of the profile', async () => {
-    mocks.updateUser.mockResolvedValue({
+  it('updates and confirms the authenticated admin email immediately', async () => {
+    mocks.updateUserById.mockResolvedValue({
       data: { user: { email: 'new@example.com' } },
       error: null,
     });
@@ -45,38 +60,19 @@ describe('updateAdminProfileAction', () => {
       password: '',
     });
 
-    expect(mocks.updateUser).toHaveBeenCalledWith({
-      data: { full_name: 'Admin User' },
+    expect(mocks.updateUserById).toHaveBeenCalledWith('admin-1', {
+      user_metadata: { role: 'admin', full_name: 'Admin User' },
       email: 'new@example.com',
+      email_confirm: true,
     });
     expect(result).toEqual({
       success: true,
       data: {
         fullName: 'Admin User',
         email: 'new@example.com',
-        emailChangePending: false,
       },
     });
-  });
-
-  it('reports when Supabase requires email confirmation', async () => {
-    mocks.updateUser.mockResolvedValue({
-      data: { user: { email: 'old@example.com' } },
-      error: null,
-    });
-
-    const result = await updateAdminProfileAction({
-      fullName: 'Admin User',
-      email: 'pending@example.com',
-    });
-
-    expect(result).toMatchObject({
-      success: true,
-      data: {
-        email: 'pending@example.com',
-        emailChangePending: true,
-      },
-    });
+    expect(mocks.refreshSession).toHaveBeenCalledOnce();
   });
 
   it('rejects invalid email addresses before calling Supabase', async () => {
@@ -86,11 +82,11 @@ describe('updateAdminProfileAction', () => {
     });
 
     expect(result).toEqual({ success: false, error: 'Please enter a valid email address.' });
-    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect(mocks.updateUserById).not.toHaveBeenCalled();
   });
 
   it('does not send an unchanged email as an auth update', async () => {
-    mocks.updateUser.mockResolvedValue({
+    mocks.updateUserById.mockResolvedValue({
       data: { user: { email: 'old@example.com' } },
       error: null,
     });
@@ -101,9 +97,24 @@ describe('updateAdminProfileAction', () => {
       password: 'new-password',
     });
 
-    expect(mocks.updateUser).toHaveBeenCalledWith({
-      data: { full_name: 'Updated Admin' },
+    expect(mocks.updateUserById).toHaveBeenCalledWith('admin-1', {
+      user_metadata: { role: 'admin', full_name: 'Updated Admin' },
       password: 'new-password',
     });
+  });
+
+  it('returns a Supabase admin update error without refreshing the session', async () => {
+    mocks.updateUserById.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'Email already registered' },
+    });
+
+    const result = await updateAdminProfileAction({
+      fullName: 'Admin User',
+      email: 'taken@example.com',
+    });
+
+    expect(result).toEqual({ success: false, error: 'Email already registered' });
+    expect(mocks.refreshSession).not.toHaveBeenCalled();
   });
 });
