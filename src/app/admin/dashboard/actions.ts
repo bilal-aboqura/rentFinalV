@@ -72,24 +72,46 @@ export async function adminLogoutAction(): Promise<void> {
 
 export async function updateAdminProfileAction(input: {
   fullName: string;
+  email: string;
   password?: string;
-}): Promise<ServerActionResponse<{ fullName: string }>> {
-  const { supabase } = await requireAdmin();
+}): Promise<ServerActionResponse<{
+  fullName: string;
+  email: string;
+  emailChangePending: boolean;
+}>> {
+  const { supabase, user } = await requireAdmin();
   const fullName = input.fullName.trim();
+  const email = input.email.trim();
   const password = input.password?.trim() ?? '';
 
   if (!fullName) return { success: false, error: 'Name is required.' };
   if (fullName.length > 100) return { success: false, error: 'Name must be 100 characters or less.' };
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { success: false, error: 'Please enter a valid email address.' };
+  }
   if (password && password.length < 6) return { success: false, error: 'Password must be at least 6 characters.' };
 
-  const { error } = await supabase.auth.updateUser({
+  const currentEmail = user.email?.trim() ?? '';
+  const emailChanged = email.toLowerCase() !== currentEmail.toLowerCase();
+  const { data, error } = await supabase.auth.updateUser({
     data: { full_name: fullName },
+    ...(emailChanged ? { email } : {}),
     ...(password ? { password } : {}),
   });
   if (error) return { success: false, error: error.message };
 
   revalidatePath('/admin/profile');
-  return { success: true, data: { fullName } };
+  const updatedEmail = data.user?.email?.trim() || currentEmail;
+  const emailChangePending = emailChanged && updatedEmail.toLowerCase() !== email.toLowerCase();
+
+  return {
+    success: true,
+    data: {
+      fullName,
+      email: emailChangePending ? email : updatedEmail,
+      emailChangePending,
+    },
+  };
 }
 
 // ----------------------------------------------------------------

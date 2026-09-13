@@ -19,9 +19,9 @@ export default async function AdminProfilePage() {
       <div className="mx-auto max-w-xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">الملف الشخصي</h1>
-          <p className="mt-1 text-sm text-slate-500">تحديث اسم الحساب وكلمة المرور.</p>
+          <p className="mt-1 text-sm text-slate-500">تحديث البريد الإلكتروني واسم الحساب وكلمة المرور.</p>
         </div>
-        <ProfileForm initialName={fullName} email={user.email ?? ''} />
+        <ProfileForm initialName={fullName} initialEmail={user.email ?? ''} />
       </div>
     </AdminShell>
   );
